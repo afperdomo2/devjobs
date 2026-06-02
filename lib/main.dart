@@ -1,16 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
-  runApp(const MainApp());
+import 'config.dart';
+import 'services/sheets_api_service.dart';
+import 'screens/dashboard_screen.dart';
+
+void main() async {
+  await dotenv.load();
+  final apiService = SheetsApiService(baseUrl: kSheetsApiUrl);
+  runApp(DevJobsApp(apiService: apiService));
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class DevJobsApp extends StatelessWidget {
+  final SheetsApiService apiService;
+
+  const DevJobsApp({super.key, required this.apiService});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('Hello World! 222'))),
+    return MaterialApp(
+      title: 'DevJobs',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+      home: DashboardScreen(apiService: apiService),
     );
   }
 }

@@ -94,11 +94,94 @@ El proyecto usa `flutter_lints` con la configuración por defecto de Flutter.
 flutter analyze
 ```
 
+## 📊 Google Sheets
+
+La app se conecta a una Google Sheet como fuente de datos. La hoja contiene dos pestañas:
+
+| Pestaña | Contenido |
+|---------|-----------|
+| **Dashboard** | Resumen con totales: postulaciones, en revisión, entrevistas, ofertas, rechazadas |
+| **Postulaciones** | Detalle de cada postulación (12 columnas) |
+
+### Columnas de Postulaciones
+
+| # | Columna | Descripción |
+|---|---------|-------------|
+| A | Fecha Postulación | Fecha en que se envió la postulación |
+| B | Empresa | Nombre de la empresa |
+| C | Vacante | Título del cargo |
+| D | Tipo de Contrato | Tiempo completo / Temporal / Freelance |
+| E | Modalidad | Remoto / Presencial / Híbrido |
+| F | Ciudad | Ubicación de la vacante |
+| G | Salario Ofrecido | Salario o rango salarial |
+| H | Estado | Enviada / En revisión / Entrevista realizada / Oferta recibida / Rechazada |
+| I | Link | URL de la oferta original |
+| J | Descripción/Notas | Descripción completa de la vacante |
+| K | Fecha Seguimiento | Fecha del último seguimiento |
+| L | Contacto | Nombre del reclutador o contacto |
+
+### Apps Script — API REST
+
+La Google Sheet no expone datos directamente. Para conectarla a la app se usa un **Google Apps Script** que actúa como API REST.
+
+**1. Crear el script**
+
+1. Abre la hoja → **Extensiones → Apps Script**
+2. Pega el código del archivo [`apps_script_code.example.gs`](apps_script_code.example.gs) en el editor
+3. Guarda con `Ctrl+S` y asígnale un nombre al proyecto (ej. `DevJobs API`)
+
+**2. Desplegar como Web App**
+
+1. Clic en **Desplegar → Nueva implementación**
+2. Tipo: **Web App**
+3. Configuración:
+   - **Ejecutar como** → Yo (tu cuenta)
+   - **Acceso** → Cualquiera
+4. Clic en **Desplegar**
+5. Autoriza los permisos cuando se soliciten
+6. **Copia la URL** generada (formato: `https://script.google.com/macros/s/.../exec`)
+
+**3. Configurar la URL en la app**
+
+1. Copia el archivo de ejemplo:
+   ```bash
+   cp .env.example .env
+   ```
+2. Edita `.env` y pega la URL del deployment:
+   ```env
+   API_URL=https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec
+   ```
+3. La app carga automáticamente las variables desde `.env` al iniciar.
+
+> ⚠️ El archivo `.env` está en `.gitignore`. **Nunca** hagas commit de la URL real. Usa `.env.example` como referencia para otros desarrolladores.
+
+### Acceso a la hoja
+
+La hoja debe ser **públicamente visible** para que el script funcione con "Ejecutar como → Yo":
+1. En la hoja → **Compartir → "Cualquier persona con el enlace" → Lector**
+
+> ⚠️ *Nunca* compartas la URL del deployment del Apps Script públicamente. Se pasa como variable de entorno (`--dart-define`) al ejecutar o compilar.
+
+---
+
 ## 📁 Estructura del proyecto
 
 ```
 lib/
-└── main.dart          # Punto de entrada de la app
-test/                  # Tests unitarios y de widget
+├── main.dart                           # Punto de entrada de la app
+├── config.dart                         # URL del Apps Script
+├── models/
+│   └── job_application.dart            # Modelo de datos + DashboardStats
+├── services/
+│   └── sheets_api_service.dart         # HTTP client para el Apps Script
+├── screens/
+│   ├── dashboard_screen.dart           # Dashboard con tarjetas de métricas
+│   ├── applications_list_screen.dart   # Lista filtrable de postulaciones
+│   └── application_detail_screen.dart  # Detalle completo + cambiar estado
+└── widgets/
+    └── status_chip.dart                # Chip de estado (colores por estado)
+apps_script_code.example.gs                # Código del Apps Script (ejemplo con placeholder)
+apps_script_code.gs                         # Copia local con tu SHEET_ID real (gitignored)
+test/                                   # Tests unitarios y de widget
 ```
 

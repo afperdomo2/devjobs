@@ -47,3 +47,8 @@ app.*.map.json
 # IA
 .agents/
 .kiro/
+
+# Environment
+.env
+
+apps_script_code.gs
