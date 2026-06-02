@@ -180,9 +180,12 @@ lib/
 │   └── date_formatter.dart             # Formateo de fechas en español
 ├── screens/
 │   ├── main_screen.dart                # BottomNavigationBar (Inicio/Postulaciones/Rechazadas)
+│   ├── dashboard_screen.dart           # Dashboard con tarjetas de métricas
+│   ├── applications_list_screen.dart   # Lista filtrable + búsqueda + pull-to-refresh
 │   └── application_detail_screen.dart  # Detalle + cambiar estado
 └── widgets/
-    └── status_chip.dart                # Chip de estado (colores por estado)
+    ├── status_chip.dart                # Chip de estado (colores por estado)
+    └── application_card.dart           # Card de postulación reutilizable
 apps_script_code.example.gs                # Apps Script de ejemplo (con placeholder)
 apps_script_code.gs                         # Copia local con tu SHEET_ID real (gitignored)
 test/                                   # Tests unitarios y de widget

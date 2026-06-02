@@ -30,7 +30,7 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 - **Models:** `lib/models/job_application.dart` — `JobApplication` (12 fields) + `DashboardStats`.
 - **Service:** `lib/services/sheets_api_service.dart` — HTTP client using `package:http`.
 - **Screens:** `MainScreen` with `BottomNavigationBar` (3 tabs: Inicio/Postulaciones/Rechazadas). Detail via `Navigator.push`.
-- **Widgets:** `lib/widgets/status_chip.dart` — colored status badge.
+- **Widgets:** `lib/widgets/status_chip.dart` — colored status badge. `lib/widgets/application_card.dart` — reusable application card.
 - **Helpers:** `lib/helpers/date_formatter.dart` — Spanish date formatting via `package:intl`.
 
 ## Notes
