@@ -49,6 +49,14 @@ class AppState extends ChangeNotifier {
         apps = apps.where((a) => a.estado.trim().toLowerCase() != 'rechazada').toList();
       case 'onlyRejected':
         apps = apps.where((a) => a.estado.trim().toLowerCase() == 'rechazada').toList();
+      case 'activas':
+        apps = apps
+            .where((a) => a.estado.trim().toLowerCase() != 'rechazada' && a.fechaSeguimiento.isNotEmpty)
+            .toList();
+      case 'pendientes':
+        apps = apps
+            .where((a) => a.estado.trim().toLowerCase() != 'rechazada' && a.fechaSeguimiento.isEmpty)
+            .toList();
     }
 
     apps.sort(_sortByDate);

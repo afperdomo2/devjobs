@@ -18,17 +18,36 @@ class MainScreen extends StatelessWidget {
             index: state.currentTab,
             children: const [
               DashboardScreen(),
-              ApplicationsListScreen(filterMode: 'noRejected'),
+              ApplicationsListScreen(filterMode: 'activas'),
+              ApplicationsListScreen(filterMode: 'pendientes'),
               ApplicationsListScreen(filterMode: 'onlyRejected'),
             ],
           ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: state.currentTab,
             onDestinationSelected: (i) => state.setTab(i),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: const [
-              NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Inicio'),
-              NavigationDestination(icon: Icon(Icons.work_outline), selectedIcon: Icon(Icons.work), label: 'Postulaciones'),
-              NavigationDestination(icon: Icon(Icons.cancel_outlined), selectedIcon: Icon(Icons.cancel), label: 'Rechazadas'),
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Inicio',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.notifications_active_outlined),
+                selectedIcon: Icon(Icons.notifications_active),
+                label: 'Activas',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.schedule_outlined),
+                selectedIcon: Icon(Icons.schedule),
+                label: 'Sin novedad',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.cancel_outlined),
+                selectedIcon: Icon(Icons.cancel),
+                label: 'Rechazadas',
+              ),
             ],
           ),
         );
@@ -36,5 +55,5 @@ class MainScreen extends StatelessWidget {
     );
   }
 
-  static const _titles = ['DevJobs', 'Postulaciones', 'Rechazadas'];
+  static const _titles = ['DevJobs', 'Activas', 'Sin novedad', 'Rechazadas'];
 }
