@@ -77,7 +77,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
           const Text('Cambiar estado', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            initialValue: _selectedEstado,
+            value: _selectedEstado,
             decoration: InputDecoration(
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

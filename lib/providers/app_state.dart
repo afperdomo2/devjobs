@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/job_application.dart';
 import '../services/sheets_api_service.dart';
+import '../helpers/date_formatter.dart';
 
 class AppState extends ChangeNotifier {
   final SheetsApiService apiService;
@@ -70,25 +71,12 @@ class AppState extends ChangeNotifier {
   }
 
   int _compareDateStrings(String a, String b) {
-    final dA = _tryParse(a);
-    final dB = _tryParse(b);
+    final dA = parseDate(a);
+    final dB = parseDate(b);
     if (dA == null && dB == null) return 0;
     if (dA == null) return 1;
     if (dB == null) return -1;
     return dA.compareTo(dB);
-  }
-
-  DateTime? _tryParse(String raw) {
-    if (raw.isEmpty) return null;
-    try {
-      final parts = raw.split('/');
-      if (parts.length == 3) {
-        return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
   }
 
   Future<void> fetchApplications({bool forceRefresh = false}) async {

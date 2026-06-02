@@ -139,7 +139,12 @@ function createRow(sheet, data) {
 function buildRecord(headers, row, rowIndex) {
   var record = { _rowIndex: rowIndex };
   for (var i = 0; i < COLUMNS.length && i < headers.length; i++) {
-    record[COLUMNS[i]] = row[i] != null ? String(row[i]) : '';
+    var value = row[i];
+    if (value instanceof Date) {
+      record[COLUMNS[i]] = Utilities.formatDate(value, 'GMT-5', 'd/M/yyyy');
+    } else {
+      record[COLUMNS[i]] = value != null ? String(value) : '';
+    }
   }
   return record;
 }

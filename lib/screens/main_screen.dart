@@ -15,15 +15,7 @@ class MainScreen extends StatelessWidget {
     return Consumer<AppState>(
       builder: (_, state, _) {
         return Scaffold(
-          appBar: AppBar(
-            title: Text(_titles[state.currentTab]),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () => state.fetchApplications(forceRefresh: true),
-              ),
-            ],
-          ),
+          appBar: AppBar(title: Text(_titles[state.currentTab])),
           body: IndexedStack(
             index: state.currentTab,
             children: const [
@@ -36,9 +28,21 @@ class MainScreen extends StatelessWidget {
             selectedIndex: state.currentTab,
             onDestinationSelected: (i) => state.setTab(i),
             destinations: const [
-              NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Inicio'),
-              NavigationDestination(icon: Icon(Icons.work_outline), selectedIcon: Icon(Icons.work), label: 'Postulaciones'),
-              NavigationDestination(icon: Icon(Icons.cancel_outlined), selectedIcon: Icon(Icons.cancel), label: 'Rechazadas'),
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Inicio',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.work_outline),
+                selectedIcon: Icon(Icons.work),
+                label: 'Postulaciones',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.cancel_outlined),
+                selectedIcon: Icon(Icons.cancel),
+                label: 'Rechazadas',
+              ),
             ],
           ),
         );
@@ -76,7 +80,12 @@ class _DashboardTabState extends State<_DashboardTab> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          _StatCard(label: 'Total postulaciones', value: stats.total.toString(), color: Colors.blue, icon: Icons.work),
+          _StatCard(
+            label: 'Total postulaciones',
+            value: stats.total.toString(),
+            color: Colors.blue,
+            icon: Icons.work,
+          ),
           const SizedBox(height: 8),
           GridView.count(
             shrinkWrap: true,
@@ -86,10 +95,30 @@ class _DashboardTabState extends State<_DashboardTab> {
             mainAxisSpacing: 8,
             childAspectRatio: 1.6,
             children: [
-              _StatCard(label: 'En revisión', value: stats.enRevision.toString(), color: Colors.orange, icon: Icons.visibility),
-              _StatCard(label: 'Entrevistas', value: stats.entrevistas.toString(), color: Colors.purple, icon: Icons.people),
-              _StatCard(label: 'Ofertas', value: stats.ofertas.toString(), color: Colors.green, icon: Icons.check_circle),
-              _StatCard(label: 'Rechazadas', value: stats.rechazadas.toString(), color: Colors.red, icon: Icons.cancel),
+              _StatCard(
+                label: 'En revisión',
+                value: stats.enRevision.toString(),
+                color: Colors.orange,
+                icon: Icons.visibility,
+              ),
+              _StatCard(
+                label: 'Entrevistas',
+                value: stats.entrevistas.toString(),
+                color: Colors.purple,
+                icon: Icons.people,
+              ),
+              _StatCard(
+                label: 'Ofertas',
+                value: stats.ofertas.toString(),
+                color: Colors.green,
+                icon: Icons.check_circle,
+              ),
+              _StatCard(
+                label: 'Rechazadas',
+                value: stats.rechazadas.toString(),
+                color: Colors.red,
+                icon: Icons.cancel,
+              ),
             ],
           ),
         ],
@@ -104,7 +133,12 @@ class _StatCard extends StatelessWidget {
   final Color color;
   final IconData icon;
 
-  const _StatCard({required this.label, required this.value, required this.color, required this.icon});
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +153,10 @@ class _StatCard extends StatelessWidget {
               children: [
                 Icon(icon, size: 18, color: color),
                 const Spacer(),
-                Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+                Text(
+                  value,
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -159,7 +196,9 @@ class _ApplicationsTabState extends State<_ApplicationsTab> {
     final q = _search.toLowerCase();
     final filtered = apps.where((a) {
       if (q.isEmpty) return true;
-      return a.empresa.toLowerCase().contains(q) || a.vacante.toLowerCase().contains(q) || a.ciudad.toLowerCase().contains(q);
+      return a.empresa.toLowerCase().contains(q) ||
+          a.vacante.toLowerCase().contains(q) ||
+          a.ciudad.toLowerCase().contains(q);
     }).toList();
 
     return Column(
@@ -188,29 +227,29 @@ class _ApplicationsTabState extends State<_ApplicationsTab> {
             child: state.loading && apps.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : state.error != null && apps.isEmpty
-                    ? Center(child: Text(state.error!, textAlign: TextAlign.center))
-                    : filtered.isEmpty
-                        ? ListView(children: const [_EmptyHint()])
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final app = filtered[index];
-                              return _ApplicationCard(
-                                application: app,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ApplicationDetailScreen(application: app),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
+                ? Center(child: Text(state.error!, textAlign: TextAlign.center))
+                : filtered.isEmpty
+                ? ListView(children: const [_EmptyHint()])
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final app = filtered[index];
+                      return _ApplicationCard(
+                        application: app,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ApplicationDetailScreen(application: app),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
           ),
         ),
       ],
@@ -250,29 +289,42 @@ class _ApplicationCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(application.empresa, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    child: Text(
+                      application.empresa,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
                   ),
                   StatusChip(status: application.estado),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(application.vacante, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700])),
+              Text(
+                application.vacante,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+              ),
               const SizedBox(height: 6),
               Row(
                 children: [
                   Expanded(
                     child: Row(
                       children: [
-                        Expanded(child: _InfoChip(icon: Icons.location_on, label: application.ciudad)),
+                        Expanded(
+                          child: _InfoChip(icon: Icons.location_on, label: application.ciudad),
+                        ),
                         const SizedBox(width: 8),
-                        Expanded(child: _InfoChip(icon: Icons.business_center, label: application.modalidad)),
+                        Expanded(
+                          child: _InfoChip(
+                            icon: Icons.business_center,
+                            label: application.modalidad,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      formatDate(application.fechaPostulacion),
+                      formatDateShort(application.fechaPostulacion),
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
@@ -300,7 +352,13 @@ class _InfoChip extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: Colors.grey),
         const SizedBox(width: 2),
-        Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall)),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
       ],
     );
   }
