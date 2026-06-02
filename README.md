@@ -168,19 +168,22 @@ La hoja debe ser **públicamente visible** para que el script funcione con "Ejec
 
 ```
 lib/
-├── main.dart                           # Punto de entrada de la app
-├── config.dart                         # URL del Apps Script
+├── main.dart                           # MultiProvider + entrada de la app
+├── config.dart                         # Carga API_URL desde .env
 ├── models/
-│   └── job_application.dart            # Modelo de datos + DashboardStats
+│   └── job_application.dart            # Modelo (12 campos) + DashboardStats
+├── providers/
+│   └── app_state.dart                  # Estado global con caché (TTL 3 min)
 ├── services/
 │   └── sheets_api_service.dart         # HTTP client para el Apps Script
+├── helpers/
+│   └── date_formatter.dart             # Formateo de fechas en español
 ├── screens/
-│   ├── dashboard_screen.dart           # Dashboard con tarjetas de métricas
-│   ├── applications_list_screen.dart   # Lista filtrable de postulaciones
-│   └── application_detail_screen.dart  # Detalle completo + cambiar estado
+│   ├── main_screen.dart                # BottomNavigationBar (Inicio/Postulaciones/Rechazadas)
+│   └── application_detail_screen.dart  # Detalle + cambiar estado
 └── widgets/
     └── status_chip.dart                # Chip de estado (colores por estado)
-apps_script_code.example.gs                # Código del Apps Script (ejemplo con placeholder)
+apps_script_code.example.gs                # Apps Script de ejemplo (con placeholder)
 apps_script_code.gs                         # Copia local con tu SHEET_ID real (gitignored)
 test/                                   # Tests unitarios y de widget
 ```
