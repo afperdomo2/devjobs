@@ -176,13 +176,22 @@ class _ApplicationCard extends StatelessWidget {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  _InfoChip(icon: Icons.location_on, label: application.ciudad),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(child: _InfoChip(icon: Icons.location_on, label: application.ciudad)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _InfoChip(icon: Icons.business_center, label: application.modalidad)),
+                      ],
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  _InfoChip(icon: Icons.business_center, label: application.modalidad),
-                  const Spacer(),
-                  Text(
-                    application.fechaPostulacion,
-                    style: Theme.of(context).textTheme.bodySmall,
+                  Flexible(
+                    child: Text(
+                      application.fechaPostulacion,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
                 ],
               ),
@@ -207,7 +216,7 @@ class _InfoChip extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: Colors.grey),
         const SizedBox(width: 2),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Flexible(child: Text(label, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall)),
       ],
     );
   }
