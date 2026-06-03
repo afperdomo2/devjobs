@@ -23,7 +23,7 @@ var SHEET_NAME = 'Postulaciones';
 var COLUMNS = [
   'fechaPostulacion', 'empresa', 'vacante', 'tipoContrato',
   'modalidad', 'ciudad', 'salarioOfrecido', 'estado',
-  'link', 'descripcion', 'fechaSeguimiento', 'contacto'
+  'link', 'descripcion', 'fechaSeguimiento', 'contacto', 'comentarios'
 ];
 
 // -------------------------------------------------
@@ -186,7 +186,8 @@ function normalizeColumn(header) {
     'notas': 'descripcion',
     'fecha seguimiento': 'fechaSeguimiento',
     'fecha de seguimiento': 'fechaSeguimiento',
-    'contacto': 'contacto'
+    'contacto': 'contacto',
+    'comentarios': 'comentarios'
   };
   return map[h] || null;
 }

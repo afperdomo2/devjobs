@@ -37,7 +37,7 @@ class AppState extends ChangeNotifier {
       enRevision: estados.where((e) => e == 'en revisión').length,
       entrevistas: estados.where((e) => e == 'entrevista realizada').length,
       ofertas: estados.where((e) => e == 'oferta recibida' || e == 'ofertas recibidas').length,
-      rechazadas: estados.where((e) => e == 'rechazada').length,
+      rechazadas: estados.where((e) => e == 'rechazada' || e == 'retirada').length,
     );
   }
 
@@ -46,16 +46,16 @@ class AppState extends ChangeNotifier {
 
     switch (filterMode) {
       case 'noRejected':
-        apps = apps.where((a) => a.estado.trim().toLowerCase() != 'rechazada').toList();
+        apps = apps.where((a) => !_isTerminal(a.estado)).toList();
       case 'onlyRejected':
-        apps = apps.where((a) => a.estado.trim().toLowerCase() == 'rechazada').toList();
+        apps = apps.where((a) => _isTerminal(a.estado)).toList();
       case 'activas':
         apps = apps
-            .where((a) => a.estado.trim().toLowerCase() != 'rechazada' && a.fechaSeguimiento.isNotEmpty)
+            .where((a) => !_isTerminal(a.estado) && a.fechaSeguimiento.isNotEmpty)
             .toList();
       case 'pendientes':
         apps = apps
-            .where((a) => a.estado.trim().toLowerCase() != 'rechazada' && a.fechaSeguimiento.isEmpty)
+            .where((a) => !_isTerminal(a.estado) && a.fechaSeguimiento.isEmpty)
             .toList();
     }
 
@@ -76,6 +76,11 @@ class AppState extends ChangeNotifier {
     }
 
     return _compareDateStrings(b.fechaPostulacion, a.fechaPostulacion);
+  }
+
+  bool _isTerminal(String estado) {
+    final e = estado.trim().toLowerCase();
+    return e == 'rechazada' || e == 'retirada';
   }
 
   int _compareDateStrings(String a, String b) {
@@ -105,10 +110,5 @@ class AppState extends ChangeNotifier {
 
     _loading = false;
     notifyListeners();
-  }
-
-  Future<void> updateApplicationStatus(int rowIndex, String newStatus) async {
-    await apiService.updateRow(rowIndex, {'estado': newStatus});
-    await fetchApplications(forceRefresh: true);
   }
 }

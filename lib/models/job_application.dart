@@ -12,6 +12,7 @@ class JobApplication {
   final String fechaPostulacion;
   final String fechaSeguimiento;
   final String contacto;
+  final String comentarios;
 
   const JobApplication({
     required this.rowIndex,
@@ -27,6 +28,7 @@ class JobApplication {
     this.fechaPostulacion = '',
     this.fechaSeguimiento = '',
     this.contacto = '',
+    this.comentarios = '',
   });
 
   factory JobApplication.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class JobApplication {
       fechaPostulacion: json['fechaPostulacion'] as String? ?? '',
       fechaSeguimiento: json['fechaSeguimiento'] as String? ?? '',
       contacto: json['contacto'] as String? ?? '',
+      comentarios: json['comentarios'] as String? ?? '',
     );
   }
 
@@ -62,6 +65,7 @@ class JobApplication {
       'fechaPostulacion': fechaPostulacion,
       'fechaSeguimiento': fechaSeguimiento,
       'contacto': contacto,
+      'comentarios': comentarios,
     };
   }
 
@@ -79,6 +83,7 @@ class JobApplication {
     String? fechaPostulacion,
     String? fechaSeguimiento,
     String? contacto,
+    String? comentarios,
   }) {
     return JobApplication(
       rowIndex: rowIndex ?? this.rowIndex,
@@ -94,6 +99,7 @@ class JobApplication {
       fechaPostulacion: fechaPostulacion ?? this.fechaPostulacion,
       fechaSeguimiento: fechaSeguimiento ?? this.fechaSeguimiento,
       contacto: contacto ?? this.contacto,
+      comentarios: comentarios ?? this.comentarios,
     );
   }
 }
