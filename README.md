@@ -2,6 +2,13 @@
 
 Aplicación Flutter para la gestión y búsqueda de ofertas de empleo.
 
+## 📸 Capturas
+
+| | | |
+|---|---|---|
+| ![Inicio](screenshots/home.jpg) | ![Activas](screenshots/activas.jpg) | ![Sin novedad](screenshots/sin_novedad.jpg) |
+| ![Rechazadas](screenshots/rechazadas.jpg) | ![Detalles](screenshots/detalles.jpg) | |
+
 ## 🛠️ Requisitos
 
 | Herramienta | Versión |
