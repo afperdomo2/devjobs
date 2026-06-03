@@ -14,6 +14,14 @@ Aplicación Flutter para la gestión y búsqueda de ofertas de empleo.
 - Dispositivo o emulador configurado para ejecución física
 - Conexión a internet para `flutter pub get`
 
+## 📱 Permisos
+
+| Permiso | Android | Propósito |
+|---------|---------|-----------|
+| `INTERNET` | ✅ Requerido | Llamadas HTTP al Apps Script (Google Sheets) |
+
+La app requiere permiso de **Internet** para comunicarse con la API REST del Apps Script. Este permiso se declara en `android/app/src/main/AndroidManifest.xml` y se incluye automáticamente en el APK.
+
 
 ## 🚀 Comandos
 
@@ -54,8 +62,8 @@ flutter run -d ios           # iOS simulator
 ### Android — APK / App Bundle
 
 ```bash
-flutter build apk
-flutter build appbundle
+flutter build apk --release  # Genera build/app/outputs/flutter-apk/app-release.apk
+flutter build appbundle      # Genera build/app/outputs/bundle/release/app-release.aab
 ```
 
 ### Web
@@ -119,6 +127,7 @@ La app se conecta a una Google Sheet como fuente de datos. La hoja contiene dos 
 | J | Descripción/Notas | Descripción completa de la vacante |
 | K | Fecha Seguimiento | Fecha del último seguimiento |
 | L | Contacto | Nombre del reclutador o contacto |
+| M | Comentarios | Notas internas separadas por `- ` (guion + espacio) |
 
 ### Apps Script — API REST
 
@@ -160,7 +169,7 @@ La Google Sheet no expone datos directamente. Para conectarla a la app se usa un
 La hoja debe ser **públicamente visible** para que el script funcione con "Ejecutar como → Yo":
 1. En la hoja → **Compartir → "Cualquier persona con el enlace" → Lector**
 
-> ⚠️ *Nunca* compartas la URL del deployment del Apps Script públicamente. Se pasa como variable de entorno (`--dart-define`) al ejecutar o compilar.
+> ⚠️ *Nunca* compartas la URL del deployment del Apps Script públicamente. Se inyecta desde el archivo `.env` (ignorado por git).
 
 ---
 
@@ -179,10 +188,11 @@ lib/
 ├── helpers/
 │   └── date_formatter.dart             # Formateo de fechas en español
 ├── screens/
-│   ├── main_screen.dart                # BottomNavigationBar (Inicio/Postulaciones/Rechazadas)
+│   ├── main_screen.dart                # BottomNavigationBar (Inicio/Activas/Sin novedad/Rechazadas)
 │   ├── dashboard_screen.dart           # Dashboard con tarjetas de métricas
-│   ├── applications_list_screen.dart   # Lista filtrable + búsqueda + pull-to-refresh
-│   └── application_detail_screen.dart  # Detalle + cambiar estado
+│   ├── applications_list_screen.dart   # Lista por pestaña con pull-to-refresh
+│   ├── search_screen.dart              # Búsqueda global (todas las postulaciones)
+│   └── application_detail_screen.dart  # Detalle + comentarios + descripción
 └── widgets/
     ├── status_chip.dart                # Chip de estado (colores por estado)
     └── application_card.dart           # Card de postulación reutilizable
