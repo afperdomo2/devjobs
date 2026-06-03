@@ -1,6 +1,6 @@
-# 💼 devjobs
+# 💼 DevJobs
 
-Aplicación Flutter para la gestión y búsqueda de ofertas de empleo.
+Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a Google Sheets vía Apps Script como backend, permite registrar, filtrar y dar seguimiento a ofertas de empleo con dashboard de métricas, estados personalizados, ordenamiento por fechas de seguimiento y búsqueda global.
 
 ## 📸 Capturas
 
@@ -20,6 +20,17 @@ Aplicación Flutter para la gestión y búsqueda de ofertas de empleo.
 
 - Dispositivo o emulador configurado para ejecución física
 - Conexión a internet para `flutter pub get`
+
+## 📦 Dependencias
+
+| Paquete | Versión | Propósito |
+|---------|---------|-----------|
+| `flutter` | SDK | Framework UI multiplataforma |
+| `http` | `^1.6.0` | Cliente HTTP para consumir la API REST del Apps Script |
+| `provider` | `^6.1.5+1` | Estado global con `ChangeNotifier` (caché, pestañas, filtros) |
+| `intl` | `^0.20.2` | Formateo de fechas en español |
+| `flutter_dotenv` | `^6.0.1` | Carga de variables de entorno desde archivo `.env` |
+| `flutter_lints` (dev) | `^6.0.0` | Reglas de lint por defecto de Flutter |
 
 ## 📱 Permisos
 
@@ -109,14 +120,14 @@ El proyecto usa `flutter_lints` con la configuración por defecto de Flutter.
 flutter analyze
 ```
 
-## 📊 Google Sheets
+## 📊 Google Sheets como fuente de datos
 
-La app se conecta a una Google Sheet como fuente de datos. La hoja contiene dos pestañas:
+La app se conecta a una **Google Sheet** como backend. No necesita servidor propio — usa un **Google Apps Script** desplegado como Web App que actúa como API REST (lectura y escritura).
 
 | Pestaña | Contenido |
 |---------|-----------|
 | **Dashboard** | Resumen con totales: postulaciones, en revisión, entrevistas, ofertas, rechazadas |
-| **Postulaciones** | Detalle de cada postulación (12 columnas) |
+| **Postulaciones** | Detalle de cada postulación (13 columnas) |
 
 ### Columnas de Postulaciones
 
@@ -138,7 +149,15 @@ La app se conecta a una Google Sheet como fuente de datos. La hoja contiene dos 
 
 ### Apps Script — API REST
 
-La Google Sheet no expone datos directamente. Para conectarla a la app se usa un **Google Apps Script** que actúa como API REST.
+La Google Sheet no expone datos directamente. Para conectarla a la app se usa un **Google Apps Script** que actúa como API REST con los siguientes endpoints:
+
+| Método | Endpoint | Acción |
+|--------|----------|--------|
+| `GET` | `?action=all` | Devuelve todas las postulaciones como JSON |
+| `GET` | `?action=dashboard` | Devuelve totales computados |
+| `POST` | — | Actualiza el estado o crea una nueva postulación |
+
+El script está vinculado a la hoja, se despliega como **Web App** (Ejecutar como: Yo, Acceso: Cualquiera) y la URL se configura vía `.env`.
 
 **1. Crear el script**
 
