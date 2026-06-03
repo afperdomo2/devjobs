@@ -21,6 +21,8 @@ class AppState extends ChangeNotifier {
   bool get loading => _loading;
   String? get error => _error;
 
+  List<JobApplication> get applications => _cached ?? [];
+
   void setTab(int index) {
     _currentTab = index;
     notifyListeners();

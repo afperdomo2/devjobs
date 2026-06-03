@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import 'dashboard_screen.dart';
 import 'applications_list_screen.dart';
+import 'search_screen.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
@@ -13,7 +14,18 @@ class MainScreen extends StatelessWidget {
     return Consumer<AppState>(
       builder: (_, state, _) {
         return Scaffold(
-          appBar: AppBar(title: Text(_titles[state.currentTab])),
+          appBar: AppBar(
+            title: Text(_titles[state.currentTab]),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                ),
+              ),
+            ],
+          ),
           body: IndexedStack(
             index: state.currentTab,
             children: const [

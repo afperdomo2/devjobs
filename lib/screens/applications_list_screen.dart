@@ -15,8 +15,6 @@ class ApplicationsListScreen extends StatefulWidget {
 }
 
 class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
-  String _search = '';
-
   @override
   void initState() {
     super.initState();
@@ -30,64 +28,32 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
     final state = context.watch<AppState>();
     final apps = state.getApplications(widget.filterMode);
 
-    final q = _search.toLowerCase();
-    final filtered = apps.where((a) {
-      if (q.isEmpty) return true;
-      return a.empresa.toLowerCase().contains(q) ||
-          a.vacante.toLowerCase().contains(q) ||
-          a.ciudad.toLowerCase().contains(q);
-    }).toList();
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: TextField(
-            onChanged: (v) => setState(() => _search = v),
-            decoration: InputDecoration(
-              hintText: 'Buscar empresa, vacante, ciudad...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _search.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => setState(() => _search = ''),
-                    )
-                  : null,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () => context.read<AppState>().fetchApplications(forceRefresh: true),
-            child: state.loading && apps.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : state.error != null && apps.isEmpty
-                    ? Center(child: Text(state.error!, textAlign: TextAlign.center))
-                    : filtered.isEmpty
-                        ? ListView(children: const [_EmptyHint()])
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final app = filtered[index];
-                              return ApplicationCard(
-                                application: app,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ApplicationDetailScreen(application: app),
-                                  ),
-                                ),
-                              );
-                            },
+    return RefreshIndicator(
+      onRefresh: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+      child: state.loading && apps.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : state.error != null && apps.isEmpty
+              ? Center(child: Text(state.error!, textAlign: TextAlign.center))
+              : apps.isEmpty
+                  ? ListView(children: const [_EmptyHint()])
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: apps.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final app = apps[index];
+                        return ApplicationCard(
+                          application: app,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ApplicationDetailScreen(application: app),
+                            ),
                           ),
-          ),
-        ),
-      ],
+                        );
+                      },
+                    ),
     );
   }
 }
