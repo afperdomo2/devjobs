@@ -1,12 +1,12 @@
 # 💼 DevJobs
 
-Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a Google Sheets vía Apps Script como backend, permite registrar, filtrar y dar seguimiento a ofertas de empleo con dashboard de métricas, estados personalizados, ordenamiento por fechas de seguimiento y búsqueda global.
+Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a Google Sheets vía Apps Script como backend, permite registrar, filtrar y dar seguimiento a ofertas de empleo con dashboard de métricas interactivas, estados personalizados, indicador de entrevista realizada (checkbox), tiempo del proceso y búsqueda global.
 
 ## 📸 Capturas
 
 | | | |
 |---|---|---|
-| ![Inicio](screenshots/home.jpg) | ![Activas](screenshots/activas.jpg) | ![Sin novedad](screenshots/sin_novedad.jpg) |
+| ![Inicio](screenshots/home.jpg) | ![Activas](screenshots/activas.jpg) | ![Enviadas](screenshots/enviadas.jpg) |
 | ![Rechazadas](screenshots/rechazadas.jpg) | ![Detalles](screenshots/detalles.jpg) | |
 
 ## 🛠️ Requisitos
@@ -126,8 +126,8 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, en revisión, entrevistas, ofertas, rechazadas |
-| **Postulaciones** | Detalle de cada postulación (13 columnas) |
+| **Dashboard** | Resumen con totales: postulaciones, activas, entrevistas (vía checkbox), rechazadas. Cards clickeables (Activas → tab Activas, Rechazadas → tab Rechazadas) con indicador visual `›` |
+| **Postulaciones** | Detalle de cada postulación (14 columnas) |
 
 ### Columnas de Postulaciones
 
@@ -136,16 +136,17 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | A | Fecha Postulación | Fecha en que se envió la postulación |
 | B | Empresa | Nombre de la empresa |
 | C | Vacante | Título del cargo |
-| D | Tipo de Contrato | Tiempo completo / Temporal / Freelance |
-| E | Modalidad | Remoto / Presencial / Híbrido |
+| D | Tipo de Contrato | Tiempo completo / Tiempo parcial / Por proyecto / Temporal / Freelance / Otro |
+| E | Modalidad | Remoto / Híbrido / Presencial / Otro |
 | F | Ciudad | Ubicación de la vacante |
 | G | Salario Ofrecido | Salario o rango salarial |
-| H | Estado | Enviada / En revisión / Entrevista realizada / Oferta recibida / Rechazada |
+| H | Estado | Enviada / En revisión / Entrevista agendada / Entrevista realizada / Prueba técnica / Oferta recibida / Rechazada / Sin respuesta / Aceptada / Retirada |
 | I | Link | URL de la oferta original |
 | J | Descripción/Notas | Descripción completa de la vacante |
 | K | Fecha Seguimiento | Fecha del último seguimiento |
 | L | Contacto | Nombre del reclutador o contacto |
 | M | Comentarios | Notas internas separadas por `- ` (guion + espacio) |
+| N | ¿Entrevista? | Checkbox: indica si se realizó entrevista (✓ = sí) |
 
 ### Apps Script — API REST
 
@@ -206,7 +207,7 @@ lib/
 ├── main.dart                           # MultiProvider + entrada de la app
 ├── config.dart                         # Carga API_URL desde .env
 ├── models/
-│   └── job_application.dart            # Modelo (12 campos) + DashboardStats
+│   └── job_application.dart            # Modelo (15 campos) + DashboardStats
 ├── providers/
 │   └── app_state.dart                  # Estado global con caché (TTL 3 min)
 ├── services/
@@ -214,7 +215,7 @@ lib/
 ├── helpers/
 │   └── date_formatter.dart             # Formateo de fechas en español
 ├── screens/
-│   ├── main_screen.dart                # BottomNavigationBar (Inicio/Activas/Sin novedad/Rechazadas)
+│   ├── main_screen.dart                # BottomNavigationBar (Inicio/Activas/Enviadas/Rechazadas)
 │   ├── dashboard_screen.dart           # Dashboard con tarjetas de métricas
 │   ├── applications_list_screen.dart   # Lista por pestaña con pull-to-refresh
 │   ├── search_screen.dart              # Búsqueda global (todas las postulaciones)

@@ -31,7 +31,7 @@ class MainScreen extends StatelessWidget {
             children: const [
               DashboardScreen(),
               ApplicationsListScreen(filterMode: 'activas'),
-              ApplicationsListScreen(filterMode: 'pendientes'),
+              ApplicationsListScreen(filterMode: 'enviadas'),
               ApplicationsListScreen(filterMode: 'onlyRejected'),
             ],
           ),
@@ -53,7 +53,7 @@ class MainScreen extends StatelessWidget {
               NavigationDestination(
                 icon: Icon(Icons.schedule_outlined),
                 selectedIcon: Icon(Icons.schedule),
-                label: 'Sin novedad',
+                label: 'Enviadas',
               ),
               NavigationDestination(
                 icon: Icon(Icons.cancel_outlined),
@@ -67,5 +67,5 @@ class MainScreen extends StatelessWidget {
     );
   }
 
-  static const _titles = ['DevJobs', 'Activas', 'Sin novedad', 'Rechazadas'];
+  static const _titles = ['DevJobs', 'Activas', 'Enviadas', 'Rechazadas'];
 }

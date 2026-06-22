@@ -31,14 +31,13 @@ class AppState extends ChangeNotifier {
   DashboardStats get dashboardStats {
     final apps = _cached;
     if (apps == null) {
-      return const DashboardStats(total: 0, enRevision: 0, entrevistas: 0, ofertas: 0, rechazadas: 0);
+      return const DashboardStats(total: 0, activas: 0, entrevistas: 0, rechazadas: 0);
     }
     final estados = apps.map((a) => (a.estado).trim().toLowerCase()).toList();
     return DashboardStats(
       total: apps.length,
-      enRevision: estados.where((e) => e == 'en revisión').length,
-      entrevistas: estados.where((e) => e == 'entrevista realizada').length,
-      ofertas: estados.where((e) => e == 'oferta recibida' || e == 'ofertas recibidas').length,
+      activas: estados.where((e) => e != 'enviada' && e != 'rechazada' && e != 'retirada').length,
+      entrevistas: apps.where((a) => a.entrevistaRealizada).length,
       rechazadas: estados.where((e) => e == 'rechazada' || e == 'retirada').length,
     );
   }
@@ -53,11 +52,14 @@ class AppState extends ChangeNotifier {
         apps = apps.where((a) => _isTerminal(a.estado)).toList();
       case 'activas':
         apps = apps
-            .where((a) => !_isTerminal(a.estado) && a.fechaSeguimiento.isNotEmpty)
+            .where((a) {
+              final e = a.estado.trim().toLowerCase();
+              return e != 'enviada' && e != 'rechazada' && e != 'retirada';
+            })
             .toList();
-      case 'pendientes':
+      case 'enviadas':
         apps = apps
-            .where((a) => !_isTerminal(a.estado) && a.fechaSeguimiento.isEmpty)
+            .where((a) => a.estado.trim().toLowerCase() == 'enviada')
             .toList();
     }
 

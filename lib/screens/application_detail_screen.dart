@@ -110,6 +110,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       (Icons.attach_money_outlined, 'Salario ofrecido', app.salarioOfrecido),
       (Icons.calendar_today, 'F. postulación', formatDate(app.fechaPostulacion)),
       (Icons.calendar_today, 'F. seguimiento', formatDate(app.fechaSeguimiento)),
+      (Icons.schedule, 'Tiempo del proceso', app.diasProceso != null ? '${app.diasProceso} días' : ''),
       (Icons.person_outline, 'Contacto', app.contacto),
     ].where((f) => f.$3.isNotEmpty);
 

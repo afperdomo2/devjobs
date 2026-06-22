@@ -46,10 +46,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             childAspectRatio: 1.6,
             children: [
               _StatCard(
-                label: 'En revisión',
-                value: stats.enRevision.toString(),
+                label: 'Activas',
+                value: stats.activas.toString(),
                 color: Colors.orange,
-                icon: Icons.visibility,
+                icon: Icons.notifications_active,
+                onTap: () => state.setTab(1),
               ),
               _StatCard(
                 label: 'Entrevistas',
@@ -58,16 +59,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 icon: Icons.people,
               ),
               _StatCard(
-                label: 'Ofertas',
-                value: stats.ofertas.toString(),
-                color: Colors.green,
-                icon: Icons.check_circle,
-              ),
-              _StatCard(
                 label: 'Rechazadas',
                 value: stats.rechazadas.toString(),
                 color: Colors.red,
                 icon: Icons.cancel,
+                onTap: () => state.setTab(3),
               ),
             ],
           ),
@@ -82,17 +78,19 @@ class _StatCard extends StatelessWidget {
   final String value;
   final Color color;
   final IconData icon;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.label,
     required this.value,
     required this.color,
     required this.icon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final card = Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -110,10 +108,28 @@ class _StatCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+                ),
+                if (onTap != null)
+                  Icon(Icons.chevron_right, size: 16, color: Colors.grey[400]),
+              ],
+            ),
           ],
         ),
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: card,
+      );
+    }
+
+    return card;
   }
 }

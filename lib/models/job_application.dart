@@ -1,3 +1,5 @@
+import '../helpers/date_formatter.dart';
+
 class JobApplication {
   final int rowIndex;
   final String empresa;
@@ -13,6 +15,7 @@ class JobApplication {
   final String fechaSeguimiento;
   final String contacto;
   final String comentarios;
+  final bool entrevistaRealizada;
 
   const JobApplication({
     required this.rowIndex,
@@ -29,7 +32,15 @@ class JobApplication {
     this.fechaSeguimiento = '',
     this.contacto = '',
     this.comentarios = '',
+    this.entrevistaRealizada = false,
   });
+
+  int? get diasProceso {
+    final post = parseDate(fechaPostulacion);
+    final seg = parseDate(fechaSeguimiento);
+    if (post == null || seg == null) return null;
+    return seg.difference(post).inDays;
+  }
 
   factory JobApplication.fromJson(Map<String, dynamic> json) {
     return JobApplication(
@@ -47,6 +58,7 @@ class JobApplication {
       fechaSeguimiento: json['fechaSeguimiento'] as String? ?? '',
       contacto: json['contacto'] as String? ?? '',
       comentarios: json['comentarios'] as String? ?? '',
+      entrevistaRealizada: json['entrevistaRealizada']?.toString().toLowerCase() == 'true',
     );
   }
 
@@ -66,6 +78,7 @@ class JobApplication {
       'fechaSeguimiento': fechaSeguimiento,
       'contacto': contacto,
       'comentarios': comentarios,
+      'entrevistaRealizada': entrevistaRealizada,
     };
   }
 
@@ -84,6 +97,7 @@ class JobApplication {
     String? fechaSeguimiento,
     String? contacto,
     String? comentarios,
+    bool? entrevistaRealizada,
   }) {
     return JobApplication(
       rowIndex: rowIndex ?? this.rowIndex,
@@ -100,31 +114,29 @@ class JobApplication {
       fechaSeguimiento: fechaSeguimiento ?? this.fechaSeguimiento,
       contacto: contacto ?? this.contacto,
       comentarios: comentarios ?? this.comentarios,
+      entrevistaRealizada: entrevistaRealizada ?? this.entrevistaRealizada,
     );
   }
 }
 
 class DashboardStats {
   final int total;
-  final int enRevision;
+  final int activas;
   final int entrevistas;
-  final int ofertas;
   final int rechazadas;
 
   const DashboardStats({
     required this.total,
-    required this.enRevision,
+    required this.activas,
     required this.entrevistas,
-    required this.ofertas,
     required this.rechazadas,
   });
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
     return DashboardStats(
       total: (json['total'] as num?)?.toInt() ?? 0,
-      enRevision: (json['enRevision'] as num?)?.toInt() ?? 0,
+      activas: (json['activas'] as num?)?.toInt() ?? 0,
       entrevistas: (json['entrevistas'] as num?)?.toInt() ?? 0,
-      ofertas: (json['ofertas'] as num?)?.toInt() ?? 0,
       rechazadas: (json['rechazadas'] as num?)?.toInt() ?? 0,
     );
   }
