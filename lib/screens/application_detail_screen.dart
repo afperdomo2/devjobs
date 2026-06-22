@@ -89,9 +89,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
             GestureDetector(
               onTap: () {
                 Clipboard.setData(ClipboardData(text: app.link));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Enlace copiado al portapapeles')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Enlace copiado al portapapeles')));
               },
               child: Text(app.link, style: TextStyle(color: Colors.blue[700], fontSize: 13)),
             ),
@@ -102,7 +102,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   }
 
   Widget _buildInfoSection(BuildContext context, JobApplication app) {
-    final fields = [
+    final baseFields = [
       (Icons.business, 'Empresa', app.empresa),
       (Icons.work_outline, 'Tipo de contrato', app.tipoContrato),
       (Icons.laptop_mac_outlined, 'Modalidad', app.modalidad),
@@ -110,30 +110,66 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       (Icons.attach_money_outlined, 'Salario ofrecido', app.salarioOfrecido),
       (Icons.calendar_today, 'F. postulación', formatDate(app.fechaPostulacion)),
       (Icons.calendar_today, 'F. seguimiento', formatDate(app.fechaSeguimiento)),
-      (Icons.schedule, 'Tiempo del proceso', app.diasProceso != null ? '${app.diasProceso} días' : ''),
+      (
+        Icons.schedule,
+        'Tiempo del proceso',
+        app.diasProceso != null ? '${app.diasProceso} días' : '',
+      ),
+    ].where((f) => f.$3.isNotEmpty).map(_fieldRow);
+
+    final afterFields = [
       (Icons.person_outline, 'Contacto', app.contacto),
-    ].where((f) => f.$3.isNotEmpty);
+    ].where((f) => f.$3.isNotEmpty).map(_fieldRow);
 
     return Column(
-      children: fields
-          .map(
-            (f) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(f.$1, size: 18, color: Colors.grey[600]),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 112,
-                    child: Text(f.$2, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                  ),
-                  Expanded(child: Text(f.$3, style: const TextStyle(fontSize: 14))),
-                ],
+      children: [
+        ...baseFields,
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 0),
+          child: Row(
+            children: [
+              Icon(Icons.people, size: 18, color: Colors.grey[600]),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 100,
+                child: Text('Entrevista', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
               ),
-            ),
-          )
-          .toList(),
+              Transform.scale(
+                scale: 0.6,
+                child: Switch(
+                  value: app.entrevistaRealizada,
+                  onChanged: null,
+                  thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return Colors.lightGreen;
+                    }
+                    return Colors.white;
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...afterFields,
+      ],
+    );
+  }
+
+  Widget _fieldRow((IconData, String, String) f) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(f.$1, size: 18, color: Colors.grey[600]),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 112,
+            child: Text(f.$2, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+          ),
+          Expanded(child: Text(f.$3, style: const TextStyle(fontSize: 14))),
+        ],
+      ),
     );
   }
 }
