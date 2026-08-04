@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import '../helpers/date_formatter.dart';
 import '../models/job_application.dart';
 import '../widgets/status_chip.dart';
+import 'application_edit_screen.dart';
 
 List<String> _parseComments(String raw) {
   return raw
@@ -30,7 +31,24 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     final comentarios = _parseComments(app.comentarios);
 
     return Scaffold(
-      appBar: AppBar(title: Text(app.empresa)),
+      appBar: AppBar(
+        title: Text(app.empresa),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: 'Editar postulación',
+            onPressed: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => ApplicationEditScreen(application: app)),
+              );
+              if (result == true) {
+                setState(() {});
+              }
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -41,7 +59,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _buildInfoSection(context, app),
+          ..._buildInfoSection(context, app),
           if (comentarios.isNotEmpty) ...[
             const Divider(height: 32),
             Row(
@@ -101,7 +119,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     );
   }
 
-  Widget _buildInfoSection(BuildContext context, JobApplication app) {
+  List<Widget> _buildInfoSection(BuildContext context, JobApplication app) {
     final baseFields = [
       (Icons.business, 'Empresa', app.empresa),
       (Icons.work_outline, 'Tipo de contrato', app.tipoContrato),
@@ -115,44 +133,42 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         'Tiempo del proceso',
         app.diasProceso != null ? '${app.diasProceso} días' : '',
       ),
-    ].where((f) => f.$3.isNotEmpty).map(_fieldRow);
+    ].where((f) => f.$3.isNotEmpty).map(_fieldRow).toList();
 
     final afterFields = [
       (Icons.person_outline, 'Contacto', app.contacto),
-    ].where((f) => f.$3.isNotEmpty).map(_fieldRow);
+    ].where((f) => f.$3.isNotEmpty).map(_fieldRow).toList();
 
-    return Column(
-      children: [
-        ...baseFields,
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 0),
-          child: Row(
-            children: [
-              Icon(Icons.people, size: 18, color: Colors.grey[600]),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 100,
-                child: Text('Entrevista', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+    return [
+      ...baseFields,
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(Icons.people, size: 18, color: Colors.grey[600]),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 100,
+              child: Text('Entrevista', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+            ),
+            Transform.scale(
+              scale: 0.6,
+              child: Switch(
+                value: app.entrevistaRealizada,
+                onChanged: null,
+                thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return Colors.lightGreen;
+                  }
+                  return Colors.white;
+                }),
               ),
-              Transform.scale(
-                scale: 0.6,
-                child: Switch(
-                  value: app.entrevistaRealizada,
-                  onChanged: null,
-                  thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return Colors.lightGreen;
-                    }
-                    return Colors.white;
-                  }),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        ...afterFields,
-      ],
-    );
+      ),
+      ...afterFields,
+    ];
   }
 
   Widget _fieldRow((IconData, String, String) f) {

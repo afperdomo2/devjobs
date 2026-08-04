@@ -96,6 +96,35 @@ class AppState extends ChangeNotifier {
     return dA.compareTo(dB);
   }
 
+  Future<void> updateApplication(int rowIndex, Map<String, String> updates) async {
+    await apiService.updateRow(rowIndex, updates);
+
+    if (_cached != null) {
+      final index = _cached!.indexWhere((a) => a.rowIndex == rowIndex);
+      if (index != -1) {
+        final old = _cached![index];
+        _cached![index] = old.copyWith(
+          empresa: updates['empresa'],
+          vacante: updates['vacante'],
+          tipoContrato: updates['tipoContrato'],
+          modalidad: updates['modalidad'],
+          ciudad: updates['ciudad'],
+          salarioOfrecido: updates['salarioOfrecido'],
+          estado: updates['estado'],
+          link: updates['link'],
+          descripcion: updates['descripcion'],
+          contacto: updates['contacto'],
+          comentarios: updates['comentarios'],
+          entrevistaRealizada: updates.containsKey('entrevistaRealizada')
+              ? updates['entrevistaRealizada'] == 'true'
+              : null,
+        );
+      }
+    }
+
+    notifyListeners();
+  }
+
   Future<void> fetchApplications({bool forceRefresh = false}) async {
     if (!forceRefresh && _cached != null && _lastFetched != null) {
       if (DateTime.now().difference(_lastFetched!) < _cacheTtl) return;

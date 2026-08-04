@@ -48,14 +48,16 @@ class SheetsApiService {
       'updates': updates,
     });
 
-    final response = await _client.post(
-      uri,
-      headers: _jsonHeaders,
-      body: body,
-    );
+    final request = http.Request('POST', uri)
+      ..headers.addAll(_jsonHeaders)
+      ..body = body
+      ..followRedirects = true;
+
+    final streamedResponse = await _client.send(request);
+    final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to update: ${response.statusCode}');
+      throw Exception('Failed to update: ${response.statusCode}\n${response.body}');
     }
   }
 
@@ -66,11 +68,13 @@ class SheetsApiService {
       'data': application.toJson(),
     });
 
-    final response = await _client.post(
-      uri,
-      headers: _jsonHeaders,
-      body: body,
-    );
+    final request = http.Request('POST', uri)
+      ..headers.addAll(_jsonHeaders)
+      ..body = body
+      ..followRedirects = true;
+
+    final streamedResponse = await _client.send(request);
+    final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
