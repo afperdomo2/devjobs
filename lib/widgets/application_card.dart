@@ -1,20 +1,67 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../helpers/date_formatter.dart';
 import '../models/job_application.dart';
 import 'status_chip.dart';
 
-class ApplicationCard extends StatelessWidget {
+class ApplicationCard extends StatefulWidget {
   final JobApplication application;
   final VoidCallback onTap;
+  final int pulseTrigger;
 
-  const ApplicationCard({super.key, required this.application, required this.onTap});
+  const ApplicationCard({
+    super.key,
+    required this.application,
+    required this.onTap,
+    this.pulseTrigger = 0,
+  });
+
+  @override
+  State<ApplicationCard> createState() => _ApplicationCardState();
+}
+
+class _ApplicationCardState extends State<ApplicationCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+  }
+
+  @override
+  void didUpdateWidget(ApplicationCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.pulseTrigger > oldWidget.pulseTrigger) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+        final baseColor = Theme.of(context).cardColor;
+        final color =
+            Color.lerp(baseColor, Theme.of(context).colorScheme.primary, math.sin(t * math.pi) * 0.15);
+        return Card(color: color, child: child);
+      },
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -24,15 +71,15 @@ class ApplicationCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(application.empresa,
+                    child: Text(widget.application.empresa,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   ),
-                  StatusChip(status: application.estado),
+                  StatusChip(status: widget.application.estado),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
-                application.vacante,
+                widget.application.vacante,
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
@@ -46,13 +93,13 @@ class ApplicationCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _InfoChip(
-                              icon: Icons.location_on, label: application.ciudad),
+                              icon: Icons.location_on, label: widget.application.ciudad),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: _InfoChip(
                               icon: Icons.business_center,
-                              label: application.modalidad),
+                              label: widget.application.modalidad),
                         ),
                       ],
                     ),
@@ -60,7 +107,7 @@ class ApplicationCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      formatDateShort(application.fechaPostulacion),
+                      formatDateShort(widget.application.fechaPostulacion),
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),

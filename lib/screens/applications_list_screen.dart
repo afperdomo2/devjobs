@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
+import '../models/job_application.dart';
 import '../widgets/application_card.dart';
 import 'application_detail_screen.dart';
 
@@ -15,11 +16,26 @@ class ApplicationsListScreen extends StatefulWidget {
 }
 
 class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
+  int? _pulseRowIndex;
+  int _pulseTrigger = 0;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AppState>().fetchApplications();
+    });
+  }
+
+  Future<void> _openDetail(JobApplication app) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ApplicationDetailScreen(application: app)),
+    );
+    if (!context.mounted) return;
+    setState(() {
+      _pulseRowIndex = app.rowIndex;
+      _pulseTrigger++;
     });
   }
 
@@ -44,13 +60,12 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
                       itemBuilder: (context, index) {
                         final app = apps[index];
                         return ApplicationCard(
+                          key: ValueKey(app.rowIndex),
                           application: app,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ApplicationDetailScreen(application: app),
-                            ),
-                          ),
+                          pulseTrigger: app.rowIndex == _pulseRowIndex
+                              ? _pulseTrigger
+                              : 0,
+                          onTap: () => _openDetail(app),
                         );
                       },
                     ),
