@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import '../helpers/date_formatter.dart';
+import '../helpers/salary_formatter.dart';
 import '../models/job_application.dart';
 import '../widgets/status_chip.dart';
 import 'application_edit_screen.dart';
@@ -125,7 +126,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       (Icons.work_outline, 'Tipo de contrato', app.tipoContrato),
       (Icons.laptop_mac_outlined, 'Modalidad', app.modalidad),
       (Icons.location_on_outlined, 'Ciudad', app.ciudad),
-      (Icons.attach_money_outlined, 'Salario ofrecido', app.salarioOfrecido),
+      (Icons.attach_money_outlined, 'Salario ofrecido', formatSalario(app.salarioOfrecido)),
       (Icons.calendar_today, 'F. postulación', formatDate(app.fechaPostulacion)),
       (Icons.calendar_today, 'F. seguimiento', formatDate(app.fechaSeguimiento)),
       (
