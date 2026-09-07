@@ -1,6 +1,6 @@
 # devjobs
 
-Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at `lib/main.dart`. No routing, or tests yet.
+Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at `lib/main.dart`.
 
 ## Commands
 
@@ -35,7 +35,14 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 - **Service:** `lib/services/sheets_api_service.dart` — HTTP client using `package:http`.
 - **Screens:** `MainScreen` with `BottomNavigationBar` (4 tabs: Inicio/Activas/Enviadas/Rechazadas). Detail via `Navigator.push`.
 - **Widgets:** `lib/widgets/status_chip.dart` — colored status badge. `lib/widgets/application_card.dart` — reusable application card.
-- **Helpers:** `lib/helpers/date_formatter.dart` — Spanish date formatting via `package:intl`.
+- **Helpers:** `lib/helpers/date_formatter.dart` — Spanish date formatting via `package:intl`. `lib/helpers/domain_parser.dart` — platform extraction; `lib/helpers/salary_formatter.dart` — salary extraction/formatting; `lib/helpers/text_shortener.dart` — truncation and contract abbreviation; `lib/helpers/network_error.dart` — network detection.
+
+## Testing
+
+- **Rule:** every new or modified reusable/utility logic (any `lib/helpers/*`, `lib/models/*` getter/parser, parser/serializer) **must** ship with unit tests in `test/` mirroring `lib/` (e.g. `lib/helpers/foo.dart` → `test/helpers/foo_test.dart`). Cover at least the happy path, one empty/null edge case, and one realistic variant (e.g. for `extractPlatform`: direct domain vs subdomain vs TLD compuesto).
+- Tests use `flutter_test` only (no extra deps). Helpers/model are pure Dart; date tests must `await initializeDateFormatting('es')` in `setUpAll` because `intl` requires it for Spanish month names. See `docs/testing.md` for conventions and a minimal example.
+- Before finishing any helper/model change, run `flutter test` and `flutter analyze`; both must be green before committing.
+- How to run: `flutter test` (all) or `flutter test test/helpers/domain_parser_test.dart` (single file).
 
 ## Notes
 
