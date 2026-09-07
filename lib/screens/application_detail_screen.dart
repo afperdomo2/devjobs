@@ -153,6 +153,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       (Icons.laptop_mac_outlined, 'Modalidad', app.modalidad),
       (Icons.location_on_outlined, 'Ciudad', app.ciudad),
       (Icons.attach_money_outlined, 'Salario ofrecido', formatSalario(app.salarioOfrecido)),
+      (Icons.language, 'Plataforma', app.plataforma),
       (Icons.calendar_today, 'F. postulación', formatDate(app.fechaPostulacion)),
       (Icons.calendar_today, 'F. seguimiento', formatDate(app.fechaSeguimiento)),
       (

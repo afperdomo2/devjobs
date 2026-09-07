@@ -1,4 +1,5 @@
 import '../helpers/date_formatter.dart';
+import '../helpers/domain_parser.dart';
 
 class JobApplication {
   final int rowIndex;
@@ -41,6 +42,8 @@ class JobApplication {
     if (post == null || seg == null) return null;
     return seg.difference(post).inDays;
   }
+
+  String get plataforma => extractPlatform(link);
 
   factory JobApplication.fromJson(Map<String, dynamic> json) {
     return JobApplication(
