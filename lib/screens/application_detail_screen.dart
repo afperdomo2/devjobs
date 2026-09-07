@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:provider/provider.dart';
 
 import '../helpers/date_formatter.dart';
 import '../helpers/salary_formatter.dart';
 import '../models/job_application.dart';
+import '../providers/app_state.dart';
+import '../widgets/offline_banner.dart';
 import '../widgets/status_chip.dart';
 import 'application_edit_screen.dart';
 
@@ -30,91 +33,114 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   Widget build(BuildContext context) {
     final app = widget.application;
     final comentarios = _parseComments(app.comentarios);
+    final isOffline = context.watch<AppState>().offline;
+    final cacheTs = context.watch<AppState>().cacheTimestamp;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(app.empresa),
         actions: [
+          if (isOffline)
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: Tooltip(
+                message: 'Sin conexión — edición deshabilitada',
+                child: Icon(Icons.wifi_off, size: 20),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.edit),
-            tooltip: 'Editar postulación',
-            onPressed: () async {
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(builder: (_) => ApplicationEditScreen(application: app)),
-              );
-              if (result == true) {
-                setState(() {});
-              }
-            },
+            tooltip: isOffline ? 'Sin conexión — edición deshabilitada' : 'Editar postulación',
+            onPressed: isOffline
+                ? null
+                : () async {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(builder: (_) => ApplicationEditScreen(application: app)),
+                    );
+                    if (result == true && mounted) {
+                      setState(() {});
+                    }
+                  },
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          StatusChip(status: app.estado),
-          const SizedBox(height: 8),
-          Text(
-            app.vacante,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          ..._buildInfoSection(context, app),
-          if (comentarios.isNotEmpty) ...[
-            const Divider(height: 32),
-            Row(
-              children: [
-                Icon(Icons.chat_bubble_outline, size: 18, color: Colors.grey[600]),
-                const SizedBox(width: 6),
-                const Text('Comentarios', style: TextStyle(fontWeight: FontWeight.w600)),
-              ],
+          if (isOffline)
+            OfflineBanner(
+              lastUpdated: cacheTs,
+              onRetry: () => context.read<AppState>().fetchApplications(forceRefresh: true),
             ),
-            const SizedBox(height: 8),
-            for (final c in comentarios)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('• ', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-                    Expanded(child: Text(c, style: const TextStyle(fontSize: 14))),
-                  ],
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                StatusChip(status: app.estado),
+                const SizedBox(height: 8),
+                Text(
+                  app.vacante,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
-              ),
-          ],
-          if (app.descripcion.isNotEmpty) ...[
-            const Divider(height: 32),
-            Row(
-              children: [
-                Icon(Icons.description_outlined, size: 18, color: Colors.grey[600]),
-                const SizedBox(width: 6),
-                const Text('Descripción', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 16),
+                ..._buildInfoSection(context, app),
+                if (comentarios.isNotEmpty) ...[
+                  const Divider(height: 32),
+                  Row(
+                    children: [
+                      Icon(Icons.chat_bubble_outline, size: 18, color: Colors.grey[600]),
+                      const SizedBox(width: 6),
+                      const Text('Comentarios', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  for (final c in comentarios)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('• ', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                          Expanded(child: Text(c, style: const TextStyle(fontSize: 14))),
+                        ],
+                      ),
+                    ),
+                ],
+                if (app.descripcion.isNotEmpty) ...[
+                  const Divider(height: 32),
+                  Row(
+                    children: [
+                      Icon(Icons.description_outlined, size: 18, color: Colors.grey[600]),
+                      const SizedBox(width: 6),
+                      const Text('Descripción', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(app.descripcion),
+                ],
+                if (app.link.isNotEmpty) ...[
+                  const Divider(height: 32),
+                  Row(
+                    children: [
+                      Icon(Icons.link, size: 18, color: Colors.grey[600]),
+                      const SizedBox(width: 6),
+                      const Text('Enlace externo', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: app.link));
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('Enlace copiado al portapapeles')));
+                    },
+                    child: Text(app.link, style: TextStyle(color: Colors.blue[700], fontSize: 13)),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 8),
-            Text(app.descripcion),
-          ],
-          if (app.link.isNotEmpty) ...[
-            const Divider(height: 32),
-            Row(
-              children: [
-                Icon(Icons.link, size: 18, color: Colors.grey[600]),
-                const SizedBox(width: 6),
-                const Text('Enlace externo', style: TextStyle(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: app.link));
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Enlace copiado al portapapeles')));
-              },
-              child: Text(app.link, style: TextStyle(color: Colors.blue[700], fontSize: 13)),
-            ),
-          ],
+          ),
         ],
       ),
     );

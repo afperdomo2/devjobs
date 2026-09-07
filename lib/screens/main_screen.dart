@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
-import 'dashboard_screen.dart';
+import '../widgets/offline_banner.dart';
 import 'applications_list_screen.dart';
+import 'dashboard_screen.dart';
 import 'search_screen.dart';
 
 class MainScreen extends StatelessWidget {
@@ -26,13 +27,24 @@ class MainScreen extends StatelessWidget {
               ),
             ],
           ),
-          body: IndexedStack(
-            index: state.currentTab,
-            children: const [
-              DashboardScreen(),
-              ApplicationsListScreen(filterMode: 'activas'),
-              ApplicationsListScreen(filterMode: 'enviadas'),
-              ApplicationsListScreen(filterMode: 'onlyRejected'),
+          body: Column(
+            children: [
+              if (state.offline)
+                OfflineBanner(
+                  lastUpdated: state.cacheTimestamp,
+                  onRetry: () => state.fetchApplications(forceRefresh: true),
+                ),
+              Expanded(
+                child: IndexedStack(
+                  index: state.currentTab,
+                  children: const [
+                    DashboardScreen(),
+                    ApplicationsListScreen(filterMode: 'activas'),
+                    ApplicationsListScreen(filterMode: 'enviadas'),
+                    ApplicationsListScreen(filterMode: 'onlyRejected'),
+                  ],
+                ),
+              ),
             ],
           ),
           bottomNavigationBar: NavigationBar(

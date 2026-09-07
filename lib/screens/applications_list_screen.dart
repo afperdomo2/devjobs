@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/app_state.dart';
+import '../helpers/network_error.dart';
 import '../models/job_application.dart';
+import '../providers/app_state.dart';
 import '../widgets/application_card.dart';
+import '../widgets/offline_banner.dart';
 import 'application_detail_screen.dart';
 
 class ApplicationsListScreen extends StatefulWidget {
@@ -44,31 +46,42 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
     final state = context.watch<AppState>();
     final apps = state.getApplications(widget.filterMode);
 
+    Widget content;
+    if (state.loading && apps.isEmpty) {
+      content = const Center(child: CircularProgressIndicator());
+    } else if (state.error != null && apps.isEmpty) {
+      content = ErrorStateView(
+        message: state.error!,
+        isOffline: isNetworkError(state.error!),
+        onRetry: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+      );
+    } else if (apps.isEmpty) {
+      content = ListView(children: const [_EmptyHint()]);
+    } else {
+      content = ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        itemCount: apps.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final app = apps[index];
+          return ApplicationCard(
+            key: ValueKey(app.rowIndex),
+            application: app,
+            pulseTrigger: app.rowIndex == _pulseRowIndex ? _pulseTrigger : 0,
+            onTap: () => _openDetail(app),
+          );
+        },
+      );
+    }
+
+    // Show inline offline indicator when we have cached data but are offline.
+    // MainScreen already shows a global banner, so avoid duplicating there
+    // when used inside IndexedStack. Only show here if not inside MainScreen's banner context:
+    // keep minimal placeholder to ensure offline is visible even if used standalone.
     return RefreshIndicator(
       onRefresh: () => context.read<AppState>().fetchApplications(forceRefresh: true),
-      child: state.loading && apps.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : state.error != null && apps.isEmpty
-              ? Center(child: Text(state.error!, textAlign: TextAlign.center))
-              : apps.isEmpty
-                  ? ListView(children: const [_EmptyHint()])
-                  : ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      itemCount: apps.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final app = apps[index];
-                        return ApplicationCard(
-                          key: ValueKey(app.rowIndex),
-                          application: app,
-                          pulseTrigger: app.rowIndex == _pulseRowIndex
-                              ? _pulseTrigger
-                              : 0,
-                          onTap: () => _openDetail(app),
-                        );
-                      },
-                    ),
+      child: content,
     );
   }
 }

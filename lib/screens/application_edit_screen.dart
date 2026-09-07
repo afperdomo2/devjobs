@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
+import '../widgets/offline_banner.dart';
 
 const _tiposContrato = [
   'Tiempo completo',
@@ -87,6 +88,14 @@ class _ApplicationEditScreenState extends State<ApplicationEditScreen> {
 
   Future<void> _save() async {
     if (_saving) return;
+    if (context.read<AppState>().offline) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sin conexión — no se puede guardar en modo solo lectura.')),
+        );
+      }
+      return;
+    }
     setState(() => _saving = true);
 
     try {
@@ -135,14 +144,23 @@ class _ApplicationEditScreenState extends State<ApplicationEditScreen> {
   @override
   Widget build(BuildContext context) {
     final app = widget.application;
+    final isOffline = context.watch<AppState>().offline;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Editar postulación'),
       ),
-      body: Form(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+      body: Column(
+        children: [
+          if (isOffline)
+            OfflineBanner(
+              lastUpdated: context.watch<AppState>().cacheTimestamp,
+              onRetry: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+            ),
+          Expanded(
+            child: Form(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
           children: [
             TextFormField(
               controller: _empresaCtrl,
@@ -222,15 +240,27 @@ class _ApplicationEditScreenState extends State<ApplicationEditScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _saving ? null : _save,
+              onPressed: (isOffline || _saving) ? null : _save,
               icon: const Icon(Icons.save),
               label: Text(_saving ? 'Guardando...' : 'Guardar cambios'),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
               ),
             ),
-          ],
-        ),
+                if (isOffline)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Modo solo lectura — conéctate a internet para editar.',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          ),
+        ],
       ),
     );
   }

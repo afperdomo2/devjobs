@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../helpers/date_formatter.dart';
+import '../helpers/network_error.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
+import '../widgets/offline_banner.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -26,6 +28,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final state = context.watch<AppState>();
     final stats = state.dashboardStats;
     final apps = state.applications;
+
+    // Full-screen error when no data and fetch failed.
+    if (state.error != null && apps.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: ErrorStateView(
+                message: state.error!,
+                isOffline: isNetworkError(state.error!),
+                onRetry: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (state.loading && apps.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return RefreshIndicator(
       onRefresh: () => context.read<AppState>().fetchApplications(forceRefresh: true),
