@@ -65,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisCount: 2,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio: 1.6,
+            childAspectRatio: 1.9,
             children: [
               _StatCard(
                 label: 'Total postulaciones',
@@ -113,6 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _DistributionCard(
               modalidades: _topBy(apps, (a) => a.modalidad, 3),
               ciudades: _topBy(apps, (a) => a.ciudad, 3),
+              plataformas: _topBy(apps, (a) => a.plataforma, 4),
             ),
           ],
         ],
@@ -140,18 +141,18 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final card = Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
               children: [
-                Icon(icon, size: 18, color: color),
+                Icon(icon, size: 16, color: color),
                 const Spacer(),
                 Text(
                   value,
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
                 ),
               ],
             ),
@@ -217,7 +218,6 @@ class _PipelineStage {
 }
 
 final _pipelineStages = <_PipelineStage>[
-  _PipelineStage('Enviada', Colors.blue, (e) => e.contains('enviada')),
   _PipelineStage('Sin respuesta', Colors.amber, (e) => e == 'sin respuesta'),
   _PipelineStage(
     'En revisión',
@@ -228,6 +228,7 @@ final _pipelineStages = <_PipelineStage>[
   _PipelineStage('Entrevista', Colors.purple, (e) => e.contains('entrevista')),
   _PipelineStage('Oferta', Colors.green, (e) => e.contains('oferta')),
   _PipelineStage('Aceptada', Colors.lightGreen, (e) => e == 'aceptada'),
+  _PipelineStage('Enviada', Colors.blue, (e) => e.contains('enviada')),
   _PipelineStage('Rechazada', Colors.red, (e) => e.contains('rechazada')),
   _PipelineStage('Retirada', Colors.blueGrey, (e) => e.contains('retirada')),
   _PipelineStage('Otros', Colors.grey, (_) => true),
@@ -494,10 +495,12 @@ class _ActivityItem extends StatelessWidget {
 class _DistributionCard extends StatelessWidget {
   final List<(String, int)> modalidades;
   final List<(String, int)> ciudades;
+  final List<(String, int)> plataformas;
 
   const _DistributionCard({
     required this.modalidades,
     required this.ciudades,
+    required this.plataformas,
   });
 
   @override
@@ -525,6 +528,13 @@ class _DistributionCard extends StatelessWidget {
               icon: Icons.location_on_outlined,
               items: ciudades,
               color: Colors.indigo,
+            ),
+            const SizedBox(height: 16),
+            _DistributionGroup(
+              label: 'Plataformas',
+              icon: Icons.language,
+              items: plataformas,
+              color: Colors.blue,
             ),
           ],
         ),
