@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../helpers/date_formatter.dart';
+import '../helpers/salary_formatter.dart';
+import '../helpers/text_shortener.dart';
 import '../models/job_application.dart';
 import 'status_chip.dart';
 
@@ -51,13 +53,18 @@ class _ApplicationCardState extends State<ApplicationCard>
 
   @override
   Widget build(BuildContext context) {
+    final app = widget.application;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         final t = _controller.value;
         final baseColor = Theme.of(context).cardColor;
-        final color =
-            Color.lerp(baseColor, Theme.of(context).colorScheme.primary, math.sin(t * math.pi) * 0.15);
+        final color = Color.lerp(
+          baseColor,
+          Theme.of(context).colorScheme.primary,
+          math.sin(t * math.pi) * 0.15,
+        );
         return Card(color: color, child: child);
       },
       child: InkWell(
@@ -71,47 +78,107 @@ class _ApplicationCardState extends State<ApplicationCard>
               Row(
                 children: [
                   Expanded(
-                    child: Text(widget.application.empresa,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    child: Text(
+                      app.empresa,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
                   ),
-                  StatusChip(status: widget.application.estado),
+                  const SizedBox(width: 8),
+                  StatusChip(status: app.estado),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
-                widget.application.vacante,
+                app.vacante,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
                     ?.copyWith(color: Colors.grey[700]),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
+              Builder(builder: (_) {
+                final chips = <Widget>[];
+                void addChip(IconData icon, String label) {
+                  if (label.trim().isEmpty) return;
+                  chips.add(_MetaChip(icon: icon, label: label));
+                }
+
+                if (app.plataforma.trim().isNotEmpty) {
+                  addChip(Icons.language, app.plataforma);
+                }
+                final loc = _buildLocation(app.modalidad, app.ciudad);
+                if (loc.isNotEmpty) {
+                  addChip(Icons.location_on_outlined, loc);
+                }
+                final salario = extractSalario(app.salarioOfrecido);
+                if (salario.isNotEmpty) {
+                  addChip(Icons.attach_money_outlined, salario);
+                }
+                final contrato = shortContract(app.tipoContrato);
+                if (contrato.isNotEmpty) {
+                  addChip(Icons.work_outline, contrato);
+                }
+
+                if (chips.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: chips,
+                  ),
+                );
+              }),
               Row(
                 children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _InfoChip(
-                              icon: Icons.location_on, label: widget.application.ciudad),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _InfoChip(
-                              icon: Icons.business_center,
-                              label: widget.application.modalidad),
-                        ),
-                      ],
-                    ),
+                  Icon(Icons.calendar_today,
+                      size: 13, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Text(
+                    formatDateShort(app.fechaPostulacion),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Colors.grey[600]),
                   ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      formatDateShort(widget.application.fechaPostulacion),
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
+                  const Spacer(),
+                  if (app.diasProceso != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.amber.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.schedule,
+                              size: 12, color: Colors.amber[800]),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${app.diasProceso} ${app.diasProceso == 1 ? "día" : "días"}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.amber[800],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -120,27 +187,47 @@ class _ApplicationCardState extends State<ApplicationCard>
       ),
     );
   }
+
+  String _buildLocation(String modalidad, String ciudad) {
+    final m = modalidad.trim();
+    final c = ciudad.trim();
+    if (m.isNotEmpty && c.isNotEmpty) return '$m · $c';
+    if (m.isNotEmpty) return m;
+    if (c.isNotEmpty) return c;
+    return '';
+  }
 }
 
-class _InfoChip extends StatelessWidget {
+class _MetaChip extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _InfoChip({required this.icon, required this.label});
+  const _MetaChip({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Colors.grey),
-        const SizedBox(width: 2),
-        Flexible(
-          child: Text(label,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.20)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: Colors.grey[600]),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
