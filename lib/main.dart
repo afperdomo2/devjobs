@@ -9,6 +9,7 @@ import 'providers/app_state.dart';
 import 'screens/main_screen.dart';
 import 'services/local_cache.dart';
 import 'services/sheets_api_service.dart';
+import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,7 +34,7 @@ class DevJobsApp extends StatelessWidget {
     return MaterialApp(
       title: 'DevJobs',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+      theme: AppTheme.light,
       home: const MainScreen(),
     );
   }

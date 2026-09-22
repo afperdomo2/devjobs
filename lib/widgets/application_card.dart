@@ -6,6 +6,7 @@ import '../helpers/date_formatter.dart';
 import '../helpers/salary_formatter.dart';
 import '../helpers/text_shortener.dart';
 import '../models/job_application.dart';
+import '../theme.dart';
 import 'status_chip.dart';
 
 class ApplicationCard extends StatefulWidget {
@@ -100,7 +101,7 @@ class _ApplicationCardState extends State<ApplicationCard>
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
-                    ?.copyWith(color: Colors.grey[700]),
+                    ?.copyWith(color: AppColors.onMuted),
               ),
               const SizedBox(height: 8),
               Builder(builder: (_) {
@@ -139,14 +140,14 @@ class _ApplicationCardState extends State<ApplicationCard>
               Row(
                 children: [
                   Icon(Icons.calendar_today,
-                      size: 13, color: Colors.grey[500]),
+                      size: 13, color: AppColors.onMuted),
                   const SizedBox(width: 4),
                   Text(
                     formatDateShort(app.fechaPostulacion),
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
-                        ?.copyWith(color: Colors.grey[600]),
+                        ?.copyWith(color: AppColors.onMuted),
                   ),
                   const Spacer(),
                   if (app.diasProceso != null)
@@ -156,24 +157,24 @@ class _ApplicationCardState extends State<ApplicationCard>
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.15),
+                        color: AppColors.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.amber.withValues(alpha: 0.35),
+                          color: AppColors.warning.withValues(alpha: 0.35),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.schedule,
-                              size: 12, color: Colors.amber[800]),
+                              size: 12, color: AppColors.warningDark),
                           const SizedBox(width: 3),
                           Text(
                             '${app.diasProceso} ${app.diasProceso == 1 ? "día" : "días"}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Colors.amber[800],
+                              color: AppColors.warningDark,
                             ),
                           ),
                         ],
@@ -209,20 +210,20 @@ class _MetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.grey.withValues(alpha: 0.10),
+        color: AppColors.muted,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.20)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: Colors.grey[600]),
+          Icon(icon, size: 13, color: AppColors.onMuted),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[700],
+              color: AppColors.onMuted,
               fontWeight: FontWeight.w500,
             ),
           ),

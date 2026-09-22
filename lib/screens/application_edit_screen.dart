@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
+import '../theme.dart';
 import '../widgets/offline_banner.dart';
 
 const _tiposContrato = [
@@ -252,7 +253,7 @@ class _ApplicationEditScreenState extends State<ApplicationEditScreen> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       'Modo solo lectura — conéctate a internet para editar.',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      style: TextStyle(color: AppColors.onMuted, fontSize: 12),
                       textAlign: TextAlign.center,
                     ),
                   ),

@@ -5,6 +5,7 @@ import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
+import '../theme.dart';
 import '../widgets/offline_banner.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -70,26 +71,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _StatCard(
                 label: 'Total postulaciones',
                 value: stats.total.toString(),
-                color: Colors.blue,
+                color: AppColors.primary,
                 icon: Icons.work,
               ),
               _StatCard(
                 label: 'Activas',
                 value: stats.activas.toString(),
-                color: Colors.orange,
+                color: AppColors.secondary,
                 icon: Icons.notifications_active,
                 onTap: () => state.setTab(1),
               ),
               _StatCard(
                 label: 'Entrevistas',
                 value: stats.entrevistas.toString(),
-                color: Colors.purple,
+                color: StatusColors.entrevista,
                 icon: Icons.people,
               ),
               _StatCard(
                 label: 'Rechazadas',
                 value: stats.rechazadas.toString(),
-                color: Colors.red,
+                color: StatusColors.rechazada,
                 icon: Icons.cancel,
                 onTap: () => state.setTab(3),
               ),
@@ -163,7 +164,7 @@ class _StatCard extends StatelessWidget {
                   child: Text(label, style: Theme.of(context).textTheme.bodySmall),
                 ),
                 if (onTap != null)
-                  Icon(Icons.chevron_right, size: 16, color: Colors.grey[400]),
+                  Icon(Icons.chevron_right, size: 16, color: AppColors.onMuted),
               ],
             ),
           ],
@@ -218,20 +219,20 @@ class _PipelineStage {
 }
 
 final _pipelineStages = <_PipelineStage>[
-  _PipelineStage('Sin respuesta', Colors.amber, (e) => e == 'sin respuesta'),
+  _PipelineStage('Sin respuesta', StatusColors.sinRespuesta, (e) => e == 'sin respuesta'),
   _PipelineStage(
     'En revisión',
-    Colors.orange,
+    StatusColors.revision,
     (e) => e.contains('revisión') || e.contains('revision'),
   ),
-  _PipelineStage('Prueba técnica', Colors.teal, (e) => e.contains('prueba')),
-  _PipelineStage('Entrevista', Colors.purple, (e) => e.contains('entrevista')),
-  _PipelineStage('Oferta', Colors.green, (e) => e.contains('oferta')),
-  _PipelineStage('Aceptada', Colors.lightGreen, (e) => e == 'aceptada'),
-  _PipelineStage('Enviada', Colors.blue, (e) => e.contains('enviada')),
-  _PipelineStage('Rechazada', Colors.red, (e) => e.contains('rechazada')),
-  _PipelineStage('Retirada', Colors.blueGrey, (e) => e.contains('retirada')),
-  _PipelineStage('Otros', Colors.grey, (_) => true),
+  _PipelineStage('Prueba técnica', StatusColors.pruebaTecnica, (e) => e.contains('prueba')),
+  _PipelineStage('Entrevista', StatusColors.entrevista, (e) => e.contains('entrevista')),
+  _PipelineStage('Oferta', StatusColors.oferta, (e) => e.contains('oferta')),
+  _PipelineStage('Aceptada', StatusColors.aceptada, (e) => e == 'aceptada'),
+  _PipelineStage('Enviada', StatusColors.enviada, (e) => e.contains('enviada')),
+  _PipelineStage('Rechazada', StatusColors.rechazada, (e) => e.contains('rechazada')),
+  _PipelineStage('Retirada', StatusColors.retirada, (e) => e.contains('retirada')),
+  _PipelineStage('Otros', StatusColors.otro, (_) => true),
 ];
 
 _PipelineStage _stageOf(String estado) {
@@ -345,14 +346,14 @@ class _ConversionCard extends StatelessWidget {
               label: 'A entrevista',
               part: entrevistas,
               total: total,
-              color: Colors.purple,
+              color: StatusColors.entrevista,
             ),
             const SizedBox(height: 10),
             _ConversionBar(
               label: 'Rechazadas',
               part: rechazadas,
               total: total,
-              color: Colors.red,
+              color: StatusColors.rechazada,
             ),
           ],
         ),
@@ -434,7 +435,7 @@ class _RecentActivityCard extends StatelessWidget {
                     icon: Icons.today,
                     label: 'Últimos 7 días',
                     value: '$ultimos7',
-                    color: Colors.teal,
+                    color: AppColors.secondary,
                   ),
                 ),
                 Expanded(
@@ -442,7 +443,7 @@ class _RecentActivityCard extends StatelessWidget {
                     icon: Icons.calendar_month,
                     label: 'Últimos 30 días',
                     value: '$ultimos30',
-                    color: Colors.lightGreen,
+                    color: AppColors.accent,
                   ),
                 ),
               ],
@@ -520,21 +521,21 @@ class _DistributionCard extends StatelessWidget {
               label: 'Modalidades',
               icon: Icons.business_center,
               items: modalidades,
-              color: Colors.teal,
+              color: StatusColors.pruebaTecnica,
             ),
             const SizedBox(height: 16),
             _DistributionGroup(
               label: 'Ciudades',
               icon: Icons.location_on_outlined,
               items: ciudades,
-              color: Colors.indigo,
+              color: AppColors.primary,
             ),
             const SizedBox(height: 16),
             _DistributionGroup(
               label: 'Plataformas',
               icon: Icons.language,
               items: plataformas,
-              color: Colors.blue,
+              color: AppColors.secondary,
             ),
           ],
         ),
@@ -571,13 +572,13 @@ class _DistributionGroup extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(color: Colors.grey[700], fontSize: 13),
+              style: TextStyle(color: AppColors.onMuted, fontSize: 13),
             ),
           ],
         ),
         const SizedBox(height: 8),
         if (items.isEmpty)
-          Text('—', style: TextStyle(color: Colors.grey[400]))
+          Text('—', style: TextStyle(color: StatusColors.otro))
         else
           for (final (name, count) in items)
             Padding(

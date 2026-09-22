@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 class OfflineBanner extends StatelessWidget {
   final DateTime? lastUpdated;
   final VoidCallback? onRetry;
@@ -13,12 +15,12 @@ class OfflineBanner extends StatelessWidget {
         : 'Mostrando datos guardados';
 
     return Material(
-      color: Colors.amber.shade100,
+      color: AppColors.warning.withValues(alpha: 0.12),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           children: [
-            Icon(Icons.wifi_off, size: 18, color: Colors.amber.shade900),
+            Icon(Icons.wifi_off, size: 18, color: AppColors.warningDark),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -30,12 +32,12 @@ class OfflineBanner extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.amber.shade900,
+                      color: AppColors.warningDark,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 11, color: Colors.amber.shade900),
+                    style: TextStyle(fontSize: 11, color: AppColors.warningDark),
                   ),
                 ],
               ),
@@ -44,7 +46,7 @@ class OfflineBanner extends StatelessWidget {
               TextButton(
                 onPressed: onRetry,
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.amber.shade900,
+                  foregroundColor: AppColors.warningDark,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   minimumSize: const Size(0, 32),
                 ),
@@ -88,7 +90,7 @@ class ErrorStateView extends StatelessWidget {
             Icon(
               isOffline ? Icons.wifi_off : Icons.error_outline,
               size: 48,
-              color: Colors.grey[400],
+              color: AppColors.onMuted,
             ),
             const SizedBox(height: 16),
             Text(
@@ -99,7 +101,7 @@ class ErrorStateView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               message,
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              style: TextStyle(color: AppColors.onMuted, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),

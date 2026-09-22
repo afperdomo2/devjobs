@@ -6,6 +6,7 @@ import '../helpers/date_formatter.dart';
 import '../helpers/salary_formatter.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
+import '../theme.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/status_chip.dart';
 import 'application_edit_screen.dart';
@@ -88,7 +89,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.chat_bubble_outline, size: 18, color: Colors.grey[600]),
+                      Icon(Icons.chat_bubble_outline, size: 18, color: AppColors.onMuted),
                       const SizedBox(width: 6),
                       const Text('Comentarios', style: TextStyle(fontWeight: FontWeight.w600)),
                     ],
@@ -100,7 +101,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('• ', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                          Text('• ', style: TextStyle(color: AppColors.onMuted, fontSize: 14)),
                           Expanded(child: Text(c, style: const TextStyle(fontSize: 14))),
                         ],
                       ),
@@ -110,7 +111,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.description_outlined, size: 18, color: Colors.grey[600]),
+                      Icon(Icons.description_outlined, size: 18, color: AppColors.onMuted),
                       const SizedBox(width: 6),
                       const Text('Descripción', style: TextStyle(fontWeight: FontWeight.w600)),
                     ],
@@ -122,7 +123,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.link, size: 18, color: Colors.grey[600]),
+                      Icon(Icons.link, size: 18, color: AppColors.onMuted),
                       const SizedBox(width: 6),
                       const Text('Enlace externo', style: TextStyle(fontWeight: FontWeight.w600)),
                     ],
@@ -135,7 +136,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                         context,
                       ).showSnackBar(const SnackBar(content: Text('Enlace copiado al portapapeles')));
                     },
-                    child: Text(app.link, style: TextStyle(color: Colors.blue[700], fontSize: 13)),
+                    child: Text(app.link, style: TextStyle(color: AppColors.primary, fontSize: 13)),
                   ),
                 ],
               ],
@@ -173,11 +174,11 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            Icon(Icons.people, size: 18, color: Colors.grey[600]),
+            Icon(Icons.people, size: 18, color: AppColors.onMuted),
             const SizedBox(width: 8),
             SizedBox(
               width: 100,
-              child: Text('Entrevista', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+              child: Text('Entrevista', style: TextStyle(color: AppColors.onMuted, fontSize: 13)),
             ),
             Transform.scale(
               scale: 0.6,
@@ -186,9 +187,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 onChanged: null,
                 thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return Colors.lightGreen;
+                    return AppColors.accent;
                   }
-                  return Colors.white;
+                  return AppColors.card;
                 }),
               ),
             ),
@@ -205,11 +206,11 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(f.$1, size: 18, color: Colors.grey[600]),
+          Icon(f.$1, size: 18, color: AppColors.onMuted),
           const SizedBox(width: 8),
           SizedBox(
             width: 112,
-            child: Text(f.$2, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+            child: Text(f.$2, style: TextStyle(color: AppColors.onMuted, fontSize: 13)),
           ),
           Expanded(child: Text(f.$3, style: const TextStyle(fontSize: 14))),
         ],
