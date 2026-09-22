@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../helpers/date_formatter.dart';
+import '../helpers/distribution.dart';
 import '../helpers/network_error.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/offline_banner.dart';
+import 'distribution_detail_screen.dart';
+import 'filtered_applications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -113,9 +116,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 8),
             _DistributionCard(
-              modalidades: _topBy(apps, (a) => a.modalidad, 3),
-              ciudades: _topBy(apps, (a) => a.ciudad, 3),
-              plataformas: _topBy(apps, (a) => a.plataforma, 4),
+              modalidades: topDistribution(apps, (a) => a.modalidad, 3),
+              ciudades: topDistribution(apps, (a) => a.ciudad, 3),
+              plataformas: topDistribution(apps, (a) => a.plataforma, 4),
             ),
           ],
         ],
@@ -195,22 +198,6 @@ int _countSince(List<JobApplication> apps, int days) {
     if (d != null && !d.isBefore(cutoff)) count++;
   }
   return count;
-}
-
-List<(String, int)> _topBy(
-  List<JobApplication> apps,
-  String Function(JobApplication) field,
-  int n,
-) {
-  final counts = <String, int>{};
-  for (final a in apps) {
-    final v = field(a).trim();
-    if (v.isEmpty) continue;
-    counts[v] = (counts[v] ?? 0) + 1;
-  }
-  final entries = counts.entries.toList()
-    ..sort((a, b) => b.value.compareTo(a.value));
-  return entries.take(n).map((e) => (e.key, e.value)).toList();
 }
 
 class _PipelineStage {
@@ -524,6 +511,7 @@ class _DistributionCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _DistributionGroup(
+              field: 'modalidad',
               label: 'Modalidades',
               icon: Icons.business_center,
               items: modalidades,
@@ -531,6 +519,7 @@ class _DistributionCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _DistributionGroup(
+              field: 'ciudad',
               label: 'Ciudades',
               icon: Icons.location_on_outlined,
               items: ciudades,
@@ -538,6 +527,7 @@ class _DistributionCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _DistributionGroup(
+              field: 'plataforma',
               label: 'Plataformas',
               icon: Icons.language,
               items: plataformas,
@@ -551,17 +541,46 @@ class _DistributionCard extends StatelessWidget {
 }
 
 class _DistributionGroup extends StatelessWidget {
+  final String field;
   final String label;
   final IconData icon;
   final List<(String, int)> items;
   final Color color;
 
   const _DistributionGroup({
+    required this.field,
     required this.label,
     required this.icon,
     required this.items,
     required this.color,
   });
+
+  void _openDetail(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DistributionDetailScreen(
+          field: field,
+          label: label,
+          icon: icon,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  void _openFiltered(BuildContext context, String value) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FilteredApplicationsScreen(
+          title: label,
+          field: field,
+          value: value,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -576,11 +595,30 @@ class _DistributionGroup extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: color),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13),
+              ),
+            ),
+            InkWell(
+              onTap: () => _openDetail(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Ver todas',
+                      style: TextStyle(fontSize: 13, color: color),
+                    ),
+                    Icon(Icons.chevron_right, size: 16, color: color),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -591,39 +629,44 @@ class _DistributionGroup extends StatelessWidget {
                   color: statusColor('', Theme.of(context).brightness)))
         else
           for (final (name, count) in items)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          name,
-                          style: const TextStyle(fontSize: 14),
-                          overflow: TextOverflow.ellipsis,
+            InkWell(
+              onTap: () => _openFiltered(context, name),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: const TextStyle(fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '$count',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                        Text(
+                          '$count',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: count / maxCount,
-                      minHeight: 6,
-                      backgroundColor: color.withValues(alpha: 0.12),
-                      valueColor: AlwaysStoppedAnimation(color),
+                        Icon(Icons.chevron_right, size: 16, color: color),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: count / maxCount,
+                        minHeight: 6,
+                        backgroundColor: color.withValues(alpha: 0.12),
+                        valueColor: AlwaysStoppedAnimation(color),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
       ],

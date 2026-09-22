@@ -51,6 +51,26 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  List<JobApplication> getByField(String field, String value) {
+    final v = value.trim().toLowerCase();
+    final apps = (_cached ?? [])
+        .where((a) {
+          switch (field) {
+            case 'ciudad':
+              return a.ciudad.trim().toLowerCase() == v;
+            case 'modalidad':
+              return a.modalidad.trim().toLowerCase() == v;
+            case 'plataforma':
+              return a.plataforma.trim().toLowerCase() == v;
+            default:
+              return false;
+          }
+        })
+        .toList();
+    apps.sort(_sortByDate);
+    return apps;
+  }
+
   List<JobApplication> getApplications(String filterMode) {
     var apps = _cached?.toList() ?? [];
 
