@@ -101,7 +101,7 @@ class _ApplicationCardState extends State<ApplicationCard>
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
-                    ?.copyWith(color: AppColors.onMuted),
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 8),
               Builder(builder: (_) {
@@ -140,14 +140,14 @@ class _ApplicationCardState extends State<ApplicationCard>
               Row(
                 children: [
                   Icon(Icons.calendar_today,
-                      size: 13, color: AppColors.onMuted),
+                      size: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Text(
                     formatDateShort(app.fechaPostulacion),
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
-                        ?.copyWith(color: AppColors.onMuted),
+                        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   const Spacer(),
                   if (app.diasProceso != null)
@@ -167,14 +167,17 @@ class _ApplicationCardState extends State<ApplicationCard>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.schedule,
-                              size: 12, color: AppColors.warningDark),
+                              size: 12,
+                              color: warningTextColor(
+                                  Theme.of(context).brightness)),
                           const SizedBox(width: 3),
                           Text(
                             '${app.diasProceso} ${app.diasProceso == 1 ? "día" : "días"}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.warningDark,
+                              color: warningTextColor(
+                                  Theme.of(context).brightness),
                             ),
                           ),
                         ],
@@ -207,23 +210,24 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.muted,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: scheme.outline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: AppColors.onMuted),
+          Icon(icon, size: 13, color: scheme.onSurfaceVariant),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.onMuted,
+              color: scheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
           ),

@@ -20,7 +20,7 @@ class OfflineBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           children: [
-            Icon(Icons.wifi_off, size: 18, color: AppColors.warningDark),
+            Icon(Icons.wifi_off, size: 18, color: warningTextColor(Theme.of(context).brightness)),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -32,12 +32,12 @@ class OfflineBanner extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.warningDark,
+                      color: warningTextColor(Theme.of(context).brightness),
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 11, color: AppColors.warningDark),
+                    style: TextStyle(fontSize: 11, color: warningTextColor(Theme.of(context).brightness)),
                   ),
                 ],
               ),
@@ -46,7 +46,7 @@ class OfflineBanner extends StatelessWidget {
               TextButton(
                 onPressed: onRetry,
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.warningDark,
+                  foregroundColor: warningTextColor(Theme.of(context).brightness),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   minimumSize: const Size(0, 32),
                 ),
@@ -90,7 +90,7 @@ class ErrorStateView extends StatelessWidget {
             Icon(
               isOffline ? Icons.wifi_off : Icons.error_outline,
               size: 48,
-              color: AppColors.onMuted,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
             Text(
@@ -101,7 +101,7 @@ class ErrorStateView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               message,
-              style: TextStyle(color: AppColors.onMuted, fontSize: 13),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),

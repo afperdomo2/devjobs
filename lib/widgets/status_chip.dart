@@ -9,7 +9,7 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = statusColor(status);
+    final color = statusColor(status, Theme.of(context).brightness);
     final icon = _statusIcon(status);
 
     return Container(

@@ -29,6 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final state = context.watch<AppState>();
     final stats = state.dashboardStats;
     final apps = state.applications;
+    final brightness = Theme.of(context).brightness;
 
     // Full-screen error when no data and fetch failed.
     if (state.error != null && apps.isEmpty) {
@@ -71,26 +72,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _StatCard(
                 label: 'Total postulaciones',
                 value: stats.total.toString(),
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 icon: Icons.work,
               ),
               _StatCard(
                 label: 'Activas',
                 value: stats.activas.toString(),
-                color: AppColors.secondary,
+                color: Theme.of(context).colorScheme.secondary,
                 icon: Icons.notifications_active,
                 onTap: () => state.setTab(1),
               ),
               _StatCard(
                 label: 'Entrevistas',
                 value: stats.entrevistas.toString(),
-                color: StatusColors.entrevista,
+                color: statusColor('entrevista', brightness),
                 icon: Icons.people,
               ),
               _StatCard(
                 label: 'Rechazadas',
                 value: stats.rechazadas.toString(),
-                color: StatusColors.rechazada,
+                color: Theme.of(context).colorScheme.error,
                 icon: Icons.cancel,
                 onTap: () => state.setTab(3),
               ),
@@ -164,7 +165,9 @@ class _StatCard extends StatelessWidget {
                   child: Text(label, style: Theme.of(context).textTheme.bodySmall),
                 ),
                 if (onTap != null)
-                  Icon(Icons.chevron_right, size: 16, color: AppColors.onMuted),
+                  Icon(Icons.chevron_right,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ),
           ],
@@ -212,27 +215,25 @@ List<(String, int)> _topBy(
 
 class _PipelineStage {
   final String label;
-  final Color color;
   final bool Function(String estado) matches;
 
-  const _PipelineStage(this.label, this.color, this.matches);
+  const _PipelineStage(this.label, this.matches);
 }
 
 final _pipelineStages = <_PipelineStage>[
-  _PipelineStage('Sin respuesta', StatusColors.sinRespuesta, (e) => e == 'sin respuesta'),
+  _PipelineStage('Sin respuesta', (e) => e == 'sin respuesta'),
   _PipelineStage(
     'En revisión',
-    StatusColors.revision,
     (e) => e.contains('revisión') || e.contains('revision'),
   ),
-  _PipelineStage('Prueba técnica', StatusColors.pruebaTecnica, (e) => e.contains('prueba')),
-  _PipelineStage('Entrevista', StatusColors.entrevista, (e) => e.contains('entrevista')),
-  _PipelineStage('Oferta', StatusColors.oferta, (e) => e.contains('oferta')),
-  _PipelineStage('Aceptada', StatusColors.aceptada, (e) => e == 'aceptada'),
-  _PipelineStage('Enviada', StatusColors.enviada, (e) => e.contains('enviada')),
-  _PipelineStage('Rechazada', StatusColors.rechazada, (e) => e.contains('rechazada')),
-  _PipelineStage('Retirada', StatusColors.retirada, (e) => e.contains('retirada')),
-  _PipelineStage('Otros', StatusColors.otro, (_) => true),
+  _PipelineStage('Prueba técnica', (e) => e.contains('prueba')),
+  _PipelineStage('Entrevista', (e) => e.contains('entrevista')),
+  _PipelineStage('Oferta', (e) => e.contains('oferta')),
+  _PipelineStage('Aceptada', (e) => e == 'aceptada'),
+  _PipelineStage('Enviada', (e) => e.contains('enviada')),
+  _PipelineStage('Rechazada', (e) => e.contains('rechazada')),
+  _PipelineStage('Retirada', (e) => e.contains('retirada')),
+  _PipelineStage('Otros', (_) => true),
 ];
 
 _PipelineStage _stageOf(String estado) {
@@ -262,6 +263,7 @@ class _PipelineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -280,7 +282,10 @@ class _PipelineCard extends StatelessWidget {
                   for (final (stage, count) in segments)
                     Expanded(
                       flex: count,
-                      child: Container(height: 10, color: stage.color),
+                      child: Container(
+                        height: 10,
+                        color: pipelineColor(stage.label, brightness),
+                      ),
                     ),
                 ],
               ),
@@ -298,7 +303,7 @@ class _PipelineCard extends StatelessWidget {
                         width: 10,
                         height: 10,
                         decoration: BoxDecoration(
-                          color: stage.color,
+                          color: pipelineColor(stage.label, brightness),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -346,14 +351,14 @@ class _ConversionCard extends StatelessWidget {
               label: 'A entrevista',
               part: entrevistas,
               total: total,
-              color: StatusColors.entrevista,
+              color: statusColor('entrevista', Theme.of(context).brightness),
             ),
             const SizedBox(height: 10),
             _ConversionBar(
               label: 'Rechazadas',
               part: rechazadas,
               total: total,
-              color: StatusColors.rechazada,
+              color: Theme.of(context).colorScheme.error,
             ),
           ],
         ),
@@ -435,7 +440,7 @@ class _RecentActivityCard extends StatelessWidget {
                     icon: Icons.today,
                     label: 'Últimos 7 días',
                     value: '$ultimos7',
-                    color: AppColors.secondary,
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
                 Expanded(
@@ -443,7 +448,7 @@ class _RecentActivityCard extends StatelessWidget {
                     icon: Icons.calendar_month,
                     label: 'Últimos 30 días',
                     value: '$ultimos30',
-                    color: AppColors.accent,
+                    color: Theme.of(context).colorScheme.tertiary,
                   ),
                 ),
               ],
@@ -506,6 +511,7 @@ class _DistributionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -521,21 +527,21 @@ class _DistributionCard extends StatelessWidget {
               label: 'Modalidades',
               icon: Icons.business_center,
               items: modalidades,
-              color: StatusColors.pruebaTecnica,
+              color: statusColor('prueba técnica', brightness),
             ),
             const SizedBox(height: 16),
             _DistributionGroup(
               label: 'Ciudades',
               icon: Icons.location_on_outlined,
               items: ciudades,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 16),
             _DistributionGroup(
               label: 'Plataformas',
               icon: Icons.language,
               items: plataformas,
-              color: AppColors.secondary,
+              color: Theme.of(context).colorScheme.secondary,
             ),
           ],
         ),
@@ -572,13 +578,17 @@ class _DistributionGroup extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(color: AppColors.onMuted, fontSize: 13),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 13),
             ),
           ],
         ),
         const SizedBox(height: 8),
         if (items.isEmpty)
-          Text('—', style: TextStyle(color: StatusColors.otro))
+          Text('—',
+              style: TextStyle(
+                  color: statusColor('', Theme.of(context).brightness)))
         else
           for (final (name, count) in items)
             Padding(

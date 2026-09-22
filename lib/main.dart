@@ -35,6 +35,8 @@ class DevJobsApp extends StatelessWidget {
       title: 'DevJobs',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       home: const MainScreen(),
     );
   }
