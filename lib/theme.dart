@@ -21,6 +21,7 @@ abstract final class AppColors {
   static const warning = Color(0xFFF59E0B);
   static const warningDark = Color(0xFFB45309);
   static const navDivider = Color(0xFFCBD5E1);
+  static const chipBorder = Color(0xFFD8E2EE);
 }
 
 /// Flat Design tokens for DevJobs — dark theme (desaturated slate-blue).
@@ -42,6 +43,7 @@ abstract final class AppColorsDark {
   static const onDestructive = Color(0xFF450A0A);
   static const warning = Color(0xFFFBBF24);
   static const navDivider = Color(0xFF475569);
+  static const chipBorder = Color(0xFF334155);
 }
 
 /// Semantic status colors — light variants.
@@ -135,6 +137,10 @@ Color warningTextColor(Brightness brightness) =>
 /// Visible separator for the bottom navigation bar.
 Color navDividerColor(Brightness brightness) =>
     brightness == Brightness.dark ? AppColorsDark.navDivider : AppColors.navDivider;
+
+/// Soft border for meta chips / badges.
+Color chipBorderColor(Brightness brightness) =>
+    brightness == Brightness.dark ? AppColorsDark.chipBorder : AppColors.chipBorder;
 
 abstract final class AppTheme {
   static ThemeData get light => _build(

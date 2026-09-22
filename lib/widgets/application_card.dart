@@ -151,37 +151,24 @@ class _ApplicationCardState extends State<ApplicationCard>
                   ),
                   const Spacer(),
                   if (app.diasProceso != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.warning.withValues(alpha: 0.35),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.schedule,
+                            size: 13,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${app.diasProceso} ${app.diasProceso == 1 ? "día" : "días"}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.schedule,
-                              size: 12,
-                              color: warningTextColor(
-                                  Theme.of(context).brightness)),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${app.diasProceso} ${app.diasProceso == 1 ? "día" : "días"}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: warningTextColor(
-                                  Theme.of(context).brightness),
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                 ],
               ),
@@ -212,11 +199,12 @@ class _MetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: scheme.outline),
+        border: Border.all(
+          color: chipBorderColor(Theme.of(context).brightness),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

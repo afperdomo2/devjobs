@@ -81,4 +81,11 @@ void main() {
       expect(navDividerColor(Brightness.dark), AppColorsDark.navDivider);
     });
   });
+
+  group('chipBorderColor', () {
+    test('usa borde suave claro en claro y slate en oscuro', () {
+      expect(chipBorderColor(Brightness.light), AppColors.chipBorder);
+      expect(chipBorderColor(Brightness.dark), AppColorsDark.chipBorder);
+    });
+  });
 }
