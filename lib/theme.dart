@@ -20,6 +20,7 @@ abstract final class AppColors {
   static const onDestructive = Color(0xFFFFFFFF);
   static const warning = Color(0xFFF59E0B);
   static const warningDark = Color(0xFFB45309);
+  static const navDivider = Color(0xFFCBD5E1);
 }
 
 /// Flat Design tokens for DevJobs — dark theme (desaturated slate-blue).
@@ -40,6 +41,7 @@ abstract final class AppColorsDark {
   static const destructive = Color(0xFFF87171);
   static const onDestructive = Color(0xFF450A0A);
   static const warning = Color(0xFFFBBF24);
+  static const navDivider = Color(0xFF475569);
 }
 
 /// Semantic status colors — light variants.
@@ -129,6 +131,10 @@ Color pipelineColor(String label, Brightness brightness) {
 /// Readable warning text color for the given brightness.
 Color warningTextColor(Brightness brightness) =>
     brightness == Brightness.dark ? AppColorsDark.warning : AppColors.warningDark;
+
+/// Visible separator for the bottom navigation bar.
+Color navDividerColor(Brightness brightness) =>
+    brightness == Brightness.dark ? AppColorsDark.navDivider : AppColors.navDivider;
 
 abstract final class AppTheme {
   static ThemeData get light => _build(

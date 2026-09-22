@@ -74,4 +74,11 @@ void main() {
       expect(warningTextColor(Brightness.dark), AppColorsDark.warning);
     });
   });
+
+  group('navDividerColor', () {
+    test('usa gris claro visible en claro y gris medio en oscuro', () {
+      expect(navDividerColor(Brightness.light), AppColors.navDivider);
+      expect(navDividerColor(Brightness.dark), AppColorsDark.navDivider);
+    });
+  });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
+import '../theme.dart';
 import '../widgets/offline_banner.dart';
 import 'applications_list_screen.dart';
 import 'dashboard_screen.dart';
@@ -47,32 +48,43 @@ class MainScreen extends StatelessWidget {
               ),
             ],
           ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: state.currentTab,
-            onDestinationSelected: (i) => state.setTab(i),
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'Inicio',
+          bottomNavigationBar: DecoratedBox(
+            position: DecorationPosition.foreground,
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: navDividerColor(Theme.of(context).brightness),
+                  width: 1,
+                ),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.notifications_active_outlined),
-                selectedIcon: Icon(Icons.notifications_active),
-                label: 'Activas',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.schedule_outlined),
-                selectedIcon: Icon(Icons.schedule),
-                label: 'Enviadas',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.cancel_outlined),
-                selectedIcon: Icon(Icons.cancel),
-                label: 'Rechazadas',
-              ),
-            ],
+            ),
+            child: NavigationBar(
+              selectedIndex: state.currentTab,
+              onDestinationSelected: (i) => state.setTab(i),
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: 'Inicio',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.notifications_active_outlined),
+                  selectedIcon: Icon(Icons.notifications_active),
+                  label: 'Activas',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.schedule_outlined),
+                  selectedIcon: Icon(Icons.schedule),
+                  label: 'Enviadas',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.cancel_outlined),
+                  selectedIcon: Icon(Icons.cancel),
+                  label: 'Rechazadas',
+                ),
+              ],
+            ),
           ),
         );
       },
