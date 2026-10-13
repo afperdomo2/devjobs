@@ -6,6 +6,7 @@ import '../helpers/date_formatter.dart';
 import '../helpers/salary_formatter.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
+import '../theme.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/status_chip.dart';
 import 'application_edit_screen.dart';
@@ -150,6 +151,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   }
 
   List<Widget> _buildInfoSection(BuildContext context, JobApplication app) {
+    final warningColor = Theme.of(context).brightness == Brightness.dark
+        ? AppColorsDark.warning
+        : AppColors.warning;
+
     final baseFields = [
       (Icons.business, 'Empresa', app.empresa),
       (Icons.work_outline, 'Tipo de contrato', app.tipoContrato),
@@ -158,13 +163,39 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       (Icons.attach_money_outlined, 'Salario ofrecido', formatSalario(app.salarioOfrecido)),
       (Icons.language, 'Plataforma', app.plataforma),
       (Icons.calendar_today, 'F. postulación', formatDate(app.fechaPostulacion)),
-      (Icons.calendar_today, 'F. seguimiento', formatDate(app.fechaSeguimiento)),
-      (
-        Icons.schedule,
-        'Tiempo del proceso',
-        app.diasProceso != null ? '${app.diasProceso} días' : '',
-      ),
+      (Icons.notifications_outlined, 'Últ. novedad', formatDate(app.fechaSeguimiento)),
     ].where((f) => f.$3.isNotEmpty).map(_fieldRow).toList();
+
+    // Tiempo del proceso: duración total si finalizado; avance y
+    // días sin novedad si sigue activo.
+    final processFields = <Widget>[
+      if (app.isFinalizado)
+        if (app.diasProceso != null)
+          _fieldRow((
+            Icons.check_circle_outline,
+            'Duración proceso',
+            formatDuracion(app.diasProceso!),
+          ))
+      else ...[
+        if (app.diasProceso != null)
+          _fieldRow((
+            Icons.schedule,
+            'En proceso',
+            formatDias(app.diasProceso!),
+          )),
+        if (app.diasSinNovedad != null)
+          _fieldRow(
+            (
+              Icons.notifications_outlined,
+              'Sin novedad',
+              formatSinNovedad(app.diasSinNovedad!),
+            ),
+            color: app.diasSinNovedad! >= kUmbralDiasSinNovedad
+                ? warningColor
+                : null,
+          ),
+      ],
+    ];
 
     final afterFields = [
       (Icons.person_outline, 'Contacto', app.contacto),
@@ -172,6 +203,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
 
     return [
       ...baseFields,
+      ...processFields,
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
@@ -202,7 +234,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     ];
   }
 
-  Widget _fieldRow((IconData, String, String) f) {
+  Widget _fieldRow((IconData, String, String) f, {Color? color}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -214,7 +246,16 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
             width: 112,
             child: Text(f.$2, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
           ),
-          Expanded(child: Text(f.$3, style: const TextStyle(fontSize: 14))),
+          Expanded(
+            child: Text(
+              f.$3,
+              style: TextStyle(
+                fontSize: 14,
+                color: color,
+                fontWeight: color != null ? FontWeight.w600 : null,
+              ),
+            ),
+          ),
         ],
       ),
     );

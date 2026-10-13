@@ -150,26 +150,42 @@ class _ApplicationCardState extends State<ApplicationCard>
                         ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   const Spacer(),
-                  if (app.diasProceso != null)
-                    Row(
+                  Builder(builder: (_) {
+                    final esFinal = app.isFinalizado;
+                    final dias = esFinal ? app.diasProceso : app.diasSinNovedad;
+                    if (dias == null) return const SizedBox.shrink();
+
+                    final estancado = !esFinal && dias >= kUmbralDiasSinNovedad;
+                    final color = estancado
+                        ? (Theme.of(context).brightness == Brightness.dark
+                            ? AppColorsDark.warning
+                            : AppColors.warning)
+                        : Theme.of(context).colorScheme.onSurfaceVariant;
+                    // Finalizado → check + duración total; activo → campana +
+                    // días desde la última novedad (se leen como una frase).
+                    final icon = esFinal
+                        ? Icons.check_circle_outline
+                        : Icons.notifications_outlined;
+                    final label = esFinal
+                        ? formatDuracion(dias)
+                        : formatSinNovedad(dias);
+
+                    return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.schedule,
-                            size: 13,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        Icon(icon, size: 13, color: color),
                         const SizedBox(width: 3),
                         Text(
-                          '${app.diasProceso} ${app.diasProceso == 1 ? "día" : "días"}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant),
+                          label,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: color,
+                                fontWeight:
+                                    estancado ? FontWeight.w600 : null,
+                              ),
                         ),
                       ],
-                    ),
+                    );
+                  }),
                 ],
               ),
             ],

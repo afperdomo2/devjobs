@@ -78,20 +78,139 @@ void main() {
   });
 
   group('JobApplication getters', () {
-    test('diasProceso: diferencia entre postulacion y seguimiento', () {
-      const app = JobApplication(
-        rowIndex: 1,
-        fechaPostulacion: '02/06/2026',
-        fechaSeguimiento: '12/06/2026',
-      );
-      expect(app.diasProceso, equals(10));
+    // Fechas relativas a hoy para que los tests no caduquen.
+    String fmt(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    final now = DateTime.now();
+    final hoy = DateTime(now.year, now.month, now.day);
+    final hoyStr = fmt(hoy);
+
+    group('isFinalizado', () {
+      test('acepta, rechaza y retirada son finales (case-insensitive)', () {
+        expect(const JobApplication(rowIndex: 1, estado: 'Aceptada').isFinalizado, isTrue);
+        expect(const JobApplication(rowIndex: 1, estado: 'aceptada').isFinalizado, isTrue);
+        expect(const JobApplication(rowIndex: 1, estado: ' Aceptada ').isFinalizado, isTrue);
+        expect(const JobApplication(rowIndex: 1, estado: 'Rechazada').isFinalizado, isTrue);
+        expect(const JobApplication(rowIndex: 1, estado: 'Retirada').isFinalizado, isTrue);
+      });
+
+      test('estados en curso no son finales', () {
+        expect(const JobApplication(rowIndex: 1, estado: 'Enviada').isFinalizado, isFalse);
+        expect(const JobApplication(rowIndex: 1, estado: 'En revisión').isFinalizado, isFalse);
+        expect(const JobApplication(rowIndex: 1, estado: 'Oferta recibida').isFinalizado, isFalse);
+        expect(const JobApplication(rowIndex: 1, estado: '').isFinalizado, isFalse);
+      });
     });
 
-    test('diasProceso null si falta alguna fecha', () {
-      const a = JobApplication(rowIndex: 1, fechaPostulacion: '02/06/2026');
-      expect(a.diasProceso, isNull);
-      const b = JobApplication(rowIndex: 1);
-      expect(b.diasProceso, isNull);
+    group('diasProceso', () {
+      test('finalizado: duración entre postulación y última novedad', () {
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'Rechazada',
+          fechaPostulacion: fmt(hoy.subtract(const Duration(days: 10))),
+          fechaSeguimiento: fmt(hoy.subtract(const Duration(days: 3))),
+        );
+        expect(app.diasProceso, equals(7));
+      });
+
+      test('finalizado sin seguimiento: null (duración desconocida)', () {
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'Retirada',
+          fechaPostulacion: hoyStr,
+        );
+        expect(app.diasProceso, isNull);
+      });
+
+      test('activo: mide desde postulación hasta hoy, no hacia seguimiento', () {
+        final post = DateTime(now.year, now.month, now.day - 5);
+        final seg = DateTime(now.year, now.month, now.day - 1);
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'En revisión',
+          fechaPostulacion: fmt(post),
+          fechaSeguimiento: fmt(seg),
+        );
+        // Debe usar hoy - postulación (≈5), no seguimiento - postulación (4).
+        expect(app.diasProceso, equals(DateTime.now().difference(post).inDays));
+        expect(app.diasProceso, isNot(equals(4)));
+      });
+
+      test('null si falta fecha de postulación', () {
+        const a = JobApplication(rowIndex: 1, fechaSeguimiento: '12/06/2026');
+        expect(a.diasProceso, isNull);
+        const b = JobApplication(rowIndex: 1);
+        expect(b.diasProceso, isNull);
+      });
+
+      test('seguimiento anterior a postulación no genera días negativos', () {
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'Aceptada',
+          fechaPostulacion: fmt(hoy),
+          fechaSeguimiento: fmt(hoy.subtract(const Duration(days: 3))),
+        );
+        expect(app.diasProceso, equals(0));
+      });
+
+      test('postulación futura no genera días negativos', () {
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'Enviada',
+          fechaPostulacion: fmt(hoy.add(const Duration(days: 3))),
+        );
+        expect(app.diasProceso, equals(0));
+      });
+    });
+
+    group('diasSinNovedad', () {
+      test('activo: días desde la última novedad (seguimiento)', () {
+        final post = DateTime(now.year, now.month, now.day - 10);
+        final seg = DateTime(now.year, now.month, now.day - 3);
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'En revisión',
+          fechaPostulacion: fmt(post),
+          fechaSeguimiento: fmt(seg),
+        );
+        expect(app.diasSinNovedad, equals(DateTime.now().difference(seg).inDays));
+        expect(app.diasSinNovedad, isNot(equals(DateTime.now().difference(post).inDays)));
+      });
+
+      test('activo sin seguimiento: usa la postulación como referencia', () {
+        final post = DateTime(now.year, now.month, now.day - 4);
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'Enviada',
+          fechaPostulacion: fmt(post),
+        );
+        expect(app.diasSinNovedad, equals(DateTime.now().difference(post).inDays));
+      });
+
+      test('finalizado: null (no aplica)', () {
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'Rechazada',
+          fechaPostulacion: fmt(hoy.subtract(const Duration(days: 20))),
+          fechaSeguimiento: fmt(hoy.subtract(const Duration(days: 10))),
+        );
+        expect(app.diasSinNovedad, isNull);
+      });
+
+      test('null si no hay fechas', () {
+        const app = JobApplication(rowIndex: 1, estado: 'Enviada');
+        expect(app.diasSinNovedad, isNull);
+      });
+
+      test('seguimiento futuro no genera días negativos', () {
+        final app = JobApplication(
+          rowIndex: 1,
+          estado: 'En revisión',
+          fechaPostulacion: fmt(hoy),
+          fechaSeguimiento: fmt(hoy.add(const Duration(days: 2))),
+        );
+        expect(app.diasSinNovedad, equals(0));
+      });
     });
 
     test('plataforma extrae dominio friendly', () {

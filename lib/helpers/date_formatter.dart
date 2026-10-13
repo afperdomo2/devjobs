@@ -44,3 +44,16 @@ String formatDateShort(String rawDate) {
 }
 
 DateTime? parseDate(String raw) => _parseRawDate(raw);
+
+/// Pluralización de días: `1 día`, `0 días`, `15 días`.
+String formatDias(int dias) => dias == 1 ? '1 día' : '$dias días';
+
+/// Texto para días transcurridos desde la última novedad:
+/// `hoy`, `hace 1 día`, `hace 15 días`.
+String formatSinNovedad(int dias) =>
+    dias == 0 ? 'hoy' : 'hace ${formatDias(dias)}';
+
+/// Texto para duración de un proceso finalizado:
+/// `Mismo día`, `Duró 1 día`, `Duró 15 días`.
+String formatDuracion(int dias) =>
+    dias == 0 ? 'Mismo día' : 'Duró ${formatDias(dias)}';

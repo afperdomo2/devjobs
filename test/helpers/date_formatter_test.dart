@@ -51,4 +51,37 @@ void main() {
       expect(formatDateShort('---'), equals('---'));
     });
   });
+
+  group('formatDias', () {
+    test('pluraliza correctamente', () {
+      expect(formatDias(0), equals('0 días'));
+      expect(formatDias(1), equals('1 día'));
+      expect(formatDias(2), equals('2 días'));
+      expect(formatDias(15), equals('15 días'));
+    });
+  });
+
+  group('formatSinNovedad', () {
+    test('0 días retorna hoy', () {
+      expect(formatSinNovedad(0), equals('hoy'));
+    });
+
+    test('pluraliza correctamente', () {
+      expect(formatSinNovedad(1), equals('hace 1 día'));
+      expect(formatSinNovedad(2), equals('hace 2 días'));
+      expect(formatSinNovedad(15), equals('hace 15 días'));
+    });
+  });
+
+  group('formatDuracion', () {
+    test('0 días retorna Mismo día', () {
+      expect(formatDuracion(0), equals('Mismo día'));
+    });
+
+    test('pluraliza correctamente', () {
+      expect(formatDuracion(1), equals('Duró 1 día'));
+      expect(formatDuracion(2), equals('Duró 2 días'));
+      expect(formatDuracion(13), equals('Duró 13 días'));
+    });
+  });
 }
