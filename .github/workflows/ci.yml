@@ -12,7 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      # .env está en .gitignore (no se sube); el CI solo necesita que el
+      # asset declarado en pubspec exista para que flutter analyze pase.
+      - name: Preparar .env placeholder
+        run: cp .env.example .env
 
       - name: Configurar Flutter
         uses: subosito/flutter-action@v2
