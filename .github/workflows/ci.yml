@@ -3,13 +3,33 @@ name: CI
 on:
   push:
     branches: [main]
+    # Cambios solo de documentación/docs no disparan el CI (ahorro de minutos).
+    # .github/** queda fuera a propósito: cambios al workflow deben validarse.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'screenshots/**'
+      - '.gitignore'
+      - 'installer/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'screenshots/**'
+      - '.gitignore'
+      - 'installer/**'
+
+# Si hay varios pushes seguidos en la misma rama, solo se completa el último.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     name: Análisis y tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v5
