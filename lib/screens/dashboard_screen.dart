@@ -116,9 +116,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 8),
             _DistributionCard(
+              plataformas: topDistribution(apps, (a) => a.plataforma, 3),
+              empresas: topDistribution(apps, (a) => a.empresa, 3),
               modalidades: topDistribution(apps, (a) => a.modalidad, 3),
               ciudades: topDistribution(apps, (a) => a.ciudad, 3),
-              plataformas: topDistribution(apps, (a) => a.plataforma, 4),
             ),
           ],
         ],
@@ -486,14 +487,16 @@ class _ActivityItem extends StatelessWidget {
 }
 
 class _DistributionCard extends StatelessWidget {
+  final List<(String, int)> plataformas;
+  final List<(String, int)> empresas;
   final List<(String, int)> modalidades;
   final List<(String, int)> ciudades;
-  final List<(String, int)> plataformas;
 
   const _DistributionCard({
+    required this.plataformas,
+    required this.empresas,
     required this.modalidades,
     required this.ciudades,
-    required this.plataformas,
   });
 
   @override
@@ -511,6 +514,22 @@ class _DistributionCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _DistributionGroup(
+              field: 'plataforma',
+              label: 'Plataformas',
+              icon: Icons.language,
+              items: plataformas,
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+            const SizedBox(height: 16),
+            _DistributionGroup(
+              field: 'empresa',
+              label: 'Empresas',
+              icon: Icons.business,
+              items: empresas,
+              color: statusColor('aceptada', brightness),
+            ),
+            const SizedBox(height: 16),
+            _DistributionGroup(
               field: 'modalidad',
               label: 'Modalidades',
               icon: Icons.business_center,
@@ -524,14 +543,6 @@ class _DistributionCard extends StatelessWidget {
               icon: Icons.location_on_outlined,
               items: ciudades,
               color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            _DistributionGroup(
-              field: 'plataforma',
-              label: 'Plataformas',
-              icon: Icons.language,
-              items: plataformas,
-              color: Theme.of(context).colorScheme.secondary,
             ),
           ],
         ),

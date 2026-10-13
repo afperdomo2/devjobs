@@ -85,6 +85,8 @@ class DistributionDetailScreen extends StatelessWidget {
         return (a) => a.modalidad;
       case 'plataforma':
         return (a) => a.plataforma;
+      case 'empresa':
+        return (a) => a.empresa;
       default:
         return (a) => '';
     }

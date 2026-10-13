@@ -62,6 +62,8 @@ class AppState extends ChangeNotifier {
               return a.modalidad.trim().toLowerCase() == v;
             case 'plataforma':
               return a.plataforma.trim().toLowerCase() == v;
+            case 'empresa':
+              return a.empresa.trim().toLowerCase() == v;
             default:
               return false;
           }

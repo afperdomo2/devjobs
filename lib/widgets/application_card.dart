@@ -7,6 +7,7 @@ import '../helpers/salary_formatter.dart';
 import '../helpers/text_shortener.dart';
 import '../models/job_application.dart';
 import '../theme.dart';
+import 'meta_chip.dart';
 import 'status_chip.dart';
 
 class ApplicationCard extends StatefulWidget {
@@ -108,7 +109,7 @@ class _ApplicationCardState extends State<ApplicationCard>
                 final chips = <Widget>[];
                 void addChip(IconData icon, String label) {
                   if (label.trim().isEmpty) return;
-                  chips.add(_MetaChip(icon: icon, label: label));
+                  chips.add(MetaChip(icon: icon, label: label));
                 }
 
                 if (app.plataforma.trim().isNotEmpty) {
@@ -202,41 +203,5 @@ class _ApplicationCardState extends State<ApplicationCard>
     if (m.isNotEmpty) return m;
     if (c.isNotEmpty) return c;
     return '';
-  }
-}
-
-class _MetaChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _MetaChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: chipBorderColor(Theme.of(context).brightness),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: scheme.onSurfaceVariant),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
