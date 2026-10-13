@@ -51,6 +51,8 @@ La app requiere permiso de **Internet** para comunicarse con la API REST del App
 | Ejecutar tests | `flutter test` |
 | Obtener paquetes | `flutter pub get` |
 | Limpiar build | `flutter clean` |
+| Build Android (APK) | `flutter build apk --release` |
+| Build Windows | `flutter build windows --release` |
 
 ## 📱 Seleccionar dispositivo
 
@@ -77,30 +79,83 @@ flutter run -d ios           # iOS simulator
 
 ## 📦 Despliegue
 
+Todos los artefactos quedan dentro de `build/` (carpeta ignorada por git — se regenera con cada build).
+
 ### Android — APK / App Bundle
 
 ```bash
-flutter build apk --release  # Genera build/app/outputs/flutter-apk/app-release.apk
-flutter build appbundle      # Genera build/app/outputs/bundle/release/app-release.aab
+flutter build apk --release
+# Salida: build\app\outputs\flutter-apk\app-release.apk  (~50 MB)
+
+flutter build appbundle
+# Salida: build\app\outputs\bundle\release\app-release.aab
 ```
+
+Instalar directamente en un dispositivo/emulador conectado (sin pasar por el archivo):
+
+```bash
+flutter install --release                    # dispositivo único conectado
+flutter install --release -d <device_id>     # dispositivo específico (ver `flutter devices`)
+```
+
+### Windows
+
+La plataforma Windows debe estar habilitada (carpeta `windows/` en la raíz del proyecto). Si no existe:
+
+```bash
+flutter create --platforms=windows .
+```
+
+Build de release:
+
+```bash
+flutter build windows --release
+# Salida: build\windows\x64\runner\Release\devjobs.exe
+```
+
+La app abre en una **ventana de 420×880 centrada** (diseño mobile-first; es redimensionable) y su ícono se genera desde `assets/icon/icon.png` con `flutter_launcher_icons` (config `windows.generate` en `pubspec.yaml`; regenerar con `dart run flutter_launcher_icons`).
+
+> ⚠️ Para distribuir o mover la app hay que copiar **toda la carpeta** `build\windows\x64\runner\Release\` (el `.exe` + DLLs + carpeta `data\`), no solo el `devjobs.exe`. Para una PC sin Flutter, comprime esa carpeta y en la destino ejecuta `devjobs.exe`.
+
+Para probar en local sin compilar: `flutter run -d windows`.
+
+#### Instalador — Inno Setup (opcional)
+
+Para generar un `DevJobsSetup.exe` con acceso directo en Escritorio/Menú Inicio y desinstalador:
+
+1. Instala **Inno Setup 6+** (gratis): <https://jrsoftware.org/isinfo.php>
+2. Compila la app: `flutter build windows --release`
+3. Genera el instalador:
+
+```bash
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\devjobs.iss
+# Salida: installer\Output\DevJobsSetup.exe
+```
+
+El script es [`installer/devjobs.iss`](installer/devjobs.iss) (incluye nombre, versión, ícono y tareas de acceso directo). Sin Inno Setup instalado, la app se distribuye igual en portable (paso anterior).
 
 ### Web
 
 ```bash
 flutter build web
+# Salida: build\web\
 ```
 
 ### iOS (requiere macOS)
 
 ```bash
 flutter build ios
+# Salida: build\ios\iphoneos\Runner.app
 ```
 
 ### macOS
 
 ```bash
 flutter build macos
+# Salida: build\macos\Build\Products\Release\
 ```
+
+> 📝 El `.env` (con `API_URL`) se embebe en el bundle durante el build — asegúrate de tenerlo configurado antes de compilar cualquier plataforma.
 
 ## 🧪 Tests
 
@@ -206,25 +261,39 @@ La hoja debe ser **públicamente visible** para que el script funcione con "Ejec
 lib/
 ├── main.dart                           # MultiProvider + entrada de la app
 ├── config.dart                         # Carga API_URL desde .env
+├── theme.dart                          # Tokens de color (claro/oscuro) + helpers semánticos
 ├── models/
-│   └── job_application.dart            # Modelo (15 campos) + DashboardStats
+│   └── job_application.dart            # Modelo (15 campos) + DashboardStats + getters de tiempo
 ├── providers/
 │   └── app_state.dart                  # Estado global con caché (TTL 3 min)
 ├── services/
 │   └── sheets_api_service.dart         # HTTP client para el Apps Script
 ├── helpers/
-│   └── date_formatter.dart             # Formateo de fechas en español
+│   ├── date_formatter.dart             # Fechas en español + formatDias/formatDuracion/formatSinNovedad
+│   ├── domain_parser.dart              # Extrae la plataforma desde el link
+│   ├── salary_formatter.dart           # Extracción/formateo de salarios
+│   ├── text_shortener.dart             # Truncado y abreviatura de contratos
+│   ├── network_error.dart              # Detección de errores de red
+│   ├── distribution.dart               # Conteos para las cards de distribución
+│   └── company_stats.dart              # Métricas agregadas por empresa
 ├── screens/
 │   ├── main_screen.dart                # BottomNavigationBar (Inicio/Activas/Enviadas/Rechazadas)
-│   ├── dashboard_screen.dart           # Dashboard con tarjetas de métricas
+│   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
 │   ├── applications_list_screen.dart   # Lista por pestaña con pull-to-refresh
 │   ├── search_screen.dart              # Búsqueda global (todas las postulaciones)
-│   └── application_detail_screen.dart  # Detalle + comentarios + descripción
+│   ├── application_detail_screen.dart  # Detalle + comentarios + descripción
+│   ├── application_edit_screen.dart    # Edición de postulación
+│   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
+│   └── filtered_applications_screen.dart # Listado filtrado (+ resumen de empresa)
 └── widgets/
     ├── status_chip.dart                # Chip de estado (colores por estado)
-    └── application_card.dart           # Card de postulación reutilizable
+    ├── application_card.dart           # Card de postulación reutilizable
+    ├── meta_chip.dart                  # Chip de meta-datos compartido
+    ├── company_insights_card.dart      # Resumen de métricas al filtrar por empresa
+    └── offline_banner.dart             # Banner de modo sin conexión
 apps_script_code.example.gs                # Apps Script de ejemplo (con placeholder)
 apps_script_code.gs                         # Copia local con tu SHEET_ID real (gitignored)
-test/                                   # Tests unitarios y de widget
+test/                                   # Tests unitarios (helpers, modelos, theme)
+docs/testing.md                         # Convenciones de tests del proyecto
 ```
 

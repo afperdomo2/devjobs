@@ -52,3 +52,4 @@ app.*.map.json
 .env
 
 apps_script_code.gs
+installer/

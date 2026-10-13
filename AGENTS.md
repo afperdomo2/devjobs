@@ -12,6 +12,16 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 | Test | `flutter test` |
 | Get deps | `flutter pub get` |
 | Clean build | `flutter clean` |
+| Build Android (APK) | `flutter build apk --release` |
+| Build Windows | `flutter build windows --release` |
+
+## Build / Deploy
+
+- **Android APK** → `build/app/outputs/flutter-apk/app-release.apk`; instalar en dispositivo conectado con `flutter install --release`.
+- **Windows** → `build/windows/x64/runner/Release/devjobs.exe`; para distribuir copiar **toda la carpeta `Release\`** (exe + DLLs + `data\`). La plataforma se habilitó con `flutter create --platforms=windows .` (carpeta `windows/` ya existe). Ventana 420×880 centrada (`windows/runner/main.cpp`); ícono generado desde `assets/icon/icon.png` vía `flutter_launcher_icons` (config `windows.generate`).
+- **Instalador Windows (opcional)** → `installer/devjobs.iss` (Inno Setup 6): compilar con `ISCC.exe installer\devjobs.iss` → `installer/Output/DevJobsSetup.exe` (requiere `flutter build windows --release` previo).
+- Web → `build/web/`. Todos los artefactos quedan bajo `build/` (gitignored).
+- El `.env` (con `API_URL`) se embebe en el bundle: debe existir antes de compilar. Ver README → Despliegue.
 
 ## Config
 
