@@ -6,6 +6,7 @@ import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../widgets/application_card.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 
 class ApplicationsListScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class ApplicationsListScreen extends StatefulWidget {
 }
 
 class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
+  final ScrollController _scrollCtrl = ScrollController();
   int? _pulseRowIndex;
   int _pulseTrigger = 0;
 
@@ -29,10 +31,22 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() {
+    return context.read<AppState>().fetchApplications(forceRefresh: true);
+  }
+
   Future<void> _openDetail(JobApplication app) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ApplicationDetailScreen(application: app)),
+      MaterialPageRoute(
+        builder: (_) => ApplicationDetailScreen(application: app),
+      ),
     );
     if (!context.mounted) return;
     setState(() {
@@ -53,12 +67,18 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
       content = ErrorStateView(
         message: state.error!,
         isOffline: isNetworkError(state.error!),
-        onRetry: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+        onRetry: () =>
+            context.read<AppState>().fetchApplications(forceRefresh: true),
       );
     } else if (apps.isEmpty) {
-      content = ListView(children: const [_EmptyHint()]);
+      content = ListView(
+        controller: _scrollCtrl,
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [_EmptyHint()],
+      );
     } else {
       content = ListView.separated(
+        controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         itemCount: apps.length,
@@ -80,8 +100,12 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
     // when used inside IndexedStack. Only show here if not inside MainScreen's banner context:
     // keep minimal placeholder to ensure offline is visible even if used standalone.
     return RefreshIndicator(
-      onRefresh: () => context.read<AppState>().fetchApplications(forceRefresh: true),
-      child: content,
+      onRefresh: _refresh,
+      child: WheelRefreshIndicator(
+        controller: _scrollCtrl,
+        onRefresh: _refresh,
+        child: content,
+      ),
     );
   }
 }

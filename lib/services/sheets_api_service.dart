@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../helpers/api_response.dart';
 import '../models/job_application.dart';
 
 class SheetsApiService {
@@ -12,9 +13,9 @@ class SheetsApiService {
     : _client = client ?? http.Client();
 
   Map<String, String> get _jsonHeaders => {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      };
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
 
   Future<List<JobApplication>> fetchAll() async {
     final uri = Uri.parse('$_baseUrl?action=all');
@@ -23,7 +24,10 @@ class SheetsApiService {
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(response.body) as List<dynamic>;
       return jsonList
-          .map((json) => JobApplication.fromJson(Map<String, dynamic>.from(json as Map)))
+          .map(
+            (json) =>
+                JobApplication.fromJson(Map<String, dynamic>.from(json as Map)),
+          )
           .toList();
     }
     throw Exception('Failed to load applications: ${response.statusCode}');
@@ -40,46 +44,54 @@ class SheetsApiService {
     throw Exception('Failed to load dashboard: ${response.statusCode}');
   }
 
+  /// Envía un POST a la API de Apps Script. Apps Script ejecuta el script y
+  /// responde 302 hacia la URL "echo" de script.googleusercontent.com (el
+  /// resultado real vive ahí). Dart no sigue esa redirección para POST, así
+  /// que la seguimos manualmente con un GET (patrón diseñado por Google).
+  Future<http.Response> _postAction(Map<String, dynamic> payload) async {
+    final request = http.Request('POST', Uri.parse(_baseUrl))
+      ..headers.addAll(_jsonHeaders)
+      ..body = jsonEncode(payload)
+      ..followRedirects = false;
+
+    var response = await http.Response.fromStream(await _client.send(request));
+
+    if (response.statusCode == 302 || response.statusCode == 303) {
+      final location = response.headers['location'];
+      if (location != null) {
+        response = await _client.get(
+          Uri.parse(location),
+          headers: const {'Accept': 'application/json'},
+        );
+      }
+    }
+    return response;
+  }
+
   Future<void> updateRow(int rowIndex, Map<String, String> updates) async {
-    final uri = Uri.parse(_baseUrl);
-    final body = jsonEncode({
+    final response = await _postAction({
       'action': 'update',
       'rowIndex': rowIndex,
       'updates': updates,
     });
 
-    final request = http.Request('POST', uri)
-      ..headers.addAll(_jsonHeaders)
-      ..body = body
-      ..followRedirects = true;
-
-    final streamedResponse = await _client.send(request);
-    final response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to update: ${response.statusCode}\n${response.body}');
+    final error = postActionError('update', response.statusCode, response.body);
+    if (error != null) {
+      throw Exception(error);
     }
   }
 
   Future<int> create(JobApplication application) async {
-    final uri = Uri.parse(_baseUrl);
-    final body = jsonEncode({
+    final response = await _postAction({
       'action': 'create',
       'data': application.toJson(),
     });
 
-    final request = http.Request('POST', uri)
-      ..headers.addAll(_jsonHeaders)
-      ..body = body
-      ..followRedirects = true;
-
-    final streamedResponse = await _client.send(request);
-    final response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return json['rowIndex'] as int;
+    final error = postActionError('create', response.statusCode, response.body);
+    if (error != null) {
+      throw Exception(error);
     }
-    throw Exception('Failed to create: ${response.statusCode}');
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return json['rowIndex'] as int;
   }
 }

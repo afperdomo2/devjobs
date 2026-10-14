@@ -6,6 +6,7 @@ import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../widgets/application_card.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _controller = TextEditingController();
+  final _scrollCtrl = ScrollController();
   String _query = '';
 
   @override
@@ -28,6 +30,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -59,16 +62,21 @@ class _SearchScreenState extends State<SearchScreen> {
       body = ErrorStateView(
         message: state.error!,
         isOffline: isNetworkError(state.error!),
-        onRetry: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+        onRetry: () =>
+            context.read<AppState>().fetchApplications(forceRefresh: true),
       );
     } else if (results.isEmpty) {
       body = Center(
         child: Text(
-          _query.isEmpty ? 'Escribe para buscar' : 'Sin resultados para "$_query"',
+          _query.isEmpty
+              ? 'Escribe para buscar'
+              : 'Sin resultados para "$_query"',
         ),
       );
     } else {
       body = ListView.separated(
+        controller: _scrollCtrl,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         itemCount: results.length,
         separatorBuilder: (_, _) => const SizedBox(height: 8),
@@ -78,7 +86,9 @@ class _SearchScreenState extends State<SearchScreen> {
             application: app,
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ApplicationDetailScreen(application: app)),
+              MaterialPageRoute(
+                builder: (_) => ApplicationDetailScreen(application: app),
+              ),
             ),
           );
         },
@@ -113,7 +123,13 @@ class _SearchScreenState extends State<SearchScreen> {
               lastUpdated: state.cacheTimestamp,
               onRetry: () => state.fetchApplications(forceRefresh: true),
             ),
-          Expanded(child: body),
+          Expanded(
+            child: WheelRefreshIndicator(
+              controller: _scrollCtrl,
+              onRefresh: () => state.fetchApplications(forceRefresh: true),
+              child: body,
+            ),
+          ),
         ],
       ),
     );

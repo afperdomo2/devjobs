@@ -32,10 +32,16 @@ class ApplicationDetailScreen extends StatefulWidget {
 class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   @override
   Widget build(BuildContext context) {
-    final app = widget.application;
+    final state = context.watch<AppState>();
+    // Tras editar, AppState tiene la versión parchada; la instancia original
+    // que llegó por parámetro queda obsoleta, así que se resuelve por rowIndex.
+    final app = state.applications.firstWhere(
+      (a) => a.rowIndex == widget.application.rowIndex,
+      orElse: () => widget.application,
+    );
     final comentarios = _parseComments(app.comentarios);
-    final isOffline = context.watch<AppState>().offline;
-    final cacheTs = context.watch<AppState>().cacheTimestamp;
+    final isOffline = state.offline;
+    final cacheTs = state.cacheTimestamp;
 
     return Scaffold(
       appBar: AppBar(

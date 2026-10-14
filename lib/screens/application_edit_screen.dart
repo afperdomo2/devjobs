@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../helpers/network_error.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../widgets/offline_banner.dart';
@@ -123,7 +124,7 @@ class _ApplicationEditScreenState extends State<ApplicationEditScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar: $e')),
+          SnackBar(content: Text('Error al guardar: ${friendlyErrorMessage(e)}')),
         );
       }
     } finally {

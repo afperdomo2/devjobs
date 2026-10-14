@@ -8,6 +8,7 @@ import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/wheel_refresh.dart';
 import 'distribution_detail_screen.dart';
 import 'filtered_applications_screen.dart';
 
@@ -19,12 +20,24 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  final ScrollController _scrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AppState>().fetchApplications();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() {
+    return context.read<AppState>().fetchApplications(forceRefresh: true);
   }
 
   @override
@@ -37,19 +50,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Full-screen error when no data and fetch failed.
     if (state.error != null && apps.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () => context.read<AppState>().fetchApplications(forceRefresh: true),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.6,
-              child: ErrorStateView(
-                message: state.error!,
-                isOffline: isNetworkError(state.error!),
-                onRetry: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+        onRefresh: _refresh,
+        child: WheelRefreshIndicator(
+          controller: _scrollCtrl,
+          onRefresh: _refresh,
+          child: ListView(
+            controller: _scrollCtrl,
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.6,
+                child: ErrorStateView(
+                  message: state.error!,
+                  isOffline: isNetworkError(state.error!),
+                  onRetry: () => context.read<AppState>().fetchApplications(
+                    forceRefresh: true,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
@@ -59,70 +79,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => context.read<AppState>().fetchApplications(forceRefresh: true),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        children: [
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 1.9,
-            children: [
-              _StatCard(
-                label: 'Total postulaciones',
-                value: stats.total.toString(),
-                color: Theme.of(context).colorScheme.primary,
-                icon: Icons.work,
+      onRefresh: _refresh,
+      child: WheelRefreshIndicator(
+        controller: _scrollCtrl,
+        onRefresh: _refresh,
+        child: ListView(
+          controller: _scrollCtrl,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          children: [
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1.9,
+              children: [
+                _StatCard(
+                  label: 'Total postulaciones',
+                  value: stats.total.toString(),
+                  color: Theme.of(context).colorScheme.primary,
+                  icon: Icons.work,
+                ),
+                _StatCard(
+                  label: 'Activas',
+                  value: stats.activas.toString(),
+                  color: Theme.of(context).colorScheme.secondary,
+                  icon: Icons.notifications_active,
+                  onTap: () => state.setTab(1),
+                ),
+                _StatCard(
+                  label: 'Entrevistas',
+                  value: stats.entrevistas.toString(),
+                  color: statusColor('entrevista', brightness),
+                  icon: Icons.people,
+                ),
+                _StatCard(
+                  label: 'Rechazadas',
+                  value: stats.rechazadas.toString(),
+                  color: Theme.of(context).colorScheme.error,
+                  icon: Icons.cancel,
+                  onTap: () => state.setTab(3),
+                ),
+              ],
+            ),
+            if (stats.total > 0) ...[
+              const SizedBox(height: 8),
+              _PipelineCard(segments: _pipelineSegments(apps)),
+              const SizedBox(height: 8),
+              _ConversionCard(
+                entrevistas: stats.entrevistas,
+                rechazadas: stats.rechazadas,
+                total: stats.total,
               ),
-              _StatCard(
-                label: 'Activas',
-                value: stats.activas.toString(),
-                color: Theme.of(context).colorScheme.secondary,
-                icon: Icons.notifications_active,
-                onTap: () => state.setTab(1),
+              const SizedBox(height: 8),
+              _RecentActivityCard(
+                ultimos7: _countSince(apps, 7),
+                ultimos30: _countSince(apps, 30),
               ),
-              _StatCard(
-                label: 'Entrevistas',
-                value: stats.entrevistas.toString(),
-                color: statusColor('entrevista', brightness),
-                icon: Icons.people,
-              ),
-              _StatCard(
-                label: 'Rechazadas',
-                value: stats.rechazadas.toString(),
-                color: Theme.of(context).colorScheme.error,
-                icon: Icons.cancel,
-                onTap: () => state.setTab(3),
+              const SizedBox(height: 8),
+              _DistributionCard(
+                plataformas: topDistribution(apps, (a) => a.plataforma, 3),
+                empresas: topDistribution(apps, (a) => a.empresa, 3),
+                modalidades: topDistribution(apps, (a) => a.modalidad, 3),
+                ciudades: topDistribution(apps, (a) => a.ciudad, 3),
               ),
             ],
-          ),
-          if (stats.total > 0) ...[
-            const SizedBox(height: 8),
-            _PipelineCard(segments: _pipelineSegments(apps)),
-            const SizedBox(height: 8),
-            _ConversionCard(
-              entrevistas: stats.entrevistas,
-              rechazadas: stats.rechazadas,
-              total: stats.total,
-            ),
-            const SizedBox(height: 8),
-            _RecentActivityCard(
-              ultimos7: _countSince(apps, 7),
-              ultimos30: _countSince(apps, 30),
-            ),
-            const SizedBox(height: 8),
-            _DistributionCard(
-              plataformas: topDistribution(apps, (a) => a.plataforma, 3),
-              empresas: topDistribution(apps, (a) => a.empresa, 3),
-              modalidades: topDistribution(apps, (a) => a.modalidad, 3),
-              ciudades: topDistribution(apps, (a) => a.ciudad, 3),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -158,7 +183,11 @@ class _StatCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   value,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
               ],
             ),
@@ -166,12 +195,17 @@ class _StatCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
                 if (onTap != null)
-                  Icon(Icons.chevron_right,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
               ],
             ),
           ],
@@ -610,8 +644,9 @@ class _DistributionGroup extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 13),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 13,
+                ),
               ),
             ),
             InkWell(
@@ -635,9 +670,12 @@ class _DistributionGroup extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         if (items.isEmpty)
-          Text('—',
-              style: TextStyle(
-                  color: statusColor('', Theme.of(context).brightness)))
+          Text(
+            '—',
+            style: TextStyle(
+              color: statusColor('', Theme.of(context).brightness),
+            ),
+          )
         else
           for (final (name, count) in items)
             InkWell(

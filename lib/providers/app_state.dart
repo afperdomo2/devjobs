@@ -168,6 +168,10 @@ class AppState extends ChangeNotifier {
       }
     }
 
+    // Invalidar el TTL para que el próximo fetch resincronice con el Sheet
+    // (evita desfases si el servidor normalizó algún valor).
+    _lastFetched = null;
+
     notifyListeners();
   }
 
