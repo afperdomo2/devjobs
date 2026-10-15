@@ -24,7 +24,7 @@ var COLUMNS = [
   'fechaPostulacion', 'empresa', 'vacante', 'tipoContrato',
   'modalidad', 'ciudad', 'salarioOfrecido', 'estado',
   'link', 'descripcion', 'fechaSeguimiento', 'contacto', 'comentarios',
-  'entrevistaRealizada'
+  'entrevistaRealizada', 'porGestionar'
 ];
 
 // -------------------------------------------------
@@ -189,7 +189,8 @@ function normalizeColumn(header) {
     'fecha de seguimiento': 'fechaSeguimiento',
     'contacto': 'contacto',
     'comentarios': 'comentarios',
-    '¿entrevista?': 'entrevistaRealizada'
+    '¿entrevista?': 'entrevistaRealizada',
+    'por gestionar': 'porGestionar'
   };
   return map[h] || null;
 }

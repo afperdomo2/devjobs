@@ -1,12 +1,16 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../helpers/date_formatter.dart';
+import '../helpers/network_error.dart';
 import '../helpers/salary_formatter.dart';
 import '../helpers/text_shortener.dart';
 import '../models/job_application.dart';
+import '../providers/app_state.dart';
 import '../theme.dart';
+import 'gestion_tag.dart';
 import 'meta_chip.dart';
 import 'status_chip.dart';
 
@@ -53,6 +57,30 @@ class _ApplicationCardState extends State<ApplicationCard>
     super.dispose();
   }
 
+  Future<void> _toggleGestion(BuildContext context) async {
+    final state = context.read<AppState>();
+    if (state.offline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sin conexión — no se puede marcar en modo solo lectura.'),
+        ),
+      );
+      return;
+    }
+    try {
+      await state.updateApplication(
+        widget.application.rowIndex,
+        {'porGestionar': (!widget.application.porGestionar).toString()},
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${friendlyErrorMessage(e)}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = widget.application;
@@ -67,7 +95,20 @@ class _ApplicationCardState extends State<ApplicationCard>
           Theme.of(context).colorScheme.primary,
           math.sin(t * math.pi) * 0.15,
         );
-        return Card(color: color, child: child);
+        final gestion = widget.application.porGestionar;
+        return Card(
+          color: color,
+          shape: gestion
+              ? RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: gestionColor(Theme.of(context).brightness),
+                    width: 1.5,
+                  ),
+                )
+              : null,
+          child: child,
+        );
       },
       child: InkWell(
         onTap: widget.onTap,
@@ -105,8 +146,11 @@ class _ApplicationCardState extends State<ApplicationCard>
                     ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 8),
-              Builder(builder: (_) {
+              Builder(builder: (context) {
                 final chips = <Widget>[];
+                if (app.porGestionar) {
+                  chips.add(GestionTag(onTap: () => _toggleGestion(context)));
+                }
                 void addChip(IconData icon, String label) {
                   if (label.trim().isEmpty) return;
                   chips.add(MetaChip(icon: icon, label: label));

@@ -3,10 +3,12 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
 import '../helpers/date_formatter.dart';
+import '../helpers/network_error.dart';
 import '../helpers/salary_formatter.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
+import '../widgets/gestion_tag.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/status_chip.dart';
 import 'application_edit_screen.dart';
@@ -30,6 +32,21 @@ class ApplicationDetailScreen extends StatefulWidget {
 }
 
 class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
+  Future<void> _toggleGestion(JobApplication app) async {
+    try {
+      await context.read<AppState>().updateApplication(
+        app.rowIndex,
+        {'porGestionar': (!app.porGestionar).toString()},
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${friendlyErrorMessage(e)}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
@@ -55,6 +72,20 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 child: Icon(Icons.wifi_off, size: 20),
               ),
             ),
+          IconButton(
+            icon: Icon(
+              app.porGestionar
+                  ? Icons.label_important
+                  : Icons.label_important_outline,
+              color: app.porGestionar
+                  ? gestionColor(Theme.of(context).brightness)
+                  : null,
+            ),
+            tooltip: isOffline
+                ? 'Sin conexión — edición deshabilitada'
+                : (app.porGestionar ? 'Quitar "Por gestionar"' : 'Marcar "Por gestionar"'),
+            onPressed: isOffline ? null : () => _toggleGestion(app),
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             tooltip: isOffline ? 'Sin conexión — edición deshabilitada' : 'Editar postulación',
@@ -84,6 +115,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 StatusChip(status: app.estado),
+                if (app.porGestionar) ...[
+                  const SizedBox(height: 8),
+                  Row(children: [GestionTag(onTap: () => _toggleGestion(app))]),
+                ],
                 const SizedBox(height: 8),
                 Text(
                   app.vacante,

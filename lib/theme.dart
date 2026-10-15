@@ -20,6 +20,7 @@ abstract final class AppColors {
   static const onDestructive = Color(0xFFFFFFFF);
   static const warning = Color(0xFFF59E0B);
   static const warningDark = Color(0xFFB45309);
+  static const gestion = Color(0xFFC026D3);
   static const navDivider = Color(0xFFCBD5E1);
   static const chipBorder = Color(0xFFD8E2EE);
 }
@@ -42,6 +43,7 @@ abstract final class AppColorsDark {
   static const destructive = Color(0xFFF87171);
   static const onDestructive = Color(0xFF450A0A);
   static const warning = Color(0xFFFBBF24);
+  static const gestion = Color(0xFFE879F9);
   static const navDivider = Color(0xFF475569);
   static const chipBorder = Color(0xFF334155);
 }
@@ -133,6 +135,11 @@ Color pipelineColor(String label, Brightness brightness) {
 /// Readable warning text color for the given brightness.
 Color warningTextColor(Brightness brightness) =>
     brightness == Brightness.dark ? AppColorsDark.warning : AppColors.warningDark;
+
+/// Accent color for the "Por gestionar" flag (tag + border + icon).
+/// Deliberadamente distinto del ámbar de "estancado" para no confundir señales.
+Color gestionColor(Brightness brightness) =>
+    brightness == Brightness.dark ? AppColorsDark.gestion : AppColors.gestion;
 
 /// Visible separator for the bottom navigation bar.
 Color navDividerColor(Brightness brightness) =>

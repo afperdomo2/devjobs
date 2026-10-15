@@ -24,6 +24,7 @@ void main() {
       'contacto': 'Ana',
       'comentarios': 'Nota',
       'entrevistaRealizada': 'true',
+      'porGestionar': 'true',
     };
 
     test('fromJson mapea campos correctamente', () {
@@ -43,6 +44,7 @@ void main() {
       expect(app.contacto, equals('Ana'));
       expect(app.comentarios, equals('Nota'));
       expect(app.entrevistaRealizada, isTrue);
+      expect(app.porGestionar, isTrue);
     });
 
     test('entrevistaRealizada insensible a mayúsculas y faltante', () {
@@ -58,12 +60,21 @@ void main() {
       expect(JobApplication.fromJson({}).entrevistaRealizada, isFalse);
     });
 
+    test('porGestionar insensible a mayúsculas y faltante', () {
+      expect(JobApplication.fromJson({'porGestionar': 'true'}).porGestionar, isTrue);
+      expect(JobApplication.fromJson({'porGestionar': 'TRUE'}).porGestionar, isTrue);
+      expect(JobApplication.fromJson({'porGestionar': 'false'}).porGestionar, isFalse);
+      expect(JobApplication.fromJson({'porGestionar': 'FALSE'}).porGestionar, isFalse);
+      expect(JobApplication.fromJson({}).porGestionar, isFalse);
+    });
+
     test('toJson round-trip conserva campos relevantes', () {
       final app = JobApplication.fromJson(json);
       final out = app.toJson();
       expect(out['empresa'], equals('Acme'));
       expect(out['estado'], equals('En revisión'));
       expect(out['entrevistaRealizada'], equals(true));
+      expect(out['porGestionar'], equals(true));
       expect(out['_rowIndex'], equals(5));
     });
 
@@ -74,6 +85,12 @@ void main() {
       expect(copy.vacante, equals('Nuevo'));
       expect(copy.estado, equals('Enviada'));
       expect(copy.rowIndex, equals(1));
+    });
+
+    test('copyWith toca porGestionar solo cuando se indica', () {
+      const base = JobApplication(rowIndex: 1, porGestionar: true);
+      expect(base.copyWith(vacante: 'X').porGestionar, isTrue);
+      expect(base.copyWith(porGestionar: false).porGestionar, isFalse);
     });
   });
 
@@ -233,17 +250,26 @@ void main() {
         'total': 10,
         'activas': 6,
         'entrevistas': 2,
-        'rechazadas': 3,
+        'finalizadas': 3,
+        'porGestionar': 4,
       });
       expect(s.total, equals(10));
       expect(s.activas, equals(6));
       expect(s.entrevistas, equals(2));
-      expect(s.rechazadas, equals(3));
+      expect(s.finalizadas, equals(3));
+      expect(s.porGestionar, equals(4));
     });
 
     test('valores por defecto 0 si ausentes', () {
-      const s = DashboardStats(total: 0, activas: 0, entrevistas: 0, rechazadas: 0);
+      const s = DashboardStats(
+        total: 0,
+        activas: 0,
+        entrevistas: 0,
+        finalizadas: 0,
+        porGestionar: 0,
+      );
       expect(s.total, equals(0));
+      expect(s.porGestionar, equals(0));
     });
   });
 }

@@ -37,14 +37,15 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 - **State management:** `Provider` (`ChangeNotifier`). Single `AppState` in `lib/providers/app_state.dart`.
   - Cache with 3-min TTL — invalidated on refresh or status change.
   - Dashboard stats computed locally from cached list.
-  - Dashboard cards: Total postulaciones (no click), Activas (clickable → tab 1), Entrevistas (checkbox-based count), Rechazadas (clickable → tab 3). Clickable cards show `chevron_right` indicator.
-  - Tab filters: Activas = estado NOT IN (Enviada, Rechazada, Retirada); Enviadas = estado = Enviada; Rechazadas = Rechazada + Retirada.
+  - Dashboard cards: Total postulaciones (no click), Activas (clickable → tab 1), Por gestionar (clickable → lista filtrada `PendingApplicationsScreen`), Finalizadas (clickable → tab 3). Clickable cards show `chevron_right` indicator.
+  - "Por gestionar" flag (columna O del Sheet, checkbox): marca manual de vacantes con algo pendiente (la razón vive en `comentarios`). No se auto-limpia. Se alterna desde el AppBar del detalle o tocando el `GestionTag` en la card. Las marcadas se ordenan primero en cualquier listado (`_sortByDate`).
+  - Tab filters: Activas = estado NOT IN (Enviada, Rechazada, Retirada, Aceptada); Enviadas = estado = Enviada; Finalizadas = Rechazada + Retirada + Aceptada.
   - `diasProceso` computed getter on model: difference in days between fechaPostulacion and fechaSeguimiento (null when no seguimiento).
   - Detail screen shows "Tiempo del proceso" below "F. seguimiento" (only when available).
-- **Models:** `lib/models/job_application.dart` — `JobApplication` (15 fields: rowIndex, empresa, vacante, tipoContrato, modalidad, ciudad, salarioOfrecido, estado, link, descripcion, fechaPostulacion, fechaSeguimiento, contacto, comentarios, entrevistaRealizada) + `DashboardStats` (total, activas, entrevistas, rechazadas).
+- **Models:** `lib/models/job_application.dart` — `JobApplication` (16 fields: rowIndex, empresa, vacante, tipoContrato, modalidad, ciudad, salarioOfrecido, estado, link, descripcion, fechaPostulacion, fechaSeguimiento, contacto, comentarios, entrevistaRealizada, porGestionar) + `DashboardStats` (total, activas, entrevistas, finalizadas, porGestionar).
 - **Service:** `lib/services/sheets_api_service.dart` — HTTP client using `package:http`.
-- **Screens:** `MainScreen` with `BottomNavigationBar` (4 tabs: Inicio/Activas/Enviadas/Rechazadas). Detail via `Navigator.push`.
-- **Widgets:** `lib/widgets/status_chip.dart` — colored status badge. `lib/widgets/application_card.dart` — reusable application card.
+- **Screens:** `MainScreen` with `BottomNavigationBar` (4 tabs: Inicio/Activas/Enviadas/Finalizadas). Detail via `Navigator.push`.
+- **Widgets:** `lib/widgets/status_chip.dart` — colored status badge. `lib/widgets/application_card.dart` — reusable application card. `lib/widgets/gestion_tag.dart` — "Por gestionar" tag (color `gestionColor`, fucsia; distinto del ámbar de "estancado").
 - **Helpers:** `lib/helpers/date_formatter.dart` — Spanish date formatting via `package:intl`. `lib/helpers/domain_parser.dart` — platform extraction; `lib/helpers/salary_formatter.dart` — salary extraction/formatting; `lib/helpers/text_shortener.dart` — truncation and contract abbreviation; `lib/helpers/network_error.dart` — network detection.
 
 ## Testing

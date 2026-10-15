@@ -11,6 +11,7 @@ import '../widgets/offline_banner.dart';
 import '../widgets/wheel_refresh.dart';
 import 'distribution_detail_screen.dart';
 import 'filtered_applications_screen.dart';
+import 'pending_applications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -110,16 +111,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onTap: () => state.setTab(1),
                 ),
                 _StatCard(
-                  label: 'Entrevistas',
-                  value: stats.entrevistas.toString(),
-                  color: statusColor('entrevista', brightness),
-                  icon: Icons.people,
+                  label: 'Por gestionar',
+                  value: stats.porGestionar.toString(),
+                  color: gestionColor(brightness),
+                  icon: Icons.label_important,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PendingApplicationsScreen(),
+                    ),
+                  ),
                 ),
                 _StatCard(
-                  label: 'Rechazadas',
-                  value: stats.rechazadas.toString(),
+                  label: 'Finalizadas',
+                  value: stats.finalizadas.toString(),
                   color: Theme.of(context).colorScheme.error,
-                  icon: Icons.cancel,
+                  icon: Icons.check_circle,
                   onTap: () => state.setTab(3),
                 ),
               ],
@@ -130,7 +137,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 8),
               _ConversionCard(
                 entrevistas: stats.entrevistas,
-                rechazadas: stats.rechazadas,
+                finalizadas: stats.finalizadas,
                 total: stats.total,
               ),
               const SizedBox(height: 8),
@@ -347,12 +354,12 @@ class _PipelineCard extends StatelessWidget {
 
 class _ConversionCard extends StatelessWidget {
   final int entrevistas;
-  final int rechazadas;
+  final int finalizadas;
   final int total;
 
   const _ConversionCard({
     required this.entrevistas,
-    required this.rechazadas,
+    required this.finalizadas,
     required this.total,
   });
 
@@ -377,8 +384,8 @@ class _ConversionCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _ConversionBar(
-              label: 'Rechazadas',
-              part: rechazadas,
+              label: 'Finalizadas',
+              part: finalizadas,
               total: total,
               color: Theme.of(context).colorScheme.error,
             ),

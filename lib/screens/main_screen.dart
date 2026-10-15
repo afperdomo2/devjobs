@@ -79,9 +79,9 @@ class MainScreen extends StatelessWidget {
                   label: 'Enviadas',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.cancel_outlined),
-                  selectedIcon: Icon(Icons.cancel),
-                  label: 'Rechazadas',
+                  icon: Icon(Icons.check_circle_outline),
+                  selectedIcon: Icon(Icons.check_circle),
+                  label: 'Finalizadas',
                 ),
               ],
             ),
@@ -91,5 +91,5 @@ class MainScreen extends StatelessWidget {
     );
   }
 
-  static const _titles = ['DevJobs', 'Activas', 'Enviadas', 'Rechazadas'];
+  static const _titles = ['DevJobs', 'Activas', 'Enviadas', 'Finalizadas'];
 }

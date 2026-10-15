@@ -26,6 +26,7 @@ class JobApplication {
   final String contacto;
   final String comentarios;
   final bool entrevistaRealizada;
+  final bool porGestionar;
 
   const JobApplication({
     required this.rowIndex,
@@ -43,6 +44,7 @@ class JobApplication {
     this.contacto = '',
     this.comentarios = '',
     this.entrevistaRealizada = false,
+    this.porGestionar = false,
   });
 
   /// true si el proceso ya terminó (Aceptada, Rechazada o Retirada).
@@ -94,6 +96,7 @@ class JobApplication {
       contacto: json['contacto'] as String? ?? '',
       comentarios: json['comentarios'] as String? ?? '',
       entrevistaRealizada: json['entrevistaRealizada']?.toString().toLowerCase() == 'true',
+      porGestionar: json['porGestionar']?.toString().toLowerCase() == 'true',
     );
   }
 
@@ -114,6 +117,7 @@ class JobApplication {
       'contacto': contacto,
       'comentarios': comentarios,
       'entrevistaRealizada': entrevistaRealizada,
+      'porGestionar': porGestionar,
     };
   }
 
@@ -133,6 +137,7 @@ class JobApplication {
     String? contacto,
     String? comentarios,
     bool? entrevistaRealizada,
+    bool? porGestionar,
   }) {
     return JobApplication(
       rowIndex: rowIndex ?? this.rowIndex,
@@ -150,6 +155,7 @@ class JobApplication {
       contacto: contacto ?? this.contacto,
       comentarios: comentarios ?? this.comentarios,
       entrevistaRealizada: entrevistaRealizada ?? this.entrevistaRealizada,
+      porGestionar: porGestionar ?? this.porGestionar,
     );
   }
 }
@@ -158,13 +164,15 @@ class DashboardStats {
   final int total;
   final int activas;
   final int entrevistas;
-  final int rechazadas;
+  final int finalizadas;
+  final int porGestionar;
 
   const DashboardStats({
     required this.total,
     required this.activas,
     required this.entrevistas,
-    required this.rechazadas,
+    required this.finalizadas,
+    required this.porGestionar,
   });
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
@@ -172,7 +180,8 @@ class DashboardStats {
       total: (json['total'] as num?)?.toInt() ?? 0,
       activas: (json['activas'] as num?)?.toInt() ?? 0,
       entrevistas: (json['entrevistas'] as num?)?.toInt() ?? 0,
-      rechazadas: (json['rechazadas'] as num?)?.toInt() ?? 0,
+      finalizadas: (json['finalizadas'] as num?)?.toInt() ?? 0,
+      porGestionar: (json['porGestionar'] as num?)?.toInt() ?? 0,
     );
   }
 }

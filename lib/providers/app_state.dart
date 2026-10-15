@@ -40,14 +40,28 @@ class AppState extends ChangeNotifier {
   DashboardStats get dashboardStats {
     final apps = _cached;
     if (apps == null) {
-      return const DashboardStats(total: 0, activas: 0, entrevistas: 0, rechazadas: 0);
+      return const DashboardStats(
+        total: 0,
+        activas: 0,
+        entrevistas: 0,
+        finalizadas: 0,
+        porGestionar: 0,
+      );
     }
     final estados = apps.map((a) => (a.estado).trim().toLowerCase()).toList();
     return DashboardStats(
       total: apps.length,
-      activas: estados.where((e) => e != 'enviada' && e != 'rechazada' && e != 'retirada').length,
+      activas: estados
+          .where((e) =>
+              e != 'enviada' &&
+              e != 'rechazada' &&
+              e != 'retirada' &&
+              e != 'aceptada')
+          .length,
       entrevistas: apps.where((a) => a.entrevistaRealizada).length,
-      rechazadas: estados.where((e) => e == 'rechazada' || e == 'retirada').length,
+      finalizadas:
+          estados.where((e) => e == 'rechazada' || e == 'retirada' || e == 'aceptada').length,
+      porGestionar: apps.where((a) => a.porGestionar).length,
     );
   }
 
@@ -85,13 +99,18 @@ class AppState extends ChangeNotifier {
         apps = apps
             .where((a) {
               final e = a.estado.trim().toLowerCase();
-              return e != 'enviada' && e != 'rechazada' && e != 'retirada';
+              return e != 'enviada' &&
+                  e != 'rechazada' &&
+                  e != 'retirada' &&
+                  e != 'aceptada';
             })
             .toList();
       case 'enviadas':
         apps = apps
             .where((a) => a.estado.trim().toLowerCase() == 'enviada')
             .toList();
+      case 'porGestionar':
+        apps = apps.where((a) => a.porGestionar).toList();
     }
 
     apps.sort(_sortByDate);
@@ -99,6 +118,9 @@ class AppState extends ChangeNotifier {
   }
 
   int _sortByDate(JobApplication a, JobApplication b) {
+    // Las marcadas "Por gestionar" suben al frente para no perderlas de vista.
+    if (a.porGestionar != b.porGestionar) return a.porGestionar ? -1 : 1;
+
     final aHasSeg = a.fechaSeguimiento.isNotEmpty;
     final bHasSeg = b.fechaSeguimiento.isNotEmpty;
 
@@ -115,7 +137,7 @@ class AppState extends ChangeNotifier {
 
   bool _isTerminal(String estado) {
     final e = estado.trim().toLowerCase();
-    return e == 'rechazada' || e == 'retirada';
+    return e == 'rechazada' || e == 'retirada' || e == 'aceptada';
   }
 
   int _compareDateStrings(String a, String b) {
@@ -159,6 +181,9 @@ class AppState extends ChangeNotifier {
           comentarios: updates['comentarios'],
           entrevistaRealizada: updates.containsKey('entrevistaRealizada')
               ? updates['entrevistaRealizada'] == 'true'
+              : null,
+          porGestionar: updates.containsKey('porGestionar')
+              ? updates['porGestionar'] == 'true'
               : null,
         );
         // Persist updated list offline

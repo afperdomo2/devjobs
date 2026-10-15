@@ -1,13 +1,13 @@
 # 💼 DevJobs
 
-Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a Google Sheets vía Apps Script como backend, permite registrar, filtrar y dar seguimiento a ofertas de empleo con dashboard de métricas interactivas, estados personalizados, indicador de entrevista realizada (checkbox), tiempo del proceso y búsqueda global.
+Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a Google Sheets vía Apps Script como backend, permite registrar, filtrar y dar seguimiento a ofertas de empleo con dashboard de métricas interactivas, estados personalizados, indicadores por checkbox (entrevista realizada y **por gestionar**), tiempo del proceso y búsqueda global.
 
 ## 📸 Capturas
 
 | | | |
 |---|---|---|
 | ![Inicio](screenshots/home.jpg) | ![Activas](screenshots/activas.jpg) | ![Enviadas](screenshots/enviadas.jpg) |
-| ![Rechazadas](screenshots/rechazadas.jpg) | ![Detalles](screenshots/detalles.jpg) | |
+| ![Finalizadas](screenshots/rechazadas.jpg) | ![Detalles](screenshots/detalles.jpg) | |
 
 ## 🛠️ Requisitos
 
@@ -181,8 +181,8 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, activas, entrevistas (vía checkbox), rechazadas. Cards clickeables (Activas → tab Activas, Rechazadas → tab Rechazadas) con indicador visual `›` |
-| **Postulaciones** | Detalle de cada postulación (14 columnas) |
+| **Dashboard** | Resumen con totales: postulaciones, activas, **por gestionar** y finalizadas. Cards clickeables (Activas → tab Activas, Por gestionar → listado filtrado, Finalizadas → tab Finalizadas) con indicador visual `›` |
+| **Postulaciones** | Detalle de cada postulación (15 columnas) |
 
 ### Columnas de Postulaciones
 
@@ -202,6 +202,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | L | Contacto | Nombre del reclutador o contacto |
 | M | Comentarios | Notas internas separadas por `- ` (guion + espacio) |
 | N | ¿Entrevista? | Checkbox: indica si se realizó entrevista (✓ = sí) |
+| O | Por gestionar | Checkbox: marca manual de vacantes con algo pendiente (prueba, ejercicio, documento). La razón se anota en `Comentarios`. No se auto-limpia; las marcadas se ordenan primero en cualquier listado |
 
 ### Apps Script — API REST
 
@@ -263,7 +264,7 @@ lib/
 ├── config.dart                         # Carga API_URL desde .env
 ├── theme.dart                          # Tokens de color (claro/oscuro) + helpers semánticos
 ├── models/
-│   └── job_application.dart            # Modelo (15 campos) + DashboardStats + getters de tiempo
+│   └── job_application.dart            # Modelo (16 campos) + DashboardStats + getters de tiempo
 ├── providers/
 │   └── app_state.dart                  # Estado global con caché (TTL 3 min)
 ├── services/
@@ -277,17 +278,19 @@ lib/
 │   ├── distribution.dart               # Conteos para las cards de distribución
 │   └── company_stats.dart              # Métricas agregadas por empresa
 ├── screens/
-│   ├── main_screen.dart                # BottomNavigationBar (Inicio/Activas/Enviadas/Rechazadas)
+│   ├── main_screen.dart                # BottomNavigationBar (Inicio/Activas/Enviadas/Finalizadas)
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
 │   ├── applications_list_screen.dart   # Lista por pestaña con pull-to-refresh
+│   ├── pending_applications_screen.dart # Listado filtrado "Por gestionar"
 │   ├── search_screen.dart              # Búsqueda global (todas las postulaciones)
-│   ├── application_detail_screen.dart  # Detalle + comentarios + descripción
+│   ├── application_detail_screen.dart  # Detalle + comentarios + descripción + toggle "Por gestionar"
 │   ├── application_edit_screen.dart    # Edición de postulación
 │   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
 │   └── filtered_applications_screen.dart # Listado filtrado (+ resumen de empresa)
 └── widgets/
     ├── status_chip.dart                # Chip de estado (colores por estado)
-    ├── application_card.dart           # Card de postulación reutilizable
+    ├── application_card.dart           # Card de postulación reutilizable (borde + tag "Por gestionar")
+    ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     ├── company_insights_card.dart      # Resumen de métricas al filtrar por empresa
     └── offline_banner.dart             # Banner de modo sin conexión
