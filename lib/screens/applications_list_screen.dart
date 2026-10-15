@@ -6,6 +6,7 @@ import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../widgets/application_card.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/scroll_to_top_button.dart';
 import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 
@@ -99,13 +100,19 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
     // MainScreen already shows a global banner, so avoid duplicating there
     // when used inside IndexedStack. Only show here if not inside MainScreen's banner context:
     // keep minimal placeholder to ensure offline is visible even if used standalone.
-    return RefreshIndicator(
-      onRefresh: _refresh,
-      child: WheelRefreshIndicator(
-        controller: _scrollCtrl,
-        onRefresh: _refresh,
-        child: content,
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        RefreshIndicator(
+          onRefresh: _refresh,
+          child: WheelRefreshIndicator(
+            controller: _scrollCtrl,
+            onRefresh: _refresh,
+            child: content,
+          ),
+        ),
+        ScrollToTopButton(controller: _scrollCtrl),
+      ],
     );
   }
 }

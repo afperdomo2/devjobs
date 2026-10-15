@@ -7,6 +7,7 @@ import '../providers/app_state.dart';
 import '../widgets/application_card.dart';
 import '../widgets/company_insights_card.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/scroll_to_top_button.dart';
 import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 
@@ -60,35 +61,41 @@ class _FilteredApplicationsScreenState
             )
           : apps.isEmpty
           ? const Center(child: Text('No se encontraron postulaciones'))
-          : WheelRefreshIndicator(
-              controller: _scrollCtrl,
-              onRefresh: _refresh,
-              child: Column(
-                children: [
-                  // Resumen de métricas solo al filtrar por empresa.
-                  if (widget.field == 'empresa')
-                    CompanyInsightsCard(apps: apps),
-                  Expanded(
-                    child: ListView.separated(
-                      controller: _scrollCtrl,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+          : Stack(
+              fit: StackFit.expand,
+              children: [
+                WheelRefreshIndicator(
+                  controller: _scrollCtrl,
+                  onRefresh: _refresh,
+                  child: Column(
+                    children: [
+                      // Resumen de métricas solo al filtrar por empresa.
+                      if (widget.field == 'empresa')
+                        CompanyInsightsCard(apps: apps),
+                      Expanded(
+                        child: ListView.separated(
+                          controller: _scrollCtrl,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          itemCount: apps.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final app = apps[index];
+                            return ApplicationCard(
+                              application: app,
+                              onTap: () => _openDetail(context, app),
+                            );
+                          },
+                        ),
                       ),
-                      itemCount: apps.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final app = apps[index];
-                        return ApplicationCard(
-                          application: app,
-                          onTap: () => _openDetail(context, app),
-                        );
-                      },
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                ScrollToTopButton(controller: _scrollCtrl),
+              ],
             ),
     );
   }

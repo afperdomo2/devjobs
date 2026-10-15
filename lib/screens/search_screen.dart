@@ -6,6 +6,7 @@ import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../widgets/application_card.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/scroll_to_top_button.dart';
 import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 
@@ -124,10 +125,16 @@ class _SearchScreenState extends State<SearchScreen> {
               onRetry: () => state.fetchApplications(forceRefresh: true),
             ),
           Expanded(
-            child: WheelRefreshIndicator(
-              controller: _scrollCtrl,
-              onRefresh: () => state.fetchApplications(forceRefresh: true),
-              child: body,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                WheelRefreshIndicator(
+                  controller: _scrollCtrl,
+                  onRefresh: () => state.fetchApplications(forceRefresh: true),
+                  child: body,
+                ),
+                ScrollToTopButton(controller: _scrollCtrl),
+              ],
             ),
           ),
         ],
