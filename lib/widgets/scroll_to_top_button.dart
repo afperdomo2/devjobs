@@ -69,8 +69,13 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton> {
     final position = widget.controller.hasClients
         ? widget.controller.position
         : null;
+    // `viewportDimension`/`pixels` lanzan si la posición aún no recibió sus
+    // dimensiones (primer frame). Sin este guardado, en release el error de
+    // build se convierte en un ErrorWidget gris que cubre el listado.
     final visible =
         position != null &&
+        position.hasViewportDimension &&
+        position.hasPixels &&
         shouldShowScrollToTop(
           offset: position.pixels,
           viewportHeight: position.viewportDimension,

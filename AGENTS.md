@@ -7,13 +7,18 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 | Action | Command |
 |--------|---------|
 | Run (debug) | `flutter run` |
-| Run (release) | `flutter run --release` |
+| Run (release) | `flutter run --release --no-tree-shake-icons` |
 | Analyze | `flutter analyze` |
 | Test | `flutter test` |
 | Get deps | `flutter pub get` |
 | Clean build | `flutter clean` |
-| Build Android (APK) | `flutter build apk --release` |
-| Build Windows | `flutter build windows --release` |
+| Build Android (APK) | `flutter build apk --release --no-tree-shake-icons` |
+| Build Windows | `flutter build windows --release --no-tree-shake-icons` |
+
+> **`--no-tree-shake-icons` es obligatorio en release.** El tree-shaker de íconos
+> de Flutter tiene un bug que descarta glyphs usados (p.ej. `Icons.business_outlined`,
+> `Icons.apartment`) y quedan **en blanco** en release. Sin el flag la fuente se
+> recorta a ~6 KB; con el flag se embebe completa (~1.6 MB) y ningún ícono falla.
 
 ## Build / Deploy
 
@@ -37,16 +42,16 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 - **State management:** `Provider` (`ChangeNotifier`). Single `AppState` in `lib/providers/app_state.dart`.
   - Cache with 3-min TTL — invalidated on refresh or status change.
   - Dashboard stats computed locally from cached list.
-  - Dashboard cards: Total postulaciones (no click), Activas (clickable → tab 1), Por gestionar (clickable → lista filtrada `PendingApplicationsScreen`), Finalizadas (clickable → tab 3). Clickable cards show `chevron_right` indicator.
+  - Dashboard cards: Total postulaciones (no click), Activas (clickable → tab 2), Por gestionar (clickable → lista filtrada `PendingApplicationsScreen`), Finalizadas (clickable → tab 4). Clickable cards show `chevron_right` indicator.
   - "Por gestionar" flag (columna O del Sheet, checkbox): marca manual de vacantes con algo pendiente (la razón vive en `comentarios`). No se auto-limpia. Se alterna desde el AppBar del detalle o tocando el `GestionTag` en la card. Las marcadas se ordenan primero en cualquier listado (`_sortByDate`).
-  - Tab filters: Activas = estado NOT IN (Enviada, Rechazada, Retirada, Aceptada); Enviadas = estado = Enviada; Finalizadas = Rechazada + Retirada + Aceptada.
+  - Tab filters: Activas = estado NOT IN (Enviada, Rechazada, Retirada, Aceptada); Enviadas = estado = Enviada; Finalizadas = Rechazada + Retirada + Aceptada. Empresas = agrupación case-insensitive/trim de la columna `empresa` (`companiesStats`), ordenada por nº de postulaciones desc.
   - `diasProceso` computed getter on model: difference in days between fechaPostulacion and fechaSeguimiento (null when no seguimiento).
   - Detail screen shows "Tiempo del proceso" below "F. seguimiento" (only when available).
 - **Models:** `lib/models/job_application.dart` — `JobApplication` (16 fields: rowIndex, empresa, vacante, tipoContrato, modalidad, ciudad, salarioOfrecido, estado, link, descripcion, fechaPostulacion, fechaSeguimiento, contacto, comentarios, entrevistaRealizada, porGestionar) + `DashboardStats` (total, activas, entrevistas, finalizadas, porGestionar).
 - **Service:** `lib/services/sheets_api_service.dart` — HTTP client using `package:http`.
-- **Screens:** `MainScreen` with `BottomNavigationBar` (4 tabs: Inicio/Activas/Enviadas/Finalizadas). Detail via `Navigator.push`.
-- **Widgets:** `lib/widgets/status_chip.dart` — colored status badge. `lib/widgets/application_card.dart` — reusable application card. `lib/widgets/gestion_tag.dart` — "Por gestionar" tag (color `gestionColor`, fucsia; distinto del ámbar de "estancado").
-- **Helpers:** `lib/helpers/date_formatter.dart` — Spanish date formatting via `package:intl`. `lib/helpers/domain_parser.dart` — platform extraction; `lib/helpers/salary_formatter.dart` — salary extraction/formatting; `lib/helpers/text_shortener.dart` — truncation and contract abbreviation; `lib/helpers/network_error.dart` — network detection.
+- **Screens:** `MainScreen` with `NavigationBar` (5 tabs: Inicio/Empresas/Activas/Enviadas/Finalizadas). `EmpresasScreen` lista todas las empresas con filtro propio por nombre; `CompanyDetailScreen` (métricas + distribución + botón "Ver vacantes de esta empresa" → `FilteredApplicationsScreen`). Detail via `Navigator.push`.
+- **Widgets:** `lib/widgets/status_chip.dart` — colored status badge. `lib/widgets/application_card.dart` — reusable application card. `lib/widgets/gestion_tag.dart` — "Por gestionar" tag (color `gestionColor`, fucsia; distinto del ámbar de "estancado"). `lib/widgets/meta_chip.dart` — icon+label chip.
+- **Helpers:** `lib/helpers/date_formatter.dart` — Spanish date formatting via `package:intl`. `lib/helpers/domain_parser.dart` — platform extraction; `lib/helpers/salary_formatter.dart` — salary extraction/formatting; `lib/helpers/text_shortener.dart` — truncation and contract abbreviation; `lib/helpers/network_error.dart` — network detection; `lib/helpers/company_stats.dart` — agregados por empresa (agrupación case-insensitive/trim).
 
 ## Testing
 
@@ -59,3 +64,5 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 
 - `.agents/` and `.kiro/` are gitignored (AI tool artifacts).
 - No CI, no custom build scripts, no test fixtures.
+- **Íconos en release:** Flutter tree-shakea `MaterialIcons` y algunos glyphs usados se descartan por un bug del tree-shaker (p.ej. `Icons.business_outlined` queda invisible). Por eso los builds release usan `--no-tree-shake-icons` (ver tabla de comandos).
+- **Widgets en `Stack` con `StackFit.expand`:** un error de build (p.ej. excepción en `build`) se pinta en release como un `ErrorWidget` **gris que cubre todo el `Stack`** y bloquea el toque. En `ScrollToTopButton` esto pasaba por leer `viewportDimension`/`pixels` antes de que el `ScrollPosition` tuviera dimensiones.

@@ -267,6 +267,25 @@ abstract final class AppTheme {
       ),
       dividerTheme: DividerThemeData(color: border),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
+      // Evita el "borroso/gris" al navegar: el builder por defecto de M3
+      // (ZoomPageTransitionsBuilder) rasteriza la página entrante y puede
+      // dejar un frame gris/borroso que solo se refresca al repintar.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android:
+              ZoomPageTransitionsBuilder(allowSnapshotting: false),
+          TargetPlatform.iOS:
+              ZoomPageTransitionsBuilder(allowSnapshotting: false),
+          TargetPlatform.windows:
+              ZoomPageTransitionsBuilder(allowSnapshotting: false),
+          TargetPlatform.macOS:
+              ZoomPageTransitionsBuilder(allowSnapshotting: false),
+          TargetPlatform.linux:
+              ZoomPageTransitionsBuilder(allowSnapshotting: false),
+          TargetPlatform.fuchsia:
+              ZoomPageTransitionsBuilder(allowSnapshotting: false),
+        },
+      ),
     );
   }
 }

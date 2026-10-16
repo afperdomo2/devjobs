@@ -54,6 +54,30 @@ void main() {
       expect(globo.finalizadas, equals(1));
     });
 
+    test('agrupa variantes de mayúsculas/espacios y usa el nombre más frecuente',
+        () {
+      final apps = [
+        JobApplication(rowIndex: 1, empresa: 'Acme', estado: 'Enviada'),
+        JobApplication(rowIndex: 2, empresa: 'ACME', estado: 'Enviada'),
+        JobApplication(rowIndex: 3, empresa: ' acme ', estado: 'Enviada'),
+        JobApplication(rowIndex: 4, empresa: 'Acme', estado: 'Rechazada'),
+      ];
+      final stats = companiesStats(apps);
+      expect(stats.length, equals(1));
+      expect(stats.first.total, equals(4));
+      expect(stats.first.nombre, equals('Acme'));
+    });
+
+    test('empate de variantes elige el nombre que ordena primero', () {
+      final apps = [
+        JobApplication(rowIndex: 1, empresa: 'Zeta', estado: 'Enviada'),
+        JobApplication(rowIndex: 2, empresa: 'zeta', estado: 'Enviada'),
+      ];
+      final stats = companiesStats(apps);
+      expect(stats.length, equals(1));
+      expect(stats.first.nombre, equals('Zeta'));
+    });
+
     test('ordena por total desc; empate se resuelve alfabético', () {
       final apps = [
         JobApplication(rowIndex: 1, empresa: 'Zeta', estado: 'Enviada'),

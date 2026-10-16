@@ -40,17 +40,23 @@ class CompanyStats {
 
 /// Agrupa las postulaciones por empresa y calcula sus métricas,
 /// ordenadas por nº de postulaciones (descendente; empate alfabético).
+///
+/// La agrupación es insensible a mayúsculas y espacios: "Acme", "ACME" y
+/// " Acme " caen en el mismo grupo. El nombre mostrado es la variante
+/// original más frecuente (empate → la que ordena primero).
 List<CompanyStats> companiesStats(List<JobApplication> apps) {
-  final byCompany = <String, List<JobApplication>>{};
+  final buckets = <String, _CompanyBucket>{};
   for (final a in apps) {
-    final name = a.empresa.trim();
-    if (name.isEmpty) continue;
-    byCompany.putIfAbsent(name, () => []).add(a);
+    final raw = a.empresa.trim();
+    if (raw.isEmpty) continue;
+    final bucket = buckets.putIfAbsent(raw.toLowerCase(), _CompanyBucket.new);
+    bucket.apps.add(a);
+    bucket.nameCounts[raw] = (bucket.nameCounts[raw] ?? 0) + 1;
   }
 
   final stats = <CompanyStats>[];
-  for (final entry in byCompany.entries) {
-    final list = entry.value;
+  for (final bucket in buckets.values) {
+    final list = bucket.apps;
 
     var activas = 0;
     var finalizadas = 0;
@@ -82,7 +88,7 @@ List<CompanyStats> companiesStats(List<JobApplication> apps) {
     }
 
     stats.add(CompanyStats(
-      nombre: entry.key,
+      nombre: _displayName(bucket.nameCounts),
       total: list.length,
       activas: activas,
       finalizadas: finalizadas,
@@ -95,7 +101,26 @@ List<CompanyStats> companiesStats(List<JobApplication> apps) {
   stats.sort((a, b) {
     final c = b.total.compareTo(a.total);
     if (c != 0) return c;
-    return a.nombre.compareTo(b.nombre);
+    return a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase());
   });
   return stats;
+}
+
+class _CompanyBucket {
+  final List<JobApplication> apps = [];
+  final Map<String, int> nameCounts = {};
+}
+
+String _displayName(Map<String, int> counts) {
+  var best = '';
+  var bestCount = -1;
+  for (final entry in counts.entries) {
+    final better = entry.value > bestCount ||
+        (entry.value == bestCount && entry.key.compareTo(best) < 0);
+    if (better) {
+      best = entry.key;
+      bestCount = entry.value;
+    }
+  }
+  return best;
 }

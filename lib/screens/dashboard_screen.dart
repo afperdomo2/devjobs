@@ -108,7 +108,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: stats.activas.toString(),
                   color: Theme.of(context).colorScheme.secondary,
                   icon: Icons.notifications_active,
-                  onTap: () => state.setTab(1),
+                  onTap: () => state.setTab(2),
                 ),
                 _StatCard(
                   label: 'Por gestionar',
@@ -127,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: stats.finalizadas.toString(),
                   color: Theme.of(context).colorScheme.error,
                   icon: Icons.check_circle,
-                  onTap: () => state.setTab(3),
+                  onTap: () => state.setTab(4),
                 ),
               ],
             ),

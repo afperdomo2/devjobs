@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../widgets/offline_banner.dart';
 import 'applications_list_screen.dart';
 import 'dashboard_screen.dart';
+import 'empresas_screen.dart';
 import 'search_screen.dart';
 
 class MainScreen extends StatelessWidget {
@@ -19,13 +20,16 @@ class MainScreen extends StatelessWidget {
           appBar: AppBar(
             title: Text(_titles[state.currentTab]),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+              // El buscador global filtra postulaciones; oculto en Empresas,
+              // que ya tiene su propio filtro por nombre de empresa.
+              if (state.currentTab != _empresasTabIndex)
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SearchScreen()),
+                  ),
                 ),
-              ),
             ],
           ),
           body: Column(
@@ -40,6 +44,7 @@ class MainScreen extends StatelessWidget {
                   index: state.currentTab,
                   children: const [
                     DashboardScreen(),
+                    EmpresasScreen(),
                     ApplicationsListScreen(filterMode: 'activas'),
                     ApplicationsListScreen(filterMode: 'enviadas'),
                     ApplicationsListScreen(filterMode: 'onlyRejected'),
@@ -69,6 +74,11 @@ class MainScreen extends StatelessWidget {
                   label: 'Inicio',
                 ),
                 NavigationDestination(
+                  icon: Icon(Icons.business_outlined),
+                  selectedIcon: Icon(Icons.business),
+                  label: 'Empresas',
+                ),
+                NavigationDestination(
                   icon: Icon(Icons.notifications_active_outlined),
                   selectedIcon: Icon(Icons.notifications_active),
                   label: 'Activas',
@@ -91,5 +101,13 @@ class MainScreen extends StatelessWidget {
     );
   }
 
-  static const _titles = ['DevJobs', 'Activas', 'Enviadas', 'Finalizadas'];
+  static const _empresasTabIndex = 1;
+
+  static const _titles = [
+    'DevJobs',
+    'Empresas',
+    'Activas',
+    'Enviadas',
+    'Finalizadas',
+  ];
 }
