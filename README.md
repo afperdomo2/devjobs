@@ -351,6 +351,40 @@ docs/testing.md                         # Convenciones de tests del proyecto
 
 ---
 
+## 🧠 Skills de agentes (opcional)
+
+El proyecto usa el gestor [skills.sh](https://skills.sh/) (`npx skills`) para darle contexto especializado a los agentes de IA. El set está deliberadamente acotado a **8 skills** alineadas con este repo (Flutter + `package:http` + tests con `flutter_test`):
+
+| Skill | Fuente | Para qué |
+|---|---|---|
+| `find-skills` | `vercel-labs/skills` | descubrir/instalar skills nuevas |
+| `grill-me` | `mattpocock/skills` | interrogar un plan antes de implementarlo |
+| `dart-add-unit-test` | `dart-lang/skills` | tests de helpers/modelos (`test/`) |
+| `dart-run-static-analysis` | `dart-lang/skills` | `dart analyze` / `dart fix` |
+| `flutter-add-widget-test` | `flutter/agent-plugins` | tests de widgets con `WidgetTester` |
+| `flutter-use-http-package` | `flutter/agent-plugins` | llamadas REST con `package:http` |
+| `flutter-fix-layout-issues` | `flutter/agent-plugins` | overflows y constraints |
+| `flutter-build-responsive-layout` | `flutter/agent-plugins` | móvil / desktop |
+
+**`skills-lock.json` sí se versiona; el directorio `.agents/` no** (está en `.gitignore`). Tras clonar, restaura los archivos:
+
+```bash
+npx skills experimental_install   # crea .agents/skills/ desde el lock
+npx skills list                   # 8 skills, sin ninguna en "Missing"
+```
+
+Para añadir o quitar skills, edita el lock implícitamente con el CLI (no a mano):
+
+```bash
+npx skills add flutter/agent-plugins@flutter-fix-layout-issues -a opencode -y
+npx skills remove flutter-fix-layout-issues
+npx skills update                 # actualiza a la última versión
+```
+
+> Se usa `-a opencode` para no generar configuraciones de otros agentes (Copilot, Cursor, etc.). Si el comando falla por el rename del repo, prueba con el alias viejo `flutter/skills`.
+
+---
+
 ## 🧩 MCP de Dart en OpenCode (opcional)
 
 El **Model Context Protocol (MCP)** permite que un agente de IA (por ejemplo [OpenCode](https://opencode.ai)) use el SDK de Flutter/Dart como herramienta. El servidor oficial es `dart mcp-server` e incluye: análisis estático/LSP (`analyze_files`), `dart fix`, `dart format`, `pub`, búsqueda en paquetes (`read_package_uris`, `rip_grep_packages`), y control de la app en ejecución (`dtd`, `hot_reload`, `hot_restart`, `get_runtime_errors`).
