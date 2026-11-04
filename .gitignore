@@ -48,6 +48,9 @@ app.*.map.json
 .agents/
 .kiro/
 
+# OpenCode — config local con rutas absolutas por SO (ver README → MCP de Dart)
+opencode.json
+
 # Environment
 .env
 

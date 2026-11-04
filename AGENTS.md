@@ -31,7 +31,7 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 ## Config
 
 - `analysis_options.yaml` — default `package:flutter_lints/flutter.yaml`, no overrides.
-- `opencode.json` — MCP server `dart-mcp-server` enabled (LSP analysis via MCP tools).
+- `opencode.json` — **local, gitignored** (no se versiona: contiene rutas absolutas por SO). Habilita el MCP server `dart-mcp-server` (análisis/LSP, hot reload, pub). En Linux/Ubuntu usa ruta absoluta al SDK (`/home/felipe/Documentos/flutter/bin/dart`) porque `dart` no está en `PATH`; en Windows basta `dart`. Plantillas listas para copiar/pegar en README → «MCP de Dart en OpenCode».
 - `skills-lock.json` — 22 skills registered (all from `dart-lang/skills`, `flutter/skills`, and autoskills registries). Load with `opencode skill load <name>`.
 
 ## Architecture

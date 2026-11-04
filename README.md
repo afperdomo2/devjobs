@@ -301,3 +301,128 @@ test/                                   # Tests unitarios (helpers, modelos, the
 docs/testing.md                         # Convenciones de tests del proyecto
 ```
 
+---
+
+## 🧩 MCP de Dart en OpenCode (opcional)
+
+El **Model Context Protocol (MCP)** permite que un agente de IA (por ejemplo [OpenCode](https://opencode.ai)) use el SDK de Flutter/Dart como herramienta. El servidor oficial es `dart mcp-server` e incluye: análisis estático/LSP (`analyze_files`), `dart fix`, `dart format`, `pub`, búsqueda en paquetes (`read_package_uris`, `rip_grep_packages`), y control de la app en ejecución (`dtd`, `hot_reload`, `hot_restart`, `get_runtime_errors`).
+
+El cliente lo configura con el archivo **`opencode.json`** en la raíz del proyecto. Ese archivo está en **`.gitignore`** (no se versiona) porque contiene rutas absolutas que cambian según el sistema operativo y la máquina de cada desarrollador:
+
+```bash
+# Linux / macOS
+touch opencode.json    # luego pega el bloque de tu SO con tu editor
+
+# Windows (PowerShell)
+ni opencode.json
+```
+
+### Requisito previo
+
+El subcomando `mcp-server` viene incluido en el SDK de Dart. Compruébalo con:
+
+```bash
+dart mcp-server --version
+# 1.2.2
+```
+
+Si el comando no existe, actualiza Flutter (`flutter upgrade`).
+
+### Versión actual — Linux / Ubuntu
+
+En Ubuntu, el SDK instalado manualmente (ej. `~/Documentos/flutter`) **no** está en el `PATH` del sistema, y OpenCode no lee tu `.bashrc`, así que `"dart"` a secas falla con `NotFound: ChildProcess.spawn (dart mcp-server)`. Hay que usar la **ruta absoluta** al binario del SDK:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "dart-mcp-server": {
+      "type": "local",
+      "command": [
+        "/home/felipe/Documentos/flutter/bin/dart",
+        "mcp-server"
+      ],
+      "enabled": true
+    }
+  }
+}
+```
+
+Para saber tu ruta, si `dart` sí está en el `PATH`:
+
+```bash
+command -v dart          # /home/tu-usuario/flutter/bin/dart
+```
+
+Si no aparece nada (caso habitual en Ubuntu), busca el SDK:
+
+```bash
+find ~ -maxdepth 4 -type f -path "*/flutter/bin/dart"
+```
+
+> ✅ Con la ruta absoluta **no** hace falta definir `FLUTTER_ROOT` ni `DART_ROOT`: el servidor deduce la raíz de Flutter subiendo desde el SDK de Dart.
+
+### Versión anterior — Windows
+
+En Windows el instalador de Flutter agrega `dart` al `PATH`, por lo que basta con el nombre del comando (configuración original del proyecto, verificada en Windows):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "dart-mcp-server": {
+      "type": "local",
+      "command": [
+        "dart",
+        "mcp-server"
+      ],
+      "enabled": true,
+      "environment": {}
+    }
+  }
+}
+```
+
+- `environment` es opcional (puede omitirse); se conserva tal como estaba en la versión de Windows.
+- Verifica que el binario sea visible desde cualquier terminal:
+
+```cmd
+where dart
+```
+
+Si `where dart` no devuelve nada, agrega `C:\ruta\a\flutter\bin` al `PATH` del usuario y reinicia la terminal (y OpenCode).
+
+### Verificar la conexión
+
+1. Reinicia OpenCode (los servidores MCP se levantan al iniciar).
+2. Lista el estado:
+
+   ```bash
+   opencode mcp list
+   # ✓ context7         connected
+   # ✓ dart-mcp-server  connected
+   ```
+
+3. En los logs (`~/.local/share/opencode/log/opencode.log` en Linux) debe aparecer:
+
+   ```
+   message="mcp connected" server=dart-mcp-server tools=14
+   ```
+
+**Diagnóstico rápido**
+
+| Síntoma | Causa / solución |
+|---------|------------------|
+| `NotFound: ChildProcess.spawn (dart mcp-server)` | El binario no se encontró → usa ruta absoluta (Linux) o corrige el `PATH` (Windows) |
+| `✓ ... pending` en `opencode mcp list` | El servidor aún está arrancando (el arranque en frío tarda ~1-2 s); vuelve a listar |
+| El agente no ve las herramientas | La sesión abierta conserva la config anterior → reinicia OpenCode |
+
+### Versiones verificadas
+
+| Componente | Versión | Plataforma |
+|------------|---------|------------|
+| Flutter | 3.47.9 (stable) | Ubuntu |
+| Dart SDK | 3.13.7 | Ubuntu |
+| `dart mcp-server` | 1.2.2 | Ubuntu |
+| MCP local config | `dart` en `PATH` | Windows |
+
