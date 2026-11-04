@@ -343,6 +343,7 @@ lib/
     ├── status_chip.dart                # Chip de estado (colores por estado)
     ├── application_card.dart           # Card de postulación reutilizable (borde + tag "Por gestionar")
     ├── company_card.dart               # Card de empresa (chips condicionales + última actividad)
+    ├── distribution_card.dart          # Distribución con selector segmentado (plataformas/modalidades/ciudades)
     ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión

@@ -7,10 +7,9 @@ import '../helpers/network_error.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
+import '../widgets/distribution_card.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/wheel_refresh.dart';
-import 'distribution_detail_screen.dart';
-import 'filtered_applications_screen.dart';
 import 'pending_applications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -150,14 +149,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color30: successColor(brightness),
               ),
               const SizedBox(height: 8),
-              _DistributionCard(
+              DistributionCard(
                 plataformas: topDistribution(apps, (a) => a.plataforma, 3),
-                empresas: topDistribution(apps, (a) => a.empresa, 3),
                 modalidades: topDistribution(apps, (a) => a.modalidad, 3),
                 ciudades: topDistribution(apps, (a) => a.ciudad, 3),
                 colorPlataformas: tealColor(brightness),
-                colorEmpresas: successColor(brightness),
-                colorModalidades: tealColor(brightness),
+                colorModalidades: indigoColor(brightness),
                 colorCiudades: infoColor(brightness),
               ),
             ],
@@ -531,219 +528,6 @@ class _ActivityItem extends StatelessWidget {
             Text(label, style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
-      ],
-    );
-  }
-}
-
-class _DistributionCard extends StatelessWidget {
-  final List<(String, int)> plataformas;
-  final List<(String, int)> empresas;
-  final List<(String, int)> modalidades;
-  final List<(String, int)> ciudades;
-  final Color colorPlataformas;
-  final Color colorEmpresas;
-  final Color colorModalidades;
-  final Color colorCiudades;
-
-  const _DistributionCard({
-    required this.plataformas,
-    required this.empresas,
-    required this.modalidades,
-    required this.ciudades,
-    required this.colorPlataformas,
-    required this.colorEmpresas,
-    required this.colorModalidades,
-    required this.colorCiudades,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpace.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Distribución', style: AppType.section(context)),
-            const SizedBox(height: AppSpace.md),
-            _DistributionGroup(
-              field: 'plataforma',
-              label: 'Plataformas',
-              icon: Icons.language,
-              items: plataformas,
-              color: colorPlataformas,
-            ),
-            const SizedBox(height: AppSpace.lg),
-            _DistributionGroup(
-              field: 'empresa',
-              label: 'Empresas',
-              icon: Icons.business,
-              items: empresas,
-              color: colorEmpresas,
-            ),
-            const SizedBox(height: AppSpace.lg),
-            _DistributionGroup(
-              field: 'modalidad',
-              label: 'Modalidades',
-              icon: Icons.business_center,
-              items: modalidades,
-              color: colorModalidades,
-            ),
-            const SizedBox(height: AppSpace.lg),
-            _DistributionGroup(
-              field: 'ciudad',
-              label: 'Ciudades',
-              icon: Icons.location_on_outlined,
-              items: ciudades,
-              color: colorCiudades,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DistributionGroup extends StatelessWidget {
-  final String field;
-  final String label;
-  final IconData icon;
-  final List<(String, int)> items;
-  final Color color;
-
-  const _DistributionGroup({
-    required this.field,
-    required this.label,
-    required this.icon,
-    required this.items,
-    required this.color,
-  });
-
-  void _openDetail(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DistributionDetailScreen(
-          field: field,
-          label: label,
-          icon: icon,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  void _openFiltered(BuildContext context, String value) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FilteredApplicationsScreen(
-          title: label,
-          field: field,
-          value: value,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final maxCount = items.isEmpty
-        ? 1
-        : items.map((e) => e.$2).reduce((a, b) => a > b ? a : b);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: AppIconSize.chip, color: color),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-            ),
-            InkWell(
-              onTap: () => _openDetail(context),
-              borderRadius:
-                  const BorderRadius.all(Radius.circular(AppRadius.chip)),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpace.xs + 2, vertical: AppSpace.xs),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Ver todas',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: color,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    Icon(Icons.chevron_right, size: 16, color: color),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpace.sm),
-        if (items.isEmpty)
-          Text(
-            '—',
-            style: TextStyle(
-              color: statusColor('', Theme.of(context).brightness),
-            ),
-          )
-        else
-          for (final (name, count) in items)
-            InkWell(
-              onTap: () => _openFiltered(context, name),
-              borderRadius:
-                  const BorderRadius.all(Radius.circular(AppRadius.chip)),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: AppSpace.sm),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: const TextStyle(fontSize: 14),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          '$count',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        Icon(Icons.chevron_right, size: 16, color: color),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpace.xs),
-                    ClipRRect(
-                      borderRadius: const BorderRadius.all(
-                          Radius.circular(AppRadius.bar)),
-                      child: LinearProgressIndicator(
-                        value: count / maxCount,
-                        minHeight: 6,
-                        backgroundColor: color.withValues(alpha: 0.12),
-                        valueColor: AlwaysStoppedAnimation(color),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
       ],
     );
   }
