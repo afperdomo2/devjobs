@@ -3,30 +3,52 @@ import 'package:intl/intl.dart';
 final _formatter = DateFormat('d \'de\' MMMM, yyyy', 'es');
 final _isoRegex = RegExp(r'(\d{4})-(\d{2})-(\d{2})');
 
+/// Valida que [DateTime] no haya normalizado la fecha (p.ej. 31/02 -> 03/03).
+DateTime? _validDate(int year, int month, int day) {
+  final date = DateTime(year, month, day);
+  if (date.year != year || date.month != month || date.day != day) return null;
+  return date;
+}
+
 DateTime? _parseRawDate(String raw) {
-  if (raw.isEmpty) return null;
+  final value = raw.trim();
+  if (value.isEmpty) return null;
 
-  // Try "d/M/yyyy" (MM/DD/YYYY or DD/MM/YYYY)
-  try {
-    final parts = raw.split('/');
-    if (parts.length == 3 && parts[2].length == 4) {
-      final y = int.parse(parts[2]);
-      final a = int.parse(parts[0]);
-      final b = int.parse(parts[1]);
-      return DateTime(y, b, a);
-    }
-  } catch (_) {}
+  // Formato de la hoja: d/M/yyyy (con o sin ceros a la izquierda).
+  final parts = value.split('/');
+  if (parts.length == 3 && parts[2].trim().length == 4) {
+    final day = int.tryParse(parts[0].trim());
+    final month = int.tryParse(parts[1].trim());
+    final year = int.tryParse(parts[2].trim());
+    if (day == null || month == null || year == null) return null;
+    return _validDate(year, month, day);
+  }
 
-  // Try ISO embedded: "...2026-06-02..."
-  try {
-    final m = _isoRegex.firstMatch(raw);
-    if (m != null) {
-      return DateTime(int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!));
-    }
-  } catch (_) {}
+  // ISO date-only, también embebido en un timestamp.
+  final match = _isoRegex.firstMatch(value);
+  if (match != null) {
+    return _validDate(
+      int.parse(match[1]!),
+      int.parse(match[2]!),
+      int.parse(match[3]!),
+    );
+  }
 
   return null;
 }
+
+/// Fecha de calendario -> ISO `yyyy-MM-dd` para enviarla a Apps Script.
+///
+/// No usa hora ni zona horaria: solo los componentes de calendario.
+String formatApiDate(DateTime date) {
+  final year = date.year.toString().padLeft(4, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
+}
+
+/// Fecha ya parseada -> formato largo español (`4 de noviembre, 2026`).
+String formatDateValue(DateTime date) => _formatter.format(date);
 
 String formatDate(String rawDate) {
   final date = _parseRawDate(rawDate);

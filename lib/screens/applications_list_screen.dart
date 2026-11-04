@@ -14,7 +14,19 @@ import 'application_detail_screen.dart';
 class ApplicationsListScreen extends StatefulWidget {
   final String filterMode;
 
-  const ApplicationsListScreen({super.key, required this.filterMode});
+  /// Reserva espacio inferior para que el botón "ir arriba" no quede debajo
+  /// del FAB de "Nueva postulación".
+  final bool hasFloatingAction;
+
+  /// Acción del estado vacío. Null cuando no aplica o no hay conexión.
+  final VoidCallback? onCreate;
+
+  const ApplicationsListScreen({
+    super.key,
+    required this.filterMode,
+    this.hasFloatingAction = false,
+    this.onCreate,
+  });
 
   @override
   State<ApplicationsListScreen> createState() => _ApplicationsListScreenState();
@@ -91,14 +103,20 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
       content = ListView(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
-        children: [_EmptyHint(message: _emptyMessage)],
+        children: [
+          _EmptyHint(message: _emptyMessage, onCreate: widget.onCreate),
+        ],
       );
     } else {
       content = ListView.separated(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpace.lg, vertical: AppSpace.sm),
+        padding: EdgeInsets.fromLTRB(
+          AppSpace.lg,
+          AppSpace.sm,
+          AppSpace.lg,
+          widget.hasFloatingAction ? 88 : AppSpace.sm,
+        ),
         itemCount: apps.length,
         separatorBuilder: (_, _) => const SizedBox(height: AppSpace.sm),
         itemBuilder: (context, index) {
@@ -128,7 +146,10 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
             child: content,
           ),
         ),
-        ScrollToTopButton(controller: _scrollCtrl),
+        ScrollToTopButton(
+          controller: _scrollCtrl,
+          bottom: widget.hasFloatingAction ? 88 : 16,
+        ),
       ],
     );
   }
@@ -136,14 +157,30 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
 
 class _EmptyHint extends StatelessWidget {
   final String message;
+  final VoidCallback? onCreate;
 
-  const _EmptyHint({required this.message});
+  const _EmptyHint({required this.message, this.onCreate});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 200,
-      child: Center(child: Text(message)),
+      height: 240,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            if (onCreate != null) ...[
+              const SizedBox(height: AppSpace.lg),
+              FilledButton.icon(
+                onPressed: onCreate,
+                icon: const Icon(Icons.add),
+                label: const Text('Crear postulación'),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

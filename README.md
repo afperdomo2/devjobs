@@ -26,6 +26,7 @@ Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a 
 | Paquete | Versión | Propósito |
 |---------|---------|-----------|
 | `flutter` | SDK | Framework UI multiplataforma |
+| `flutter_localizations` | SDK | Textos Material y selector de fecha en español |
 | `http` | `^1.6.0` | Cliente HTTP para consumir la API REST del Apps Script |
 | `provider` | `^6.1.5+1` | Estado global con `ChangeNotifier` (caché, pestañas, filtros) |
 | `intl` | `^0.20.2` | Formateo de fechas en español |
@@ -212,7 +213,7 @@ flutter build macos
 flutter test
 
 # Tests de un archivo específico
-flutter test test/widget_test.dart
+flutter test test/widgets/application_form_test.dart
 ```
 
 ## 🧹 Linter
@@ -230,7 +231,8 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | Pestaña | Contenido |
 |---------|-----------|
 | **Dashboard** | Resumen con totales: postulaciones, activas, **por gestionar** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Por gestionar → listado filtrado, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›` |
-| **Postulaciones** | Detalle de cada postulación (15 columnas) |
+| **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
+| **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
 ### Columnas de Postulaciones
 
@@ -252,6 +254,23 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | N | ¿Entrevista? | Checkbox: indica si se realizó entrevista (✓ = sí) |
 | O | Por gestionar | Checkbox: marca manual de vacantes con algo pendiente (prueba, ejercicio, documento). La razón se anota en `Comentarios`. No se auto-limpia; las marcadas se ordenan primero en cualquier listado |
 
+### Contrato de fechas
+
+Las columnas A y K son celdas de **fecha** reales de Google Sheets (no texto). Para que el día/mes no se intercambie ni la fecha se corra un día:
+
+| Paso | Formato | Responsable |
+|------|---------|-------------|
+| App → script | `yyyy-MM-dd` (`formatApiDate`) | Flutter |
+| Script → celda | `Date` real: `Utilities.parseDate(iso, zona de la hoja, 'yyyy-MM-dd')` | Apps Script |
+| Celda → script | `Date` | Sheets |
+| Script → app | `d/M/yyyy` | Apps Script |
+
+- La app **no** envía timestamps ni usa la zona horaria del dispositivo para guardar: solo año/mes/día.
+- El script usa `Spreadsheet.getSpreadsheetTimeZone()`; no hay `GMT-5` hardcodeado.
+- El selector de fecha es **solo calendario** y está en español (`flutter_localizations`), para eliminar el tecleo ambiguo.
+- `GET ?action=meta` devuelve zona horaria, locale y formato de A/K para diagnosticar. Si `timeZone` y `scriptTimeZone` difieren, ajusta la zona del proyecto de Apps Script a la de la hoja (Project Settings → Time zone).
+- **Al cambiar el script, redesplegar con Manage deployments → Edit → New version** para conservar la URL del `.env`.
+
 ### Apps Script — API REST
 
 La Google Sheet no expone datos directamente. Para conectarla a la app se usa un **Google Apps Script** que actúa como API REST con los siguientes endpoints:
@@ -260,7 +279,9 @@ La Google Sheet no expone datos directamente. Para conectarla a la app se usa un
 |--------|----------|--------|
 | `GET` | `?action=all` | Devuelve todas las postulaciones como JSON |
 | `GET` | `?action=dashboard` | Devuelve totales computados |
-| `POST` | — | Actualiza el estado o crea una nueva postulación |
+| `GET` | `?action=meta` | Diagnóstico: zona horaria, locale y formato de las fechas |
+| `POST` | `action: update` | Actualiza una fila existente (`rowIndex` + `updates`) |
+| `POST` | `action: create` | Crea una postulación y devuelve el `rowIndex` asignado |
 
 El script está vinculado a la hoja, se despliega como **Web App** (Ejecutar como: Yo, Acceso: Cualquiera) y la URL se configura vía `.env`.
 
@@ -312,13 +333,14 @@ lib/
 ├── config.dart                         # Carga API_URL desde .env
 ├── theme.dart                          # Tokens de color (claro/oscuro) + helpers semánticos
 ├── models/
-│   └── job_application.dart            # Modelo (16 campos) + DashboardStats + getters de tiempo
+│   ├── job_application.dart            # Modelo (16 campos) + DashboardStats + getters de tiempo
+│   └── application_options.dart        # Opciones de contrato, modalidad y estado
 ├── providers/
 │   └── app_state.dart                  # Estado global con caché (TTL 3 min)
 ├── services/
 │   └── sheets_api_service.dart         # HTTP client para el Apps Script
 ├── helpers/
-│   ├── date_formatter.dart             # Fechas en español + formatDias/formatDuracion/formatSinNovedad
+│   ├── date_formatter.dart             # Fechas en español, parseo D/M e ISO y formatApiDate (yyyy-MM-dd)
 │   ├── domain_parser.dart              # Extrae la plataforma desde el link
 │   ├── salary_formatter.dart           # Extracción/formateo de salarios
 │   ├── text_shortener.dart             # Truncado y abreviatura de contratos
@@ -335,7 +357,7 @@ lib/
 │   ├── pending_applications_screen.dart # Listado filtrado "Por gestionar"
 │   ├── search_screen.dart              # Búsqueda global (todas las postulaciones)
 │   ├── application_detail_screen.dart  # Detalle + comentarios + descripción + toggle "Por gestionar"
-│   ├── application_edit_screen.dart    # Edición de postulación
+│   ├── application_form_screen.dart    # Formulario único: crear/editar en secciones
 │   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
 │   └── filtered_applications_screen.dart # Listado filtrado por campo/valor
 └── widgets/
@@ -345,6 +367,7 @@ lib/
     ├── company_card.dart               # Card de empresa (chips condicionales + última actividad)
     ├── distribution_card.dart          # Distribución con selector segmentado (plataformas/modalidades/ciudades)
     ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)
+    ├── form_section.dart               # Sección de formulario (encabezado + campos)
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión
 apps_script_code.example.gs                # Apps Script de ejemplo (con placeholder)

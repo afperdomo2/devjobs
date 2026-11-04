@@ -11,7 +11,7 @@ import '../theme.dart';
 import '../widgets/gestion_tag.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/status_chip.dart';
-import 'application_edit_screen.dart';
+import 'application_form_screen.dart';
 
 List<String> _parseComments(String raw) {
   return raw
@@ -94,7 +94,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 : () async {
                     final result = await Navigator.push<bool>(
                       context,
-                      MaterialPageRoute(builder: (_) => ApplicationEditScreen(application: app)),
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ApplicationFormScreen.edit(application: app),
+                      ),
                     );
                     if (result == true && mounted) {
                       setState(() {});

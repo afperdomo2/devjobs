@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/app_state.dart';
 import '../widgets/applications_filter_bar.dart';
+import 'application_form_screen.dart';
 import 'applications_list_screen.dart';
 
 /// Pestaña única de postulaciones: la lista completa con las pills de estado
@@ -31,6 +32,10 @@ class PostulacionesScreen extends StatelessWidget {
             // no herede el scroll (ni el pulse) del filtro anterior.
             key: ValueKey(state.applicationsFilter),
             filterMode: state.applicationsFilter,
+            hasFloatingAction: true,
+            onCreate: state.offline
+                ? null
+                : () => startCreateApplication(context),
           ),
         ),
       ],

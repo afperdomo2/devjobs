@@ -91,7 +91,22 @@ class SheetsApiService {
     if (error != null) {
       throw Exception(error);
     }
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return json['rowIndex'] as int;
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } catch (_) {
+      throw Exception(
+        'Respuesta inválida del servidor al crear la postulación.',
+      );
+    }
+
+    if (decoded is! Map || decoded['rowIndex'] is! num) {
+      throw Exception(
+        'Respuesta inválida del servidor al crear la postulación.',
+      );
+    }
+
+    return (decoded['rowIndex'] as num).toInt();
   }
 }

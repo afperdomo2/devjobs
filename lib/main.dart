@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,6 +35,9 @@ class DevJobsApp extends StatelessWidget {
     return MaterialApp(
       title: 'DevJobs',
       debugShowCheckedModeBanner: false,
+      locale: const Locale('es'),
+      supportedLocales: const [Locale('es')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,

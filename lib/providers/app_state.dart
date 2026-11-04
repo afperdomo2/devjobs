@@ -196,6 +196,8 @@ class AppState extends ChangeNotifier {
           estado: updates['estado'],
           link: updates['link'],
           descripcion: updates['descripcion'],
+          fechaPostulacion: updates['fechaPostulacion'],
+          fechaSeguimiento: updates['fechaSeguimiento'],
           contacto: updates['contacto'],
           comentarios: updates['comentarios'],
           entrevistaRealizada: updates.containsKey('entrevistaRealizada')
@@ -217,6 +219,42 @@ class AppState extends ChangeNotifier {
     _lastFetched = null;
 
     notifyListeners();
+  }
+
+  /// Crea una postulación nueva en la hoja y la inserta en la caché local.
+  ///
+  /// [draft] debe traer `rowIndex: 0`; el índice real lo devuelve el servidor.
+  Future<JobApplication> createApplication(JobApplication draft) async {
+    if (_offline) {
+      throw Exception(
+        'Sin conexión a internet. No se puede crear en modo solo lectura.',
+      );
+    }
+
+    final int rowIndex;
+    try {
+      rowIndex = await apiService.create(draft);
+    } catch (e) {
+      if (isNetworkError(e)) {
+        _offline = true;
+        notifyListeners();
+      }
+      throw Exception(friendlyErrorMessage(e));
+    }
+
+    final created = draft.copyWith(rowIndex: rowIndex);
+    final current = _cached;
+    _cached = current == null ? [created] : [...current, created];
+
+    if (localCache != null) {
+      await localCache!.save(_cached!);
+    }
+
+    // Fuerza un resync en el próximo fetch para normalizar valores del Sheet.
+    _lastFetched = null;
+
+    notifyListeners();
+    return created;
   }
 
   Future<void> _ensureCacheLoaded() async {

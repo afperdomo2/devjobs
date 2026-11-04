@@ -27,6 +27,49 @@ void main() {
       expect(parseDate(''), isNull);
       expect(parseDate('texto raro'), isNull);
     });
+
+    test('ignora espacios alrededor', () {
+      final d = parseDate(' 02/06/2026 ');
+      expect(d, isNotNull);
+      expect(d!.day, equals(2));
+    });
+
+    test('rechaza fechas que DateTime normalizaría', () {
+      expect(parseDate('31/02/2026'), isNull);
+      expect(parseDate('2026-02-30'), isNull);
+      expect(parseDate('2026-13-01'), isNull);
+    });
+  });
+
+  group('formatApiDate', () {
+    test('usa ceros a la izquierda', () {
+      expect(formatApiDate(DateTime(2026, 1, 5)), equals('2026-01-05'));
+    });
+
+    test('ignora la hora', () {
+      expect(
+        formatApiDate(DateTime(2026, 11, 4, 23, 59)),
+        equals('2026-11-04'),
+      );
+    });
+
+    test('soporta año bisiesto', () {
+      expect(formatApiDate(DateTime(2028, 2, 29)), equals('2028-02-29'));
+    });
+
+    test('round-trip con parseDate', () {
+      final date = DateTime(2026, 12, 31);
+      expect(parseDate(formatApiDate(date)), equals(date));
+    });
+  });
+
+  group('formatDateValue', () {
+    test('formatea un DateTime al formato largo español', () {
+      expect(
+        formatDateValue(DateTime(2026, 6, 2)),
+        equals('2 de junio, 2026'),
+      );
+    });
   });
 
   group('formatDate', () {

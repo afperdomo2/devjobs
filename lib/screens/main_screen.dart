@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/offline_banner.dart';
+import 'application_form_screen.dart';
 import 'dashboard_screen.dart';
 import 'empresas_screen.dart';
 import 'postulaciones_screen.dart';
@@ -84,6 +85,15 @@ class MainScreen extends StatelessWidget {
               ],
             ),
           ),
+          floatingActionButton:
+              state.currentTab == AppState.tabPostulaciones && !state.offline
+              ? FloatingActionButton.extended(
+                  heroTag: 'create-application',
+                  onPressed: () => startCreateApplication(context),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Nueva'),
+                )
+              : null,
         );
       },
     );

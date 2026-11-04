@@ -27,6 +27,10 @@ var COLUMNS = [
   'entrevistaRealizada', 'porGestionar'
 ];
 
+// Columnas que son fechas reales en la hoja. Al escribirlas se convierten
+// a Date explícitamente para que Sheets no las interprete con el locale.
+var DATE_COLUMNS = ['fechaPostulacion', 'fechaSeguimiento'];
+
 // -------------------------------------------------
 // GET: fetchAll / fetchDashboard
 // -------------------------------------------------
@@ -35,13 +39,17 @@ function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || 'all';
 
   try {
-    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sheet = ss.getSheetByName(SHEET_NAME);
+    var tz = ss.getSpreadsheetTimeZone();
     var result;
 
     if (action === 'dashboard') {
-      result = getDashboard(sheet);
+      result = getDashboard(sheet, tz);
+    } else if (action === 'meta') {
+      result = getMeta(ss, sheet);
     } else {
-      result = getAllRows(sheet);
+      result = getAllRows(sheet, tz);
     }
 
     return jsonResponse(result);
@@ -50,22 +58,33 @@ function doGet(e) {
   }
 }
 
-function getAllRows(sheet) {
+/** Diagnóstico de solo lectura: zona horaria, locale y formato de las fechas. */
+function getMeta(ss, sheet) {
+  return {
+    timeZone: ss.getSpreadsheetTimeZone(),
+    locale: ss.getSpreadsheetLocale(),
+    scriptTimeZone: Session.getScriptTimeZone(),
+    fechaPostulacionFormat: sheet.getRange('A2').getNumberFormat(),
+    fechaSeguimientoFormat: sheet.getRange('K2').getNumberFormat()
+  };
+}
+
+function getAllRows(sheet, tz) {
   var data = sheet.getDataRange().getValues();
   if (data.length < 2) return [];
 
   var headers = data[0];
   return data.slice(1)
     .map(function (row, i) {
-      return buildRecord(headers, row, i + 2);
+      return buildRecord(headers, row, i + 2, tz);
     })
     .filter(function (r) {
       return r.empresa || r.vacante;
     });
 }
 
-function getDashboard(sheet) {
-  var rows = getAllRows(sheet);
+function getDashboard(sheet, tz) {
+  var rows = getAllRows(sheet, tz);
   var estados = rows.map(function (r) { return (r.estado || '').trim().toLowerCase(); });
 
   return {
@@ -84,13 +103,15 @@ function getDashboard(sheet) {
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
-    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var sheet = ss.getSheetByName(SHEET_NAME);
+    var tz = ss.getSpreadsheetTimeZone();
 
     switch (body.action) {
       case 'update':
-        return updateRow(sheet, body.rowIndex, body.updates);
+        return updateRow(sheet, body.rowIndex, body.updates, tz);
       case 'create':
-        return createRow(sheet, body.data);
+        return createRow(sheet, body.data, tz);
       default:
         return jsonResponse({ _error: 'acción no válida: ' + body.action }, 400);
     }
@@ -99,35 +120,55 @@ function doPost(e) {
   }
 }
 
-function updateRow(sheet, rowIndex, updates) {
+function updateRow(sheet, rowIndex, updates, tz) {
   var headers = sheet.getDataRange().getValues()[0];
   var colMap = buildColMap(headers);
 
   Object.keys(updates).forEach(function (key) {
     var col = colMap[key];
-    if (col != null) {
-      sheet.getRange(rowIndex, col + 1).setValue(updates[key]);
+    if (col == null) return;
+
+    var cell = sheet.getRange(rowIndex, col + 1);
+    var value = updates[key];
+
+    if (DATE_COLUMNS.indexOf(key) !== -1) {
+      value = parseDateForSheet(value, tz);
+      if (value === '') {
+        cell.clearContent();
+        return;
+      }
     }
+
+    cell.setValue(value);
   });
 
   return jsonResponse({ _ok: true, rowIndex: rowIndex });
 }
 
-function createRow(sheet, data) {
+function createRow(sheet, data, tz) {
   var headers = sheet.getDataRange().getValues()[0];
   var colMap = buildColMap(headers);
-
-  var row = COLUMNS.map(function (key) { return data[key] != null ? data[key] : ''; });
 
   var lastRow = sheet.getLastRow();
   sheet.insertRowAfter(lastRow);
   var newRow = lastRow + 1;
 
-  COLUMNS.forEach(function (key, i) {
+  COLUMNS.forEach(function (key) {
     var col = colMap[key];
-    if (col != null) {
-      sheet.getRange(newRow, col + 1).setValue(data[key] != null ? data[key] : '');
+    if (col == null) return;
+
+    var cell = sheet.getRange(newRow, col + 1);
+    var value = data[key] != null ? data[key] : '';
+
+    if (DATE_COLUMNS.indexOf(key) !== -1) {
+      value = parseDateForSheet(value, tz);
+      if (value === '') {
+        cell.clearContent();
+        return;
+      }
     }
+
+    cell.setValue(value);
   });
 
   return jsonResponse({ _ok: true, rowIndex: newRow });
@@ -137,17 +178,63 @@ function createRow(sheet, data) {
 // HELPERS
 // -------------------------------------------------
 
-function buildRecord(headers, row, rowIndex) {
+function buildRecord(headers, row, rowIndex, tz) {
   var record = { _rowIndex: rowIndex };
   for (var i = 0; i < COLUMNS.length && i < headers.length; i++) {
-    var value = row[i];
-    if (value instanceof Date) {
-      record[COLUMNS[i]] = Utilities.formatDate(value, 'GMT-5', 'd/M/yyyy');
-    } else {
-      record[COLUMNS[i]] = value != null ? String(value) : '';
-    }
+    record[COLUMNS[i]] = formatDateForWire(row[i], tz);
   }
   return record;
+}
+
+/**
+ * Fecha de la hoja -> string de calendario para la app.
+ * Usa la zona horaria de la hoja para que el día no se desplace.
+ */
+function formatDateForWire(value, tz) {
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, tz, 'd/M/yyyy');
+  }
+  return value != null ? String(value) : '';
+}
+
+/**
+ * Fecha que manda la app -> Date real de la hoja.
+ *
+ * Acepta ISO 'yyyy-MM-dd' (formato nuevo) y 'd/M/yyyy' (compatibilidad).
+ * Nunca deja que Sheets interprete el string con el locale de la hoja.
+ * Se guarda al mediodía local para blindar el día ante DST o cambios de zona.
+ */
+function parseDateForSheet(value, tz) {
+  if (typeof value !== 'string') return value;
+
+  var v = value.trim();
+  if (v === '') return '';
+
+  var iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (iso) {
+    var d = Utilities.parseDate(v, tz, 'yyyy-MM-dd');
+    return new Date(d.getTime() + 12 * 60 * 60 * 1000);
+  }
+
+  var dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(v);
+  if (dmy) {
+    var d2 = Utilities.parseDate(v, tz, 'd/M/yyyy');
+    return new Date(d2.getTime() + 12 * 60 * 60 * 1000);
+  }
+
+  return value;
+}
+
+/** Ejecutar manualmente desde el editor para validar el round-trip de fechas. */
+function testDateRoundTrip() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var tz = ss.getSpreadsheetTimeZone();
+  ['2026-11-04', '2026-12-25', '2026-12-31', '2027-01-01', '2028-02-29']
+    .forEach(function (iso) {
+      var back = Utilities.formatDate(parseDateForSheet(iso, tz), tz, 'yyyy-MM-dd');
+      if (back !== iso) throw new Error(iso + ' -> ' + back);
+    });
+  Logger.log('OK: round-trip de fechas válido en ' + tz);
 }
 
 function buildColMap(headers) {

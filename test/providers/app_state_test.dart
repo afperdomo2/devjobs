@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:devjobs/models/job_application.dart';
 import 'package:devjobs/providers/app_state.dart';
 import 'package:devjobs/services/sheets_api_service.dart';
@@ -7,10 +9,53 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakeApi extends SheetsApiService {
   final List<JobApplication> data;
 
+  int createCalls = 0;
+  int updateCalls = 0;
+  JobApplication? lastCreated;
+  int? lastUpdatedRow;
+  Map<String, String>? lastUpdates;
+  int nextRowIndex = 100;
+
   _FakeApi(this.data) : super(baseUrl: 'http://test');
 
   @override
   Future<List<JobApplication>> fetchAll() async => data;
+
+  @override
+  Future<int> create(JobApplication application) async {
+    createCalls++;
+    lastCreated = application;
+    return nextRowIndex;
+  }
+
+  @override
+  Future<void> updateRow(int rowIndex, Map<String, String> updates) async {
+    updateCalls++;
+    lastUpdatedRow = rowIndex;
+    lastUpdates = updates;
+  }
+}
+
+/// Simula un dispositivo sin conexión desde el primer fetch.
+class _OfflineApi extends SheetsApiService {
+  _OfflineApi() : super(baseUrl: 'http://test');
+
+  @override
+  Future<List<JobApplication>> fetchAll() async =>
+      throw SocketException('offline');
+
+  @override
+  Future<int> create(JobApplication application) async =>
+      throw StateError('create no debería llamarse sin conexión');
+}
+
+/// Fetch OK, pero la escritura falla por red.
+class _CreateNetworkErrorApi extends _FakeApi {
+  _CreateNetworkErrorApi(super.data);
+
+  @override
+  Future<int> create(JobApplication application) async =>
+      throw SocketException('offline');
 }
 
 void main() {
@@ -135,5 +180,79 @@ void main() {
     final empty = AppState(apiService: _FakeApi([]));
     expect(empty.countApplications(AppState.filterAll), 0);
     expect(empty.countApplications(AppState.filterFinalizadas), 0);
+  });
+
+  test('createApplication inserta, asigna rowIndex y notifica', () async {
+    final api = _FakeApi(apps);
+    final state = AppState(apiService: api);
+    await state.fetchApplications(forceRefresh: true);
+
+    var notified = 0;
+    state.addListener(() => notified++);
+
+    const draft = JobApplication(
+      rowIndex: 0,
+      empresa: 'Nueva',
+      vacante: 'Dev',
+      estado: 'Enviada',
+      fechaPostulacion: '2026-11-04',
+    );
+    final created = await state.createApplication(draft);
+
+    expect(api.createCalls, 1);
+    expect(api.lastCreated?.empresa, 'Nueva');
+    expect(created.rowIndex, 100);
+    expect(created.empresa, 'Nueva');
+    expect(state.applications.length, apps.length + 1);
+    expect(state.applications.any((a) => a.rowIndex == 100), isTrue);
+    expect(notified, greaterThan(0));
+  });
+
+  test('createApplication sin conexión no llama a la API', () async {
+    final state = AppState(apiService: _OfflineApi());
+    await state.fetchApplications(forceRefresh: true);
+    expect(state.offline, isTrue);
+
+    const draft = JobApplication(rowIndex: 0, empresa: 'X', vacante: 'Y');
+    await expectLater(
+      state.createApplication(draft),
+      throwsA(isA<Exception>()),
+    );
+  });
+
+  test('createApplication marca offline y no inserta si falla la red', () async {
+    final api = _CreateNetworkErrorApi(apps);
+    final state = AppState(apiService: api);
+    await state.fetchApplications(forceRefresh: true);
+    expect(state.offline, isFalse);
+
+    const draft = JobApplication(rowIndex: 0, empresa: 'X', vacante: 'Y');
+    await expectLater(
+      state.createApplication(draft),
+      throwsA(isA<Exception>()),
+    );
+
+    expect(state.offline, isTrue);
+    expect(state.applications.length, apps.length);
+  });
+
+  test('updateApplication también parchea las fechas', () async {
+    final api = _FakeApi(apps);
+    final state = AppState(apiService: api);
+    await state.fetchApplications(forceRefresh: true);
+
+    await state.updateApplication(1, {
+      'fechaPostulacion': '2026-12-25',
+      'fechaSeguimiento': '2026-12-31',
+    });
+
+    final updated = state.applications.firstWhere((a) => a.rowIndex == 1);
+    expect(updated.fechaPostulacion, '2026-12-25');
+    expect(updated.fechaSeguimiento, '2026-12-31');
+    expect(api.lastUpdatedRow, 1);
+
+    await state.updateApplication(1, {'fechaSeguimiento': ''});
+    final cleared = state.applications.firstWhere((a) => a.rowIndex == 1);
+    expect(cleared.fechaSeguimiento, '');
   });
 }
