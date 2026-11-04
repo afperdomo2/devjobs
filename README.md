@@ -328,8 +328,8 @@ lib/
 ├── screens/
 │   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas)
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
-│   ├── empresas_screen.dart            # Listado de empresas con filtro por nombre
-│   ├── company_detail_screen.dart      # Detalle de empresa (métricas + vacantes)
+│   ├── empresas_screen.dart            # Listado de empresas: buscador, contador y cards
+│   ├── company_detail_screen.dart      # Detalle de empresa (métricas en grilla + vacantes)
 │   ├── postulaciones_screen.dart       # Postulaciones: pills Todas/Activas/Enviadas/Finalizadas + lista
 │   ├── applications_list_screen.dart   # Lista con pull-to-refresh (reutilizada por Postulaciones y Por gestionar)
 │   ├── pending_applications_screen.dart # Listado filtrado "Por gestionar"
@@ -342,12 +342,13 @@ lib/
     ├── applications_filter_bar.dart    # Pills de filtro de Postulaciones (con contadores)
     ├── status_chip.dart                # Chip de estado (colores por estado)
     ├── application_card.dart           # Card de postulación reutilizable (borde + tag "Por gestionar")
+    ├── company_card.dart               # Card de empresa (chips condicionales + última actividad)
     ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión
 apps_script_code.example.gs                # Apps Script de ejemplo (con placeholder)
 apps_script_code.gs                         # Copia local con tu SHEET_ID real (gitignored)
-test/                                   # Tests unitarios (helpers, modelos, theme)
+test/                                   # Tests unitarios y de widgets (helpers, modelos, theme, widgets, screens)
 docs/testing.md                         # Convenciones de tests del proyecto
 ```
 

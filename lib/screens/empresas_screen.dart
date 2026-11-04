@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../helpers/company_stats.dart';
-import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
-import '../widgets/meta_chip.dart';
+import '../widgets/company_card.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/scroll_to_top_button.dart';
 import '../widgets/wheel_refresh.dart';
@@ -45,6 +44,11 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
     return context.read<AppState>().fetchApplications(forceRefresh: true);
   }
 
+  void _clearQuery() {
+    _searchCtrl.clear();
+    setState(() => _query = '');
+  }
+
   List<CompanyStats> _filter(List<CompanyStats> all) {
     final q = _query.trim().toLowerCase();
     if (q.isEmpty) return all;
@@ -68,17 +72,37 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
             context.read<AppState>().fetchApplications(forceRefresh: true),
       );
     } else if (companies.isEmpty) {
+      final muted = Theme.of(context).colorScheme.onSurfaceVariant;
       content = ListView(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(
-            height: 220,
+            height: 260,
             child: Center(
-              child: Text(
-                _query.isEmpty
-                    ? 'Sin empresas para mostrar'
-                    : 'Sin resultados para "$_query"',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _query.isEmpty ? Icons.business_outlined : Icons.search_off,
+                    size: 40,
+                    color: muted,
+                  ),
+                  const SizedBox(height: AppSpace.sm),
+                  Text(
+                    _query.isEmpty
+                        ? 'Sin empresas para mostrar'
+                        : 'Sin resultados para "$_query"',
+                    textAlign: TextAlign.center,
+                  ),
+                  if (_query.isNotEmpty) ...[
+                    const SizedBox(height: AppSpace.xs),
+                    TextButton(
+                      onPressed: _clearQuery,
+                      child: const Text('Limpiar búsqueda'),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
@@ -94,7 +118,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
         separatorBuilder: (_, _) => const SizedBox(height: AppSpace.sm),
         itemBuilder: (context, index) {
           final company = companies[index];
-          return _CompanyCard(
+          return CompanyCard(
             company: company,
             onTap: () => Navigator.push(
               context,
@@ -113,11 +137,29 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
           controller: _searchCtrl,
           query: _query,
           onChanged: (v) => setState(() => _query = v),
-          onClear: () {
-            _searchCtrl.clear();
-            setState(() => _query = '');
-          },
+          onClear: _clearQuery,
         ),
+        if (companies.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.lg,
+              0,
+              AppSpace.lg,
+              AppSpace.xs,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                _query.isEmpty
+                    ? '${companies.length} '
+                        '${companies.length == 1 ? 'empresa' : 'empresas'}'
+                    : '${companies.length} de ${all.length} empresas',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
+          ),
         Expanded(
           child: Stack(
             fit: StackFit.expand,
@@ -182,121 +224,3 @@ class _SearchField extends StatelessWidget {
   }
 }
 
-class _CompanyCard extends StatelessWidget {
-  final CompanyStats company;
-  final VoidCallback onTap;
-
-  const _CompanyCard({required this.company, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final muted = scheme.onSurfaceVariant;
-    final brightness = Theme.of(context).brightness;
-
-    final chips = <Widget>[
-      MetaChip(
-        icon: Icons.notifications_active_outlined,
-        label:
-            '${company.activas} ${company.activas == 1 ? 'activa' : 'activas'}',
-        color: tealColor(brightness),
-      ),
-      MetaChip(
-        icon: Icons.check_circle_outline,
-        label: '${company.conNovedad}/${company.total} respondieron',
-        color: infoColor(brightness),
-      ),
-    ];
-
-    final ultima = company.ultimaPostulacion;
-    if (ultima != null) {
-      final dias = DateTime.now().difference(ultima).inDays;
-      chips.add(MetaChip(
-        icon: Icons.schedule,
-        label: formatSinNovedad(dias < 0 ? 0 : dias),
-      ));
-    }
-
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius:
-            const BorderRadius.all(Radius.circular(AppRadius.card)),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpace.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _CompanyAvatar(nombre: company.nombre),
-                  const SizedBox(width: AppSpace.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          company.nombre,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppType.cardTitle(context),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${company.total} '
-                          '${company.total == 1 ? 'postulación' : 'postulaciones'}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: muted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, color: scheme.primary),
-                ],
-              ),
-              const SizedBox(height: AppSpace.md - 2),
-              Wrap(
-                spacing: AppSpace.xs + 2,
-                runSpacing: AppSpace.xs + 2,
-                children: chips,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CompanyAvatar extends StatelessWidget {
-  final String nombre;
-
-  const _CompanyAvatar({required this.nombre});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final initial = nombre.trim().isEmpty
-        ? '?'
-        : nombre.trim().characters.first.toUpperCase();
-    return Container(
-      width: 40,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        initial,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: scheme.primary,
-        ),
-      ),
-    );
-  }
-}

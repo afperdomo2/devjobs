@@ -8,7 +8,6 @@ import '../theme.dart';
 import '../widgets/application_card.dart';
 import '../widgets/meta_chip.dart';
 import 'application_detail_screen.dart';
-import 'filtered_applications_screen.dart';
 
 /// Detalle de una empresa: métricas agregadas, distribución de sus
 /// postulaciones y acceso al listado de vacantes filtrado por empresa.
@@ -32,7 +31,6 @@ class CompanyDetailScreen extends StatelessWidget {
       );
     }
 
-    final entrevistas = apps.where((a) => a.entrevistaRealizada).length;
     final ciudades = _unique(apps.map((a) => a.ciudad));
     final modalidades = _unique(apps.map((a) => a.modalidad));
     final plataformas = _unique(apps.map((a) => a.plataforma));
@@ -53,42 +51,63 @@ class CompanyDetailScreen extends StatelessWidget {
                 children: [
                   Text('Métricas', style: AppType.section(context)),
                   const SizedBox(height: AppSpace.md),
-                  Wrap(
-                    spacing: 20,
-                    runSpacing: 16,
-                    children: [
-                      _Metric(
-                        icon: Icons.notifications_active_outlined,
-                        value: '${stats.activas}',
-                        label: 'Activas',
-                        color: tealColor(brightness),
-                      ),
-                      _Metric(
-                        icon: Icons.check_circle_outline,
-                        value: '${stats.conNovedad}/${stats.total}',
-                        label: 'Respondieron',
-                        color: infoColor(brightness),
-                      ),
-                      _Metric(
-                        icon: Icons.flag_outlined,
-                        value: '${stats.finalizadas}',
-                        label: 'Finalizadas',
-                        color: neutralColor(brightness),
-                      ),
-                      _Metric(
-                        icon: Icons.record_voice_over_outlined,
-                        value: '$entrevistas',
-                        label: 'Entrevistas',
-                        color: statusColor('entrevista', brightness),
-                      ),
-                      if (stats.promedioDias != null)
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const gap = AppSpace.md;
+                      final columns = constraints.maxWidth >= 520 ? 3 : 2;
+                      final tileWidth =
+                          (constraints.maxWidth - gap * (columns - 1)) /
+                              columns;
+                      final metrics = <Widget>[
                         _Metric(
-                          icon: Icons.schedule,
-                          value: formatDias(stats.promedioDias!),
-                          label: 'Prom. cierre',
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          icon: Icons.notifications_active_outlined,
+                          value: '${stats.activas}',
+                          label: 'Activas',
+                          color: tealColor(brightness),
                         ),
-                    ],
+                        _Metric(
+                          icon: Icons.check_circle_outline,
+                          value: '${stats.conNovedad}/${stats.total}',
+                          label: 'Respondieron',
+                          color: infoColor(brightness),
+                        ),
+                        _Metric(
+                          icon: Icons.flag_outlined,
+                          value: '${stats.finalizadas}',
+                          label: 'Finalizadas',
+                          color: neutralColor(brightness),
+                        ),
+                        _Metric(
+                          icon: Icons.record_voice_over_outlined,
+                          value: '${stats.entrevistas}',
+                          label: 'Entrevistas',
+                          color: statusColor('entrevista', brightness),
+                        ),
+                        _Metric(
+                          icon: Icons.label_important,
+                          value: '${stats.porGestionar}',
+                          label: 'Por gestionar',
+                          color: gestionColor(brightness),
+                        ),
+                        if (stats.promedioDias != null)
+                          _Metric(
+                            icon: Icons.schedule,
+                            value: formatDias(stats.promedioDias!),
+                            label: 'Prom. cierre',
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                      ];
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          for (final metric in metrics)
+                            SizedBox(width: tileWidth, child: metric),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -129,21 +148,6 @@ class CompanyDetailScreen extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: AppSpace.lg),
-          FilledButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => FilteredApplicationsScreen(
-                  title: 'Empresa',
-                  field: 'empresa',
-                  value: stats.nombre,
-                ),
-              ),
-            ),
-            icon: const Icon(Icons.list_alt),
-            label: const Text('Ver vacantes de esta empresa'),
-          ),
           const SizedBox(height: AppSpace.xl),
           Text('Vacantes (${apps.length})', style: AppType.section(context)),
           const SizedBox(height: AppSpace.sm),
@@ -187,6 +191,15 @@ class _HeaderCard extends StatelessWidget {
     final initial = stats.nombre.trim().isEmpty
         ? '?'
         : stats.nombre.trim().characters.first.toUpperCase();
+    final totalLabel =
+        '${stats.total} ${stats.total == 1 ? 'postulación' : 'postulaciones'}';
+    final ultima = stats.ultimaPostulacion;
+    final dias = ultima == null
+        ? null
+        : DateTime.now().difference(ultima).inDays;
+    final subtitle = dias == null
+        ? totalLabel
+        : '$totalLabel · ${formatSinNovedad(dias < 0 ? 0 : dias)}';
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -222,8 +235,9 @@ class _HeaderCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${stats.total} '
-                    '${stats.total == 1 ? 'postulación' : 'postulaciones'}',
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall
@@ -255,30 +269,45 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    return SizedBox(
-      width: 76,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.md,
+        vertical: AppSpace.sm,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius:
+            const BorderRadius.all(Radius.circular(AppRadius.control)),
+      ),
+      child: Row(
         children: [
-          Icon(icon, size: AppIconSize.chip + 4, color: color),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: color,
+          Icon(icon, size: AppIconSize.metric, color: color),
+          const SizedBox(width: AppSpace.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
                 ),
-          ),
-          const SizedBox(height: 1),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontSize: 11,
-                  color: muted,
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 11,
+                        color: muted,
+                      ),
                 ),
+              ],
+            ),
           ),
         ],
       ),

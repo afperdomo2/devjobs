@@ -18,6 +18,12 @@ class CompanyStats {
   /// Postulaciones con fecha de seguimiento registrada (respuesta/novedad).
   final int conNovedad;
 
+  /// Postulaciones con entrevista realizada.
+  final int entrevistas;
+
+  /// Postulaciones marcadas con el flag "Por gestionar".
+  final int porGestionar;
+
   /// Promedio de días de cierre: media de [JobApplication.diasProceso] solo
   /// sobre finalizadas con seguimiento. null si no hay datos suficientes
   /// (se excluyen activas y finalizadas sin seguimiento para no
@@ -33,6 +39,8 @@ class CompanyStats {
     required this.activas,
     required this.finalizadas,
     required this.conNovedad,
+    required this.entrevistas,
+    required this.porGestionar,
     this.promedioDias,
     this.ultimaPostulacion,
   });
@@ -61,6 +69,8 @@ List<CompanyStats> companiesStats(List<JobApplication> apps) {
     var activas = 0;
     var finalizadas = 0;
     var conNovedad = 0;
+    var entrevistas = 0;
+    var porGestionar = 0;
     var sumaCierre = 0;
     var cuentaCierre = 0;
     DateTime? ultima;
@@ -73,6 +83,8 @@ List<CompanyStats> companiesStats(List<JobApplication> apps) {
       }
 
       if (parseDate(a.fechaSeguimiento) != null) conNovedad++;
+      if (a.entrevistaRealizada) entrevistas++;
+      if (a.porGestionar) porGestionar++;
 
       // Solo finalizadas con seguimiento aportan al promedio de cierre.
       final dias = a.isFinalizado ? a.diasProceso : null;
@@ -93,6 +105,8 @@ List<CompanyStats> companiesStats(List<JobApplication> apps) {
       activas: activas,
       finalizadas: finalizadas,
       conNovedad: conNovedad,
+      entrevistas: entrevistas,
+      porGestionar: porGestionar,
       promedioDias: cuentaCierre == 0 ? null : (sumaCierre / cuentaCierre).round(),
       ultimaPostulacion: ultima,
     ));

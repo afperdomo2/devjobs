@@ -158,6 +158,37 @@ void main() {
       expect(companiesStats(apps).first.conNovedad, equals(2));
     });
 
+    test('entrevistas y porGestionar cuentan por empresa', () {
+      final apps = [
+        JobApplication(
+            rowIndex: 1,
+            empresa: 'Acme',
+            estado: 'Entrevista realizada',
+            entrevistaRealizada: true,
+            porGestionar: true),
+        JobApplication(
+            rowIndex: 2,
+            empresa: 'Acme',
+            estado: 'Entrevista agendada',
+            entrevistaRealizada: true),
+        JobApplication(rowIndex: 3, empresa: 'Acme', estado: 'Enviada'),
+        JobApplication(
+            rowIndex: 4,
+            empresa: 'Otra',
+            estado: 'Enviada',
+            porGestionar: true),
+      ];
+      final stats = companiesStats(apps);
+
+      final acme = stats.firstWhere((s) => s.nombre == 'Acme');
+      expect(acme.entrevistas, equals(2));
+      expect(acme.porGestionar, equals(1));
+
+      final otra = stats.firstWhere((s) => s.nombre == 'Otra');
+      expect(otra.entrevistas, equals(0));
+      expect(otra.porGestionar, equals(1));
+    });
+
     test('ultimaPostulacion toma la más reciente; null si no hay fechas', () {
       final apps = [
         JobApplication(
