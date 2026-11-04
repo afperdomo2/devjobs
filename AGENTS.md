@@ -14,6 +14,8 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 | Clean build | `flutter clean` |
 | Build Android (APK) | `flutter build apk --release --no-tree-shake-icons` |
 | Build Windows | `flutter build windows --release --no-tree-shake-icons` |
+| Build Linux | `flutter build linux --release --no-tree-shake-icons` |
+| Install Linux (local) | `./scripts/install-linux.sh` |
 
 > **`--no-tree-shake-icons` es obligatorio en release.** El tree-shaker de íconos
 > de Flutter tiene un bug que descarta glyphs usados (p.ej. `Icons.business_outlined`,
@@ -25,6 +27,8 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 - **Android APK** → `build/app/outputs/flutter-apk/app-release.apk`; instalar en dispositivo conectado con `flutter install --release`.
 - **Windows** → `build/windows/x64/runner/Release/devjobs.exe`; para distribuir copiar **toda la carpeta `Release\`** (exe + DLLs + `data\`). La plataforma se habilitó con `flutter create --platforms=windows .` (carpeta `windows/` ya existe). Ventana 420×880 centrada (`windows/runner/main.cpp`); ícono generado desde `assets/icon/icon.png` vía `flutter_launcher_icons` (config `windows.generate`).
 - **Instalador Windows (opcional)** → `installer/devjobs.iss` (Inno Setup 6): compilar con `ISCC.exe installer\devjobs.iss` → `installer/Output/DevJobsSetup.exe` (requiere `flutter build windows --release` previo).
+- **Linux** → `build/linux/x64/release/bundle/` (binario + `data/` + `lib/`); para distribuir copiar **toda la carpeta `bundle/`**. Requiere toolchain `clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev`. Ventana 420×880 centrada y mínima 360×600 (`linux/runner/my_application.cc`); ícono de ventana desde `linux/devjobs.png` (256×256, copiado al bundle por `linux/CMakeLists.txt`). `APPLICATION_ID=com.example.devjobs`.
+- **Instalación Linux (sin sudo)** → `scripts/install-linux.sh` copia el bundle a `~/.local/opt/devjobs`, symlink en `~/.local/bin/devjobs`, `.desktop` en `~/.local/share/applications` e ícono en `~/.local/share/icons/hicolor/256x256/apps`; `--uninstall` revierte. Plantilla del entry: `linux/devjobs.desktop`.
 - Web → `build/web/`. Todos los artefactos quedan bajo `build/` (gitignored).
 - El `.env` (con `API_URL`) se embebe en el bundle: debe existir antes de compilar. Ver README → Despliegue.
 

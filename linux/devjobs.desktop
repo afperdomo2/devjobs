@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=DevJobs
+GenericName=Gestor de postulaciones
+Comment=Seguimiento de postulaciones laborales (Google Sheets)
+# install-linux.sh reemplaza el marcador de Exec por la ruta absoluta del
+# binario instalado en ~/.local/opt/devjobs.
+Exec=@EXEC@
+TryExec=@EXEC@
+Icon=devjobs
+Terminal=false
+Categories=Development;
+Keywords=jobs;empleo;postulaciones;devjobs;
+StartupNotify=true
+StartupWMClass=com.example.devjobs

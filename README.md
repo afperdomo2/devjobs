@@ -53,6 +53,7 @@ La app requiere permiso de **Internet** para comunicarse con la API REST del App
 | Limpiar build | `flutter clean` |
 | Build Android (APK) | `flutter build apk --release` |
 | Build Windows | `flutter build windows --release` |
+| Build Linux | `flutter build linux --release --no-tree-shake-icons` |
 
 ## 📱 Seleccionar dispositivo
 
@@ -73,6 +74,7 @@ Ejemplos:
 ```bash
 flutter run -d chrome        # Navegador web
 flutter run -d emulator-5554 # Emulador Android
+flutter run -d linux         # Linux desktop
 flutter run -d macos         # macOS (desktop)
 flutter run -d ios           # iOS simulator
 ```
@@ -133,6 +135,52 @@ Para generar un `DevJobsSetup.exe` con acceso directo en Escritorio/Menú Inicio
 ```
 
 El script es [`installer/devjobs.iss`](installer/devjobs.iss) (incluye nombre, versión, ícono y tareas de acceso directo). Sin Inno Setup instalado, la app se distribuye igual en portable (paso anterior).
+
+### Linux
+
+La plataforma Linux debe estar habilitada (carpeta `linux/` en la raíz del proyecto). Si no existe:
+
+```bash
+flutter create --platforms=linux .
+```
+
+Antes de compilar por primera vez, instala el toolchain (Ubuntu/Debian) y verifícalo con `flutter doctor`:
+
+```bash
+sudo apt install clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+flutter doctor -v   # "Linux toolchain" debe quedar en verde
+```
+
+Build de release:
+
+```bash
+flutter build linux --release --no-tree-shake-icons
+# Salida: build/linux/x64/release/bundle/devjobs
+```
+
+`--no-tree-shake-icons` es obligatorio en release (bug del tree-shaker de íconos: ver [AGENTS.md](AGENTS.md) → Comandos).
+
+La app abre en una **ventana de 420×880 centrada** (mismo criterio mobile-first que Windows; tamaño mínimo 360×600). El icono de la ventana sale de `linux/devjobs.png` (256×256, generado desde `assets/icon/icon.png`) y se copia junto al binario.
+
+Para probar en local sin compilar: `flutter run -d linux`.
+
+> ⚠️ Para distribuir o mover la app hay que copiar **toda la carpeta** `build/linux/x64/release/bundle/` (binario + `data/` + `lib/`), no solo el ejecutable.
+>
+> ⚠️ El binario enlaza contra la glibc del sistema donde se compiló: lo compilado en Ubuntu 26.04 puede no correr en distros más viejas. Si necesitas compatibilidad amplia, compila dentro de un contenedor con la versión más antigua que quieras soportar.
+
+#### Instalación local — `.desktop` + `install-linux.sh`
+
+Instala la app en tu perfil (sin `sudo`), con entrada en el menú de aplicaciones e icono:
+
+```bash
+flutter build linux --release --no-tree-shake-icons
+./scripts/install-linux.sh              # instalar / actualizar
+./scripts/install-linux.sh --uninstall  # desinstalar
+```
+
+Destinos: `~/.local/opt/devjobs` (bundle completo), `~/.local/bin/devjobs` (symlink), `~/.local/share/applications/devjobs.desktop` y `~/.local/share/icons/hicolor/256x256/apps/devjobs.png`. Si `~/.local/bin` no está en el `PATH`, el script te recuerda cómo agregarlo.
+
+La entrada de escritorio está en [`linux/devjobs.desktop`](linux/devjobs.desktop) y usa `APPLICATION_ID=com.example.devjobs` (el mismo identificador que Android).
 
 ### Web
 
