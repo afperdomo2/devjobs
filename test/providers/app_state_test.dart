@@ -7,25 +7,52 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Servicio falso: evita red y devuelve una lista fija.
 class _FakeApi extends SheetsApiService {
-  final List<JobApplication> data;
+  List<JobApplication> data;
 
   int createCalls = 0;
+  int fetchCalls = 0;
   int updateCalls = 0;
   JobApplication? lastCreated;
   int? lastUpdatedRow;
   Map<String, String>? lastUpdates;
   int nextRowIndex = 100;
+  bool shiftedAfterCreate = true;
+  bool failFetchAfterCreate = false;
 
-  _FakeApi(this.data) : super(baseUrl: 'http://test');
+  _FakeApi(List<JobApplication> data)
+    : data = List.of(data),
+      super(baseUrl: 'http://test');
 
   @override
-  Future<List<JobApplication>> fetchAll() async => data;
+  Future<List<JobApplication>> fetchAll() async {
+    fetchCalls++;
+    if (failFetchAfterCreate && createCalls > 0) {
+      throw SocketException('offline');
+    }
+    return List.of(data);
+  }
 
   @override
-  Future<int> create(JobApplication application) async {
+  Future<CreateResult> create(JobApplication application) async {
     createCalls++;
     lastCreated = application;
-    return nextRowIndex;
+
+    final created = application.copyWith(rowIndex: nextRowIndex);
+    if (shiftedAfterCreate) {
+      for (var i = 0; i < data.length; i++) {
+        if (data[i].rowIndex >= nextRowIndex) {
+          data[i] = data[i].copyWith(rowIndex: data[i].rowIndex + 1);
+        }
+      }
+      data.insert(0, created);
+    } else {
+      data.add(created);
+    }
+
+    return CreateResult(
+      rowIndex: nextRowIndex,
+      shifted: shiftedAfterCreate,
+    );
   }
 
   @override
@@ -45,7 +72,7 @@ class _OfflineApi extends SheetsApiService {
       throw SocketException('offline');
 
   @override
-  Future<int> create(JobApplication application) async =>
+  Future<CreateResult> create(JobApplication application) async =>
       throw StateError('create no debería llamarse sin conexión');
 }
 
@@ -54,7 +81,7 @@ class _CreateNetworkErrorApi extends _FakeApi {
   _CreateNetworkErrorApi(super.data);
 
   @override
-  Future<int> create(JobApplication application) async =>
+  Future<CreateResult> create(JobApplication application) async =>
       throw SocketException('offline');
 }
 
@@ -182,10 +209,13 @@ void main() {
     expect(empty.countApplications(AppState.filterFinalizadas), 0);
   });
 
-  test('createApplication inserta, asigna rowIndex y notifica', () async {
-    final api = _FakeApi(apps);
+  test('createApplication con desplazamiento refresca la lista', () async {
+    final api = _FakeApi(apps)
+      ..nextRowIndex = 3
+      ..shiftedAfterCreate = true;
     final state = AppState(apiService: api);
     await state.fetchApplications(forceRefresh: true);
+    expect(api.fetchCalls, 1);
 
     var notified = 0;
     state.addListener(() => notified++);
@@ -200,12 +230,95 @@ void main() {
     final created = await state.createApplication(draft);
 
     expect(api.createCalls, 1);
-    expect(api.lastCreated?.empresa, 'Nueva');
-    expect(created.rowIndex, 100);
-    expect(created.empresa, 'Nueva');
-    expect(state.applications.length, apps.length + 1);
-    expect(state.applications.any((a) => a.rowIndex == 100), isTrue);
+    expect(api.fetchCalls, 2); // refresco forzado tras el desplazamiento
+    expect(created.rowIndex, 3);
+    expect(
+      state.applications.any((a) => a.empresa == 'Nueva' && a.rowIndex == 3),
+      isTrue,
+    );
+    // Las filas 3, 4 y 5 se desplazan a 4, 5 y 6.
+    expect(state.applications.firstWhere((a) => a.empresa == 'C').rowIndex, 4);
+    expect(state.applications.firstWhere((a) => a.empresa == 'D').rowIndex, 5);
+    expect(state.applications.firstWhere((a) => a.empresa == 'E').rowIndex, 6);
+    // Las filas 1 y 2 no cambian.
+    expect(state.applications.firstWhere((a) => a.empresa == 'A').rowIndex, 1);
+    expect(state.applications.firstWhere((a) => a.empresa == 'B').rowIndex, 2);
     expect(notified, greaterThan(0));
+  });
+
+  test('createApplication con shift mantiene los índices si el refetch falla', () async {
+    final api = _FakeApi(apps)
+      ..nextRowIndex = 3
+      ..shiftedAfterCreate = true
+      ..failFetchAfterCreate = true;
+    final state = AppState(apiService: api);
+    await state.fetchApplications(forceRefresh: true);
+    expect(api.fetchCalls, 1);
+
+    const draft = JobApplication(
+      rowIndex: 0,
+      empresa: 'Nueva',
+      vacante: 'Dev',
+      fechaPostulacion: '2026-11-04',
+    );
+    final created = await state.createApplication(draft);
+
+    expect(created.rowIndex, 3);
+    expect(api.fetchCalls, 2);
+    expect(state.offline, isTrue);
+    // El refresh falló, pero el desplazamiento local mantiene los índices.
+    expect(
+      state.applications.any((a) => a.empresa == 'Nueva' && a.rowIndex == 3),
+      isTrue,
+    );
+    expect(state.applications.firstWhere((a) => a.empresa == 'C').rowIndex, 4);
+    expect(state.applications.firstWhere((a) => a.empresa == 'D').rowIndex, 5);
+    expect(state.applications.firstWhere((a) => a.empresa == 'E').rowIndex, 6);
+  });
+
+  test('createApplication sin desplazamiento inserta local y no refresca', () async {
+    final api = _FakeApi([
+      JobApplication(
+        rowIndex: 14,
+        empresa: 'Consultec',
+        vacante: 'Backend',
+        fechaPostulacion: '01/11/2026',
+      ),
+      JobApplication(
+        rowIndex: 15,
+        empresa: 'Rappi',
+        vacante: 'Mobile',
+        fechaPostulacion: '02/11/2026',
+      ),
+    ])
+      ..nextRowIndex = 13
+      ..shiftedAfterCreate = false;
+    final state = AppState(apiService: api);
+    await state.fetchApplications(forceRefresh: true);
+    expect(api.fetchCalls, 1);
+
+    const draft = JobApplication(
+      rowIndex: 0,
+      empresa: 'Nueva',
+      vacante: 'Dev',
+      fechaPostulacion: '2026-11-04',
+    );
+    final created = await state.createApplication(draft);
+
+    expect(created.rowIndex, 13);
+    expect(api.fetchCalls, 1); // no hubo refresh
+    expect(
+      state.applications.any((a) => a.empresa == 'Nueva' && a.rowIndex == 13),
+      isTrue,
+    );
+    expect(
+      state.applications.firstWhere((a) => a.empresa == 'Consultec').rowIndex,
+      14,
+    );
+    expect(
+      state.applications.firstWhere((a) => a.empresa == 'Rappi').rowIndex,
+      15,
+    );
   });
 
   test('createApplication sin conexión no llama a la API', () async {

@@ -29,10 +29,10 @@ class _FormApi extends SheetsApiService {
   }
 
   @override
-  Future<int> create(JobApplication application) async {
+  Future<CreateResult> create(JobApplication application) async {
     createCalls++;
     lastCreated = application;
-    return 42;
+    return const CreateResult(rowIndex: 42, shifted: false);
   }
 
   @override

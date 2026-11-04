@@ -279,9 +279,13 @@ La Google Sheet no expone datos directamente. Para conectarla a la app se usa un
 |--------|----------|--------|
 | `GET` | `?action=all` | Devuelve todas las postulaciones como JSON |
 | `GET` | `?action=dashboard` | Devuelve totales computados |
-| `GET` | `?action=meta` | Diagnóstico: zona horaria, locale y formato de las fechas |
+| `GET` | `?action=meta` | Diagnóstico: zona horaria, locale, formato de fechas, primera fila de datos y rango del filtro |
 | `POST` | `action: update` | Actualiza una fila existente (`rowIndex` + `updates`) |
-| `POST` | `action: create` | Crea una postulación y devuelve el `rowIndex` asignado |
+| `POST` | `action: create` | Crea una postulación y devuelve `rowIndex` + `shifted` |
+
+Las nuevas postulaciones quedan **encima** de la primera existente. Si la fila inmediatamente superior está vacía (sin valores, fórmulas ni notas), el script la rellena sin mover filas y responde `shifted: false`; en caso contrario inserta una fila, desplaza las existentes y responde `shifted: true` (la app refresca la lista).
+
+> `rowIndex` es posicional: si insertas o borras filas directamente en el Sheet, haz **pull-to-refresh** en la app antes de editar una postulación.
 
 El script está vinculado a la hoja, se despliega como **Web App** (Ejecutar como: Yo, Acceso: Cualquiera) y la URL se configura vía `.env`.
 

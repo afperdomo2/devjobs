@@ -60,12 +60,30 @@ function doGet(e) {
 
 /** Diagnóstico de solo lectura: zona horaria, locale y formato de las fechas. */
 function getMeta(ss, sheet) {
+  var headers = sheet.getDataRange().getValues()[0];
+  var colMap = buildColMap(headers);
+  var firstDataRow = findFirstDataRow(sheet, colMap);
+
+  var filter = sheet.getFilter();
+  var filterRange = null;
+  if (filter != null) {
+    var fr = filter.getRange();
+    filterRange = {
+      startRow: fr.getRow(),
+      endRow: fr.getLastRow()
+    };
+  }
+
   return {
     timeZone: ss.getSpreadsheetTimeZone(),
     locale: ss.getSpreadsheetLocale(),
     scriptTimeZone: Session.getScriptTimeZone(),
     fechaPostulacionFormat: sheet.getRange('A2').getNumberFormat(),
-    fechaSeguimientoFormat: sheet.getRange('K2').getNumberFormat()
+    fechaSeguimientoFormat: sheet.getRange('K2').getNumberFormat(),
+    lastRow: sheet.getLastRow(),
+    lastColumn: sheet.getLastColumn(),
+    firstDataRow: firstDataRow,
+    filterRange: filterRange
   };
 }
 
@@ -148,10 +166,31 @@ function updateRow(sheet, rowIndex, updates, tz) {
 function createRow(sheet, data, tz) {
   var headers = sheet.getDataRange().getValues()[0];
   var colMap = buildColMap(headers);
+  var lastColumn = sheet.getLastColumn();
 
-  var lastRow = sheet.getLastRow();
-  sheet.insertRowAfter(lastRow);
-  var newRow = lastRow + 1;
+  var firstDataRow = findFirstDataRow(sheet, colMap);
+  var hadData = firstDataRow != null;
+  if (!hadData) firstDataRow = 2;
+
+  var shifted = true;
+  var newRow;
+
+  if (hadData && firstDataRow > 2 &&
+      isRowVisibleForData(sheet, firstDataRow - 1) &&
+      isRowEmpty(sheet, firstDataRow - 1, lastColumn)) {
+    // Hay un hueco justo encima de la primera postulación: lo usamos sin
+    // mover filas. Los rowIndex existentes siguen siendo válidos.
+    newRow = firstDataRow - 1;
+    shifted = false;
+    copyRowFormat(sheet, firstDataRow, newRow, lastColumn);
+  } else {
+    // No hay hueco: insertamos arriba y todo lo demás se desplaza.
+    newRow = firstDataRow;
+    sheet.insertRowBefore(newRow);
+    if (hadData) {
+      copyRowFormat(sheet, newRow + 1, newRow, lastColumn);
+    }
+  }
 
   COLUMNS.forEach(function (key) {
     var col = colMap[key];
@@ -171,12 +210,91 @@ function createRow(sheet, data, tz) {
     cell.setValue(value);
   });
 
-  return jsonResponse({ _ok: true, rowIndex: newRow });
+  return jsonResponse({
+    _ok: true,
+    rowIndex: newRow,
+    shifted: shifted
+  });
 }
 
 // -------------------------------------------------
 // HELPERS
 // -------------------------------------------------
+
+/**
+ * Primera fila con una postulación (misma condición que getAllRows).
+ * Devuelve null si no hay ninguna.
+ */
+function findFirstDataRow(sheet, colMap) {
+  var lastRow = sheet.getLastRow();
+  var lastColumn = sheet.getLastColumn();
+  if (lastRow < 2 || lastColumn < 1) return null;
+
+  var empresaCol = colMap['empresa'];
+  var vacanteCol = colMap['vacante'];
+  var data = sheet.getRange(2, 1, lastRow - 1, lastColumn).getValues();
+
+  for (var i = 0; i < data.length; i++) {
+    var empresa = empresaCol != null ? data[i][empresaCol] : '';
+    var vacante = vacanteCol != null ? data[i][vacanteCol] : '';
+    if (hasText(empresa) || hasText(vacante)) return i + 2;
+  }
+
+  return null;
+}
+
+function hasText(value) {
+  return value != null && String(value).trim() !== '';
+}
+
+/**
+ * ¿La fila es apta para escribir datos? No debe estar oculta manualmente ni
+ * fuera del rango del filtro activo, para que la nueva postulación se vea.
+ */
+function isRowVisibleForData(sheet, row) {
+  if (sheet.isRowHiddenByUser(row)) return false;
+
+  var filter = sheet.getFilter();
+  if (filter == null) return true;
+
+  var range = filter.getRange();
+  return row >= range.getRow() && row <= range.getLastRow();
+}
+
+/** ¿La fila está completamente vacía? (valores, fórmulas y notas). */
+function isRowEmpty(sheet, row, lastColumn) {
+  if (lastColumn < 1) return true;
+
+  var range = sheet.getRange(row, 1, 1, lastColumn);
+  var values = range.getValues()[0];
+  var formulas = range.getFormulas()[0];
+  var notes = range.getNotes()[0];
+
+  for (var i = 0; i < lastColumn; i++) {
+    // Un checkbox desmarcado (false) en una fila plantilla no es dato.
+    if (values[i] !== '' && values[i] != null && values[i] !== false) {
+      return false;
+    }
+    if (formulas[i] !== '') return false;
+    if (notes[i] !== '') return false;
+  }
+
+  return true;
+}
+
+/** Copia solo formato y validación de datos entre filas. */
+function copyRowFormat(sheet, sourceRow, targetRow, lastColumn) {
+  if (lastColumn < 1) return;
+
+  var source = sheet.getRange(sourceRow, 1, 1, lastColumn);
+  var target = sheet.getRange(targetRow, 1, 1, lastColumn);
+  source.copyTo(target, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+  source.copyTo(
+    target,
+    SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION,
+    false
+  );
+}
 
 function buildRecord(headers, row, rowIndex, tz) {
   var record = { _rowIndex: rowIndex };

@@ -81,7 +81,7 @@ class SheetsApiService {
     }
   }
 
-  Future<int> create(JobApplication application) async {
+  Future<CreateResult> create(JobApplication application) async {
     final response = await _postAction({
       'action': 'create',
       'data': application.toJson(),
@@ -101,12 +101,45 @@ class SheetsApiService {
       );
     }
 
-    if (decoded is! Map || decoded['rowIndex'] is! num) {
+    if (decoded is! Map) {
       throw Exception(
         'Respuesta inválida del servidor al crear la postulación.',
       );
     }
 
-    return (decoded['rowIndex'] as num).toInt();
+    try {
+      return CreateResult.fromJson(Map<String, dynamic>.from(decoded));
+    } on FormatException {
+      throw Exception(
+        'Respuesta inválida del servidor al crear la postulación.',
+      );
+    }
+  }
+}
+
+/// Resultado de crear una postulación.
+///
+/// [shifted] indica si el servidor insertó una fila y desplazó las existentes.
+/// En ese caso los `rowIndex` cacheados quedan obsoletos y hay que refrescar.
+class CreateResult {
+  final int rowIndex;
+  final bool shifted;
+
+  const CreateResult({required this.rowIndex, required this.shifted});
+
+  factory CreateResult.fromJson(Map<String, dynamic> json) {
+    final rowIndex = json['rowIndex'];
+    if (rowIndex is! num) {
+      throw FormatException('Respuesta de creación sin rowIndex');
+    }
+
+    final rawShifted = json['shifted'];
+    // Scripts viejos no envían el flag: asumimos que sí hubo desplazamiento
+    // para forzar un refresh seguro.
+    final shifted = rawShifted == null
+        ? true
+        : (rawShifted == true || rawShifted == 'true');
+
+    return CreateResult(rowIndex: rowIndex.toInt(), shifted: shifted);
   }
 }

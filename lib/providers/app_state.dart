@@ -221,9 +221,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Crea una postulación nueva en la hoja y la inserta en la caché local.
+  /// Crea una postulación nueva en la hoja.
   ///
   /// [draft] debe traer `rowIndex: 0`; el índice real lo devuelve el servidor.
+  /// Si el servidor rellenó un hueco sin mover filas (`shifted == false`),
+  /// insertamos localmente. Si insertó una fila y desplazó las existentes,
+  /// ajustamos los índices cacheados y luego forzamos un refresh.
   Future<JobApplication> createApplication(JobApplication draft) async {
     if (_offline) {
       throw Exception(
@@ -231,9 +234,9 @@ class AppState extends ChangeNotifier {
       );
     }
 
-    final int rowIndex;
+    final CreateResult result;
     try {
-      rowIndex = await apiService.create(draft);
+      result = await apiService.create(draft);
     } catch (e) {
       if (isNetworkError(e)) {
         _offline = true;
@@ -242,19 +245,55 @@ class AppState extends ChangeNotifier {
       throw Exception(friendlyErrorMessage(e));
     }
 
-    final created = draft.copyWith(rowIndex: rowIndex);
+    final created = draft.copyWith(rowIndex: result.rowIndex);
+
+    if (result.shifted) {
+      // El servidor insertó una fila y desplazó las existentes. Ajustamos la
+      // caché de inmediato para que los índices sigan siendo correctos aunque
+      // el refresh falle, y luego intentamos resincronizar con el Sheet.
+      _applyRowShift(result.rowIndex, created);
+      if (localCache != null) {
+        await localCache!.save(_cached!);
+      }
+      notifyListeners();
+
+      _lastFetched = null;
+      await fetchApplications(forceRefresh: true);
+      return created;
+    }
+
+    // Se usó un hueco encima de la primera postulación: ningún rowIndex
+    // existente cambia, así que basta con insertar la nueva en la caché.
     final current = _cached;
-    _cached = current == null ? [created] : [...current, created];
+    _cached = [
+      if (current != null)
+        ...current.where((a) => a.rowIndex != created.rowIndex),
+      created,
+    ];
 
     if (localCache != null) {
       await localCache!.save(_cached!);
     }
 
-    // Fuerza un resync en el próximo fetch para normalizar valores del Sheet.
-    _lastFetched = null;
-
     notifyListeners();
     return created;
+  }
+
+  /// Desplaza +1 los rowIndex >= [insertedRow] y agrega [created].
+  ///
+  /// Se usa como respaldo cuando el servidor confirma una inserción con
+  /// desplazamiento; si el refresh posterior falla, la caché sigue apuntando
+  /// a las filas correctas.
+  void _applyRowShift(int insertedRow, JobApplication created) {
+    final current = _cached;
+    _cached = [
+      if (current != null)
+        for (final app in current)
+          app.rowIndex >= insertedRow
+              ? app.copyWith(rowIndex: app.rowIndex + 1)
+              : app,
+      created,
+    ];
   }
 
   Future<void> _ensureCacheLoaded() async {
