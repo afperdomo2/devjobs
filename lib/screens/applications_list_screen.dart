@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../helpers/network_error.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
+import '../theme.dart';
 import '../widgets/application_card.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/scroll_to_top_button.dart';
@@ -81,9 +82,10 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
       content = ListView.separated(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.lg, vertical: AppSpace.sm),
         itemCount: apps.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpace.sm),
         itemBuilder: (context, index) {
           final app = apps[index];
           return ApplicationCard(

@@ -100,7 +100,7 @@ class _ApplicationCardState extends State<ApplicationCard>
           color: color,
           shape: gestion
               ? RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                   side: BorderSide(
                     color: gestionColor(Theme.of(context).brightness),
                     width: 1.5,
@@ -112,9 +112,9 @@ class _ApplicationCardState extends State<ApplicationCard>
       },
       child: InkWell(
         onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpace.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -125,17 +125,14 @@ class _ApplicationCardState extends State<ApplicationCard>
                       app.empresa,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                      style: AppType.cardTitle(context),
                     ),
                   ),
                   const SizedBox(width: 8),
                   StatusChip(status: app.estado),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpace.xs),
               Text(
                 app.vacante,
                 maxLines: 1,
@@ -174,10 +171,10 @@ class _ApplicationCardState extends State<ApplicationCard>
 
                 if (chips.isEmpty) return const SizedBox.shrink();
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: AppSpace.sm),
                   child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: AppSpace.xs + 2,
+                    runSpacing: AppSpace.xs + 2,
                     children: chips,
                   ),
                 );
@@ -185,8 +182,9 @@ class _ApplicationCardState extends State<ApplicationCard>
               Row(
                 children: [
                   Icon(Icons.calendar_today,
-                      size: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 4),
+                      size: 13,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  const SizedBox(width: AppSpace.xs),
                   Text(
                     formatDateShort(app.fechaPostulacion),
                     style: Theme.of(context)
@@ -202,9 +200,7 @@ class _ApplicationCardState extends State<ApplicationCard>
 
                     final estancado = !esFinal && dias >= kUmbralDiasSinNovedad;
                     final color = estancado
-                        ? (Theme.of(context).brightness == Brightness.dark
-                            ? AppColorsDark.warning
-                            : AppColors.warning)
+                        ? warningTextColor(Theme.of(context).brightness)
                         : Theme.of(context).colorScheme.onSurfaceVariant;
                     // Finalizado → check + duración total; activo → campana +
                     // días desde la última novedad (se leen como una frase).
@@ -219,8 +215,7 @@ class _ApplicationCardState extends State<ApplicationCard>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(icon, size: 13, color: color),
-                        const SizedBox(width: 3),
-                        Text(
+                        const SizedBox(width: 3),                        Text(
                           label,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: color,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../helpers/company_stats.dart';
 import '../helpers/date_formatter.dart';
 import '../providers/app_state.dart';
+import '../theme.dart';
 import '../widgets/application_card.dart';
 import '../widgets/meta_chip.dart';
 import 'application_detail_screen.dart';
@@ -19,6 +20,7 @@ class CompanyDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final brightness = Theme.of(context).brightness;
     final apps = state.getByField('empresa', nombre);
     final statsList = companiesStats(apps);
     final stats = statsList.isEmpty ? null : statsList.first;
@@ -49,11 +51,8 @@ class CompanyDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Métricas',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 12),
+                  Text('Métricas', style: AppType.section(context)),
+                  const SizedBox(height: AppSpace.md),
                   Wrap(
                     spacing: 20,
                     runSpacing: 16,
@@ -62,25 +61,25 @@ class CompanyDetailScreen extends StatelessWidget {
                         icon: Icons.notifications_active_outlined,
                         value: '${stats.activas}',
                         label: 'Activas',
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: tealColor(brightness),
                       ),
                       _Metric(
                         icon: Icons.check_circle_outline,
                         value: '${stats.conNovedad}/${stats.total}',
                         label: 'Respondieron',
-                        color: Theme.of(context).colorScheme.primary,
+                        color: infoColor(brightness),
                       ),
                       _Metric(
                         icon: Icons.flag_outlined,
                         value: '${stats.finalizadas}',
                         label: 'Finalizadas',
-                        color: Theme.of(context).colorScheme.error,
+                        color: neutralColor(brightness),
                       ),
                       _Metric(
                         icon: Icons.record_voice_over_outlined,
                         value: '$entrevistas',
                         label: 'Entrevistas',
-                        color: Theme.of(context).colorScheme.tertiary,
+                        color: statusColor('entrevista', brightness),
                       ),
                       if (stats.promedioDias != null)
                         _Metric(
@@ -105,11 +104,8 @@ class CompanyDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Distribución',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 12),
+                    Text('Distribución', style: AppType.section(context)),
+                    const SizedBox(height: AppSpace.md),
                     if (plataformas.isNotEmpty)
                       _ChipGroup(
                         icon: Icons.language,
@@ -133,7 +129,7 @@ class CompanyDetailScreen extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpace.lg),
           FilledButton.icon(
             onPressed: () => Navigator.push(
               context,
@@ -148,12 +144,9 @@ class CompanyDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.list_alt),
             label: const Text('Ver vacantes de esta empresa'),
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Vacantes (${apps.length})',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.xl),
+          Text('Vacantes (${apps.length})', style: AppType.section(context)),
+          const SizedBox(height: AppSpace.sm),
           for (final app in apps) ...[
             ApplicationCard(
               application: app,
@@ -164,7 +157,7 @@ class CompanyDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.sm),
           ],
         ],
       ),
@@ -223,10 +216,9 @@ class _HeaderCard extends StatelessWidget {
                 children: [
                   Text(
                     stats.nombre,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -268,22 +260,25 @@ class _Metric extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: color),
+          Icon(icon, size: AppIconSize.chip + 4, color: color),
           const SizedBox(height: 3),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
           ),
           const SizedBox(height: 1),
           Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 11, color: muted),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontSize: 11,
+                  color: muted,
+                ),
           ),
         ],
       ),
@@ -312,18 +307,21 @@ class _ChipGroup extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: muted),
+              Icon(icon, size: AppIconSize.chip, color: muted),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: TextStyle(fontSize: 12, color: muted),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontSize: 12,
+                      color: muted,
+                    ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpace.xs + 2),
           Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: AppSpace.xs + 2,
+            runSpacing: AppSpace.xs + 2,
             children: [for (final v in values) MetaChip(icon: icon, label: v)],
           ),
         ],

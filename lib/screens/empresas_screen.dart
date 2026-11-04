@@ -5,6 +5,7 @@ import '../helpers/company_stats.dart';
 import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
 import '../providers/app_state.dart';
+import '../theme.dart';
 import '../widgets/meta_chip.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/scroll_to_top_button.dart';
@@ -87,9 +88,10 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
       content = ListView.separated(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpace.lg, AppSpace.xs, AppSpace.lg, AppSpace.sm),
         itemCount: companies.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpace.sm),
         itemBuilder: (context, index) {
           final company = companies[index];
           return _CompanyCard(
@@ -150,7 +152,8 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.md, AppSpace.sm, AppSpace.md, AppSpace.sm),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
@@ -168,7 +171,8 @@ class _SearchField extends StatelessWidget {
           filled: true,
           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: const BorderRadius.all(
+                Radius.circular(AppRadius.control)),
             borderSide: BorderSide.none,
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -188,18 +192,19 @@ class _CompanyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final muted = scheme.onSurfaceVariant;
+    final brightness = Theme.of(context).brightness;
 
     final chips = <Widget>[
       MetaChip(
         icon: Icons.notifications_active_outlined,
         label:
             '${company.activas} ${company.activas == 1 ? 'activa' : 'activas'}',
-        color: scheme.secondary,
+        color: tealColor(brightness),
       ),
       MetaChip(
         icon: Icons.check_circle_outline,
         label: '${company.conNovedad}/${company.total} respondieron',
-        color: scheme.primary,
+        color: infoColor(brightness),
       ),
     ];
 
@@ -215,16 +220,17 @@ class _CompanyCard extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+            const BorderRadius.all(Radius.circular(AppRadius.card)),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpace.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   _CompanyAvatar(nombre: company.nombre),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpace.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,10 +239,7 @@ class _CompanyCard extends StatelessWidget {
                           company.nombre,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                          style: AppType.cardTitle(context),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -253,8 +256,12 @@ class _CompanyCard extends StatelessWidget {
                   Icon(Icons.chevron_right, color: scheme.primary),
                 ],
               ),
-              const SizedBox(height: 10),
-              Wrap(spacing: 6, runSpacing: 6, children: chips),
+              const SizedBox(height: AppSpace.md - 2),
+              Wrap(
+                spacing: AppSpace.xs + 2,
+                runSpacing: AppSpace.xs + 2,
+                children: chips,
+              ),
             ],
           ),
         ),

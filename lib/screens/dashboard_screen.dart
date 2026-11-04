@@ -100,13 +100,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _StatCard(
                   label: 'Total postulaciones',
                   value: stats.total.toString(),
-                  color: Theme.of(context).colorScheme.primary,
+                  color: infoColor(brightness),
                   icon: Icons.work,
                 ),
                 _StatCard(
                   label: 'Activas',
                   value: stats.activas.toString(),
-                  color: Theme.of(context).colorScheme.secondary,
+                  color: tealColor(brightness),
                   icon: Icons.notifications_active,
                   onTap: () => state.setTab(2),
                 ),
@@ -125,7 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _StatCard(
                   label: 'Finalizadas',
                   value: stats.finalizadas.toString(),
-                  color: Theme.of(context).colorScheme.error,
+                  color: neutralColor(brightness),
                   icon: Icons.check_circle,
                   onTap: () => state.setTab(4),
                 ),
@@ -139,11 +139,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 entrevistas: stats.entrevistas,
                 finalizadas: stats.finalizadas,
                 total: stats.total,
+                entrevistaColor: statusColor('entrevista', brightness),
+                finalizadasColor: neutralColor(brightness),
               ),
               const SizedBox(height: 8),
               _RecentActivityCard(
                 ultimos7: _countSince(apps, 7),
                 ultimos30: _countSince(apps, 30),
+                color7: tealColor(brightness),
+                color30: successColor(brightness),
               ),
               const SizedBox(height: 8),
               _DistributionCard(
@@ -151,6 +155,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 empresas: topDistribution(apps, (a) => a.empresa, 3),
                 modalidades: topDistribution(apps, (a) => a.modalidad, 3),
                 ciudades: topDistribution(apps, (a) => a.ciudad, 3),
+                colorPlataformas: tealColor(brightness),
+                colorEmpresas: successColor(brightness),
+                colorModalidades: tealColor(brightness),
+                colorCiudades: infoColor(brightness),
               ),
             ],
           ],
@@ -179,26 +187,22 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final card = Card(
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(AppSpace.sm + 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
               children: [
-                Icon(icon, size: 16, color: color),
+                Icon(icon, size: AppIconSize.chip + 2, color: color),
                 const Spacer(),
                 Text(
                   value,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+                  style: AppType.metric(context).copyWith(color: color),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpace.xs),
             Row(
               children: [
                 Expanded(
@@ -223,7 +227,8 @@ class _StatCard extends StatelessWidget {
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius:
+            const BorderRadius.all(Radius.circular(AppRadius.card)),
         child: card,
       );
     }
@@ -299,13 +304,11 @@ class _PipelineCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Pipeline de postulaciones',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
+            Text('Pipeline de postulaciones', style: AppType.section(context)),
+            const SizedBox(height: AppSpace.md),
             ClipRRect(
-              borderRadius: BorderRadius.circular(5),
+              borderRadius:
+                  const BorderRadius.all(Radius.circular(AppRadius.bar)),
               child: Row(
                 children: [
                   for (final (stage, count) in segments)
@@ -319,10 +322,10 @@ class _PipelineCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpace.md),
             Wrap(
-              spacing: 12,
-              runSpacing: 6,
+              spacing: AppSpace.md,
+              runSpacing: AppSpace.xs + 2,
               children: [
                 for (final (stage, count) in segments)
                   Row(
@@ -336,7 +339,7 @@ class _PipelineCard extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppSpace.xs),
                       Text(
                         '${stage.label} $count',
                         style: Theme.of(context).textTheme.bodySmall,
@@ -356,38 +359,39 @@ class _ConversionCard extends StatelessWidget {
   final int entrevistas;
   final int finalizadas;
   final int total;
+  final Color entrevistaColor;
+  final Color finalizadasColor;
 
   const _ConversionCard({
     required this.entrevistas,
     required this.finalizadas,
     required this.total,
+    required this.entrevistaColor,
+    required this.finalizadasColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpace.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Tasa de conversión',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
+            Text('Tasa de conversión', style: AppType.section(context)),
+            const SizedBox(height: AppSpace.md),
             _ConversionBar(
               label: 'A entrevista',
               part: entrevistas,
               total: total,
-              color: statusColor('entrevista', Theme.of(context).brightness),
+              color: entrevistaColor,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpace.md - 2),
             _ConversionBar(
               label: 'Finalizadas',
               part: finalizadas,
               total: total,
-              color: Theme.of(context).colorScheme.error,
+              color: finalizadasColor,
             ),
           ],
         ),
@@ -420,7 +424,8 @@ class _ConversionBar extends StatelessWidget {
         ),
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius:
+                const BorderRadius.all(Radius.circular(AppRadius.bar)),
             child: LinearProgressIndicator(
               value: pct,
               minHeight: 8,
@@ -435,7 +440,7 @@ class _ConversionBar extends StatelessWidget {
           child: Text(
             '${(pct * 100).round()}%',
             textAlign: TextAlign.right,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: AppType.section(context),
           ),
         ),
       ],
@@ -446,22 +451,26 @@ class _ConversionBar extends StatelessWidget {
 class _RecentActivityCard extends StatelessWidget {
   final int ultimos7;
   final int ultimos30;
+  final Color color7;
+  final Color color30;
 
-  const _RecentActivityCard({required this.ultimos7, required this.ultimos30});
+  const _RecentActivityCard({
+    required this.ultimos7,
+    required this.ultimos30,
+    required this.color7,
+    required this.color30,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpace.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Postulaciones recientes',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
+            Text('Postulaciones recientes', style: AppType.section(context)),
+            const SizedBox(height: AppSpace.md),
             Row(
               children: [
                 Expanded(
@@ -469,7 +478,7 @@ class _RecentActivityCard extends StatelessWidget {
                     icon: Icons.today,
                     label: 'Últimos 7 días',
                     value: '$ultimos7',
-                    color: Theme.of(context).colorScheme.secondary,
+                    color: color7,
                   ),
                 ),
                 Expanded(
@@ -477,7 +486,7 @@ class _RecentActivityCard extends StatelessWidget {
                     icon: Icons.calendar_month,
                     label: 'Últimos 30 días',
                     value: '$ultimos30',
-                    color: Theme.of(context).colorScheme.tertiary,
+                    color: color30,
                   ),
                 ),
               ],
@@ -506,18 +515,18 @@ class _ActivityItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(width: 8),
+        Icon(icon, size: AppIconSize.metric, color: color),
+        const SizedBox(width: AppSpace.sm),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
             ),
             Text(label, style: Theme.of(context).textTheme.bodySmall),
           ],
@@ -532,58 +541,62 @@ class _DistributionCard extends StatelessWidget {
   final List<(String, int)> empresas;
   final List<(String, int)> modalidades;
   final List<(String, int)> ciudades;
+  final Color colorPlataformas;
+  final Color colorEmpresas;
+  final Color colorModalidades;
+  final Color colorCiudades;
 
   const _DistributionCard({
     required this.plataformas,
     required this.empresas,
     required this.modalidades,
     required this.ciudades,
+    required this.colorPlataformas,
+    required this.colorEmpresas,
+    required this.colorModalidades,
+    required this.colorCiudades,
   });
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpace.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Distribución',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
+            Text('Distribución', style: AppType.section(context)),
+            const SizedBox(height: AppSpace.md),
             _DistributionGroup(
               field: 'plataforma',
               label: 'Plataformas',
               icon: Icons.language,
               items: plataformas,
-              color: Theme.of(context).colorScheme.secondary,
+              color: colorPlataformas,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.lg),
             _DistributionGroup(
               field: 'empresa',
               label: 'Empresas',
               icon: Icons.business,
               items: empresas,
-              color: statusColor('aceptada', brightness),
+              color: colorEmpresas,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.lg),
             _DistributionGroup(
               field: 'modalidad',
               label: 'Modalidades',
               icon: Icons.business_center,
               items: modalidades,
-              color: statusColor('prueba técnica', brightness),
+              color: colorModalidades,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.lg),
             _DistributionGroup(
               field: 'ciudad',
               label: 'Ciudades',
               icon: Icons.location_on_outlined,
               items: ciudades,
-              color: Theme.of(context).colorScheme.primary,
+              color: colorCiudades,
             ),
           ],
         ),
@@ -645,28 +658,32 @@ class _DistributionGroup extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: color),
+            Icon(icon, size: AppIconSize.chip, color: color),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13,
-                ),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
             ),
             InkWell(
               onTap: () => _openDetail(context),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius:
+                  const BorderRadius.all(Radius.circular(AppRadius.chip)),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpace.xs + 2, vertical: AppSpace.xs),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Ver todas',
-                      style: TextStyle(fontSize: 13, color: color),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     Icon(Icons.chevron_right, size: 16, color: color),
                   ],
@@ -675,7 +692,7 @@ class _DistributionGroup extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpace.sm),
         if (items.isEmpty)
           Text(
             '—',
@@ -687,9 +704,10 @@ class _DistributionGroup extends StatelessWidget {
           for (final (name, count) in items)
             InkWell(
               onTap: () => _openFiltered(context, name),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius:
+                  const BorderRadius.all(Radius.circular(AppRadius.chip)),
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: AppSpace.sm),
                 child: Column(
                   children: [
                     Row(
@@ -703,17 +721,18 @@ class _DistributionGroup extends StatelessWidget {
                         ),
                         Text(
                           '$count',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         Icon(Icons.chevron_right, size: 16, color: color),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpace.xs),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: const BorderRadius.all(
+                          Radius.circular(AppRadius.bar)),
                       child: LinearProgressIndicator(
                         value: count / maxCount,
                         minHeight: 6,

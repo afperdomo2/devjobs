@@ -15,13 +15,16 @@ class OfflineBanner extends StatelessWidget {
         : 'Mostrando datos guardados';
 
     return Material(
-      color: AppColors.warning.withValues(alpha: 0.12),
+      color: warningContainer(Theme.of(context).brightness),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.md, vertical: AppSpace.sm),
         child: Row(
           children: [
-            Icon(Icons.wifi_off, size: 18, color: warningTextColor(Theme.of(context).brightness)),
-            const SizedBox(width: 8),
+            Icon(Icons.wifi_off,
+                size: AppIconSize.row,
+                color: warningTextColor(Theme.of(context).brightness)),
+            const SizedBox(width: AppSpace.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +40,10 @@ class OfflineBanner extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 11, color: warningTextColor(Theme.of(context).brightness)),
+                    style: TextStyle(
+                        fontSize: 11,
+                        color:
+                            warningTextColor(Theme.of(context).brightness)),
                   ),
                 ],
               ),
@@ -50,7 +56,8 @@ class OfflineBanner extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   minimumSize: const Size(0, 32),
                 ),
-                child: const Text('Reintentar', style: TextStyle(fontSize: 12)),
+                child: const Text('Reintentar',
+                    style: TextStyle(fontSize: 12)),
               ),
           ],
         ),
@@ -92,19 +99,21 @@ class ErrorStateView extends StatelessWidget {
               size: 48,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.lg),
             Text(
-              isOffline ? 'Sin conexión a internet' : 'No se pudieron cargar los datos',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              isOffline
+                  ? 'Sin conexión a internet'
+                  : 'No se pudieron cargar los datos',
+              style: AppType.section(context),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpace.sm),
             Text(
               message,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
+              style: AppType.label(context),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.lg),
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh, size: 18),

@@ -130,12 +130,15 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.chat_bubble_outline, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      Icon(Icons.chat_bubble_outline,
+                          size: AppIconSize.row,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(width: 6),
-                      const Text('Comentarios', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('Comentarios', style: AppType.section(context)),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpace.sm),
                   for (final c in comentarios)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -152,24 +155,30 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.description_outlined, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      Icon(Icons.description_outlined,
+                          size: AppIconSize.row,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(width: 6),
-                      const Text('Descripción', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('Descripción', style: AppType.section(context)),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpace.sm),
                   Text(app.descripcion),
                 ],
                 if (app.link.isNotEmpty) ...[
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.link, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      Icon(Icons.link,
+                          size: AppIconSize.row,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(width: 6),
-                      const Text('Enlace externo', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('Enlace externo', style: AppType.section(context)),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpace.sm),
                   GestureDetector(
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: app.link));
@@ -192,9 +201,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   }
 
   List<Widget> _buildInfoSection(BuildContext context, JobApplication app) {
-    final warningColor = Theme.of(context).brightness == Brightness.dark
-        ? AppColorsDark.warning
-        : AppColors.warning;
+    final warningColor =
+        warningTextColor(Theme.of(context).brightness);
 
     final baseFields = [
       (Icons.business, 'Empresa', app.empresa),
@@ -249,11 +257,13 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            Icon(Icons.people, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            const SizedBox(width: 8),
+            Icon(Icons.people,
+                size: AppIconSize.row,
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
+            const SizedBox(width: AppSpace.sm),
             SizedBox(
               width: 100,
-              child: Text('Entrevista', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+              child: Text('Entrevista', style: AppType.label(context)),
             ),
             Transform.scale(
               scale: 0.6,
@@ -262,7 +272,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 onChanged: null,
                 thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return Theme.of(context).colorScheme.tertiary;
+                    return successColor(Theme.of(context).brightness);
                   }
                   return Theme.of(context).colorScheme.surface;
                 }),
@@ -281,20 +291,21 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(f.$1, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          const SizedBox(width: 8),
+          Icon(f.$1,
+              size: AppIconSize.row,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(width: AppSpace.sm),
           SizedBox(
             width: 112,
-            child: Text(f.$2, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+            child: Text(f.$2, style: AppType.label(context)),
           ),
           Expanded(
             child: Text(
               f.$3,
-              style: TextStyle(
-                fontSize: 14,
-                color: color,
-                fontWeight: color != null ? FontWeight.w600 : null,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: color,
+                    fontWeight: color != null ? FontWeight.w600 : null,
+                  ),
             ),
           ),
         ],

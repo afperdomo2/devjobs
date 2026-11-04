@@ -10,7 +10,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_dotenv: ^6.0.1
-  google_fonts: ^8.2.1
   http: ^1.6.0
   intl: ^0.20.2
   provider: ^6.1.5+1
@@ -30,6 +29,18 @@ flutter:
 
   assets:
     - .env
+
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-400.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-500.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-600.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-700.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: "ic_launcher"
