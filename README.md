@@ -6,8 +6,8 @@ Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a 
 
 | | | |
 |---|---|---|
-| ![Inicio](screenshots/home.jpg) | ![Activas](screenshots/activas.jpg) | ![Enviadas](screenshots/enviadas.jpg) |
-| ![Finalizadas](screenshots/rechazadas.jpg) | ![Detalles](screenshots/detalles.jpg) | |
+| ![Inicio](screenshots/home.jpg) | ![Postulaciones · Activas](screenshots/activas.jpg) | ![Postulaciones · Enviadas](screenshots/enviadas.jpg) |
+| ![Postulaciones · Finalizadas](screenshots/rechazadas.jpg) | ![Detalles](screenshots/detalles.jpg) | |
 
 ## 🛠️ Requisitos
 
@@ -229,7 +229,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, activas, **por gestionar** y finalizadas. Cards clickeables (Activas → tab Activas, Por gestionar → listado filtrado, Finalizadas → tab Finalizadas) con indicador visual `›` |
+| **Dashboard** | Resumen con totales: postulaciones, activas, **por gestionar** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Por gestionar → listado filtrado, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›` |
 | **Postulaciones** | Detalle de cada postulación (15 columnas) |
 
 ### Columnas de Postulaciones
@@ -326,11 +326,12 @@ lib/
 │   ├── distribution.dart               # Conteos para las cards de distribución
 │   └── company_stats.dart              # Métricas agregadas por empresa
 ├── screens/
-│   ├── main_screen.dart                # NavigationBar (Inicio/Empresas/Activas/Enviadas/Finalizadas)
+│   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas)
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
 │   ├── empresas_screen.dart            # Listado de empresas con filtro por nombre
 │   ├── company_detail_screen.dart      # Detalle de empresa (métricas + vacantes)
-│   ├── applications_list_screen.dart   # Lista por pestaña con pull-to-refresh
+│   ├── postulaciones_screen.dart       # Postulaciones: pills Todas/Activas/Enviadas/Finalizadas + lista
+│   ├── applications_list_screen.dart   # Lista con pull-to-refresh (reutilizada por Postulaciones y Por gestionar)
 │   ├── pending_applications_screen.dart # Listado filtrado "Por gestionar"
 │   ├── search_screen.dart              # Búsqueda global (todas las postulaciones)
 │   ├── application_detail_screen.dart  # Detalle + comentarios + descripción + toggle "Por gestionar"
@@ -338,6 +339,7 @@ lib/
 │   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
 │   └── filtered_applications_screen.dart # Listado filtrado por campo/valor
 └── widgets/
+    ├── applications_filter_bar.dart    # Pills de filtro de Postulaciones (con contadores)
     ├── status_chip.dart                # Chip de estado (colores por estado)
     ├── application_card.dart           # Card de postulación reutilizable (borde + tag "Por gestionar")
     ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)

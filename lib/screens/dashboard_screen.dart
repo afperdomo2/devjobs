@@ -108,7 +108,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: stats.activas.toString(),
                   color: tealColor(brightness),
                   icon: Icons.notifications_active,
-                  onTap: () => state.setTab(2),
+                  onTap: () => state.openApplications(AppState.filterActivas),
                 ),
                 _StatCard(
                   label: 'Por gestionar',
@@ -127,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: stats.finalizadas.toString(),
                   color: neutralColor(brightness),
                   icon: Icons.check_circle,
-                  onTap: () => state.setTab(4),
+                  onTap: () => state.openApplications(AppState.filterFinalizadas),
                 ),
               ],
             ),

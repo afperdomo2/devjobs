@@ -39,6 +39,21 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
     super.dispose();
   }
 
+  String get _emptyMessage {
+    switch (widget.filterMode) {
+      case AppState.filterActivas:
+        return 'No hay postulaciones activas';
+      case AppState.filterEnviadas:
+        return 'No hay postulaciones enviadas';
+      case AppState.filterFinalizadas:
+        return 'No hay postulaciones finalizadas';
+      case AppState.filterPorGestionar:
+        return 'No hay postulaciones por gestionar';
+      default:
+        return 'No se encontraron postulaciones';
+    }
+  }
+
   Future<void> _refresh() {
     return context.read<AppState>().fetchApplications(forceRefresh: true);
   }
@@ -76,7 +91,7 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
       content = ListView(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
-        children: const [_EmptyHint()],
+        children: [_EmptyHint(message: _emptyMessage)],
       );
     } else {
       content = ListView.separated(
@@ -120,13 +135,15 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
 }
 
 class _EmptyHint extends StatelessWidget {
-  const _EmptyHint();
+  final String message;
+
+  const _EmptyHint({required this.message});
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       height: 200,
-      child: Center(child: Text('No se encontraron postulaciones')),
+      child: Center(child: Text(message)),
     );
   }
 }

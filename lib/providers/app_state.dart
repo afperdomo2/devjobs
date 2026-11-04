@@ -15,14 +15,29 @@ class AppState extends ChangeNotifier {
   bool _loading = false;
   String? _error;
   bool _offline = false;
-  int _currentTab = 0;
+  int _currentTab = tabInicio;
+  String _applicationsFilter = filterAll;
   bool _cacheLoaded = false;
 
   static const _cacheTtl = Duration(minutes: 3);
 
+  /// Índices de los destinos del `NavigationBar`. Centralizados para que
+  /// reordenar las pestañas no dependa de números mágicos repartidos.
+  static const tabInicio = 0;
+  static const tabPostulaciones = 1;
+  static const tabEmpresas = 2;
+
+  /// Filtros de la pestaña Postulaciones.
+  static const filterAll = 'all';
+  static const filterActivas = 'activas';
+  static const filterEnviadas = 'enviadas';
+  static const filterFinalizadas = 'finalizadas';
+  static const filterPorGestionar = 'porGestionar';
+
   AppState({required this.apiService, this.localCache});
 
   int get currentTab => _currentTab;
+  String get applicationsFilter => _applicationsFilter;
   bool get loading => _loading;
   String? get error => _error;
   bool get offline => _offline;
@@ -37,6 +52,20 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Cambia el filtro de la pestaña Postulaciones sin mover de pestaña.
+  void setApplicationsFilter(String filter) {
+    if (_applicationsFilter == filter) return;
+    _applicationsFilter = filter;
+    notifyListeners();
+  }
+
+  /// Abre Postulaciones con el filtro indicado (atajos del dashboard).
+  void openApplications(String filter) {
+    _applicationsFilter = filter;
+    _currentTab = tabPostulaciones;
+    notifyListeners();
+  }
+
   DashboardStats get dashboardStats {
     final apps = _cached;
     if (apps == null) {
@@ -48,19 +77,11 @@ class AppState extends ChangeNotifier {
         porGestionar: 0,
       );
     }
-    final estados = apps.map((a) => (a.estado).trim().toLowerCase()).toList();
     return DashboardStats(
       total: apps.length,
-      activas: estados
-          .where((e) =>
-              e != 'enviada' &&
-              e != 'rechazada' &&
-              e != 'retirada' &&
-              e != 'aceptada')
-          .length,
+      activas: apps.where((a) => _matchesFilter(a, filterActivas)).length,
       entrevistas: apps.where((a) => a.entrevistaRealizada).length,
-      finalizadas:
-          estados.where((e) => e == 'rechazada' || e == 'retirada' || e == 'aceptada').length,
+      finalizadas: apps.where((a) => _matchesFilter(a, filterFinalizadas)).length,
       porGestionar: apps.where((a) => a.porGestionar).length,
     );
   }
@@ -88,33 +109,31 @@ class AppState extends ChangeNotifier {
   }
 
   List<JobApplication> getApplications(String filterMode) {
-    var apps = _cached?.toList() ?? [];
-
-    switch (filterMode) {
-      case 'noRejected':
-        apps = apps.where((a) => !_isTerminal(a.estado)).toList();
-      case 'onlyRejected':
-        apps = apps.where((a) => _isTerminal(a.estado)).toList();
-      case 'activas':
-        apps = apps
-            .where((a) {
-              final e = a.estado.trim().toLowerCase();
-              return e != 'enviada' &&
-                  e != 'rechazada' &&
-                  e != 'retirada' &&
-                  e != 'aceptada';
-            })
-            .toList();
-      case 'enviadas':
-        apps = apps
-            .where((a) => a.estado.trim().toLowerCase() == 'enviada')
-            .toList();
-      case 'porGestionar':
-        apps = apps.where((a) => a.porGestionar).toList();
-    }
-
+    final apps =
+        (_cached ?? []).where((a) => _matchesFilter(a, filterMode)).toList();
     apps.sort(_sortByDate);
     return apps;
+  }
+
+  /// Número de postulaciones de un filtro, sin ordenar ni copiar la lista.
+  /// Lo usan los contadores de las pills de Postulaciones.
+  int countApplications(String filterMode) =>
+      (_cached ?? []).where((a) => _matchesFilter(a, filterMode)).length;
+
+  bool _matchesFilter(JobApplication a, String filterMode) {
+    switch (filterMode) {
+      case filterActivas:
+        return a.estado.trim().toLowerCase() != 'enviada' &&
+            !_isTerminal(a.estado);
+      case filterEnviadas:
+        return a.estado.trim().toLowerCase() == 'enviada';
+      case filterFinalizadas:
+        return _isTerminal(a.estado);
+      case filterPorGestionar:
+        return a.porGestionar;
+      default:
+        return true;
+    }
   }
 
   int _sortByDate(JobApplication a, JobApplication b) {
