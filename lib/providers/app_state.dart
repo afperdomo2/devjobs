@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
+import '../helpers/status.dart';
 import '../models/job_application.dart';
 import '../services/local_cache.dart';
 import '../services/sheets_api_service.dart';
@@ -154,10 +155,7 @@ class AppState extends ChangeNotifier {
     return _compareDateStrings(b.fechaPostulacion, a.fechaPostulacion);
   }
 
-  bool _isTerminal(String estado) {
-    final e = estado.trim().toLowerCase();
-    return e == 'rechazada' || e == 'retirada' || e == 'aceptada';
-  }
+  bool _isTerminal(String estado) => isTerminalStatus(estado);
 
   int _compareDateStrings(String a, String b) {
     final dA = parseDate(a);

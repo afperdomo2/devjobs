@@ -9,7 +9,9 @@ import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/distribution_card.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/pending_applications_card.dart';
 import '../widgets/wheel_refresh.dart';
+import 'application_detail_screen.dart';
 import 'pending_applications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -45,6 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final state = context.watch<AppState>();
     final stats = state.dashboardStats;
     final apps = state.applications;
+    final pending = state.getApplications(AppState.filterPorGestionar);
     final brightness = Theme.of(context).brightness;
 
     // Full-screen error when no data and fetch failed.
@@ -110,16 +113,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onTap: () => state.openApplications(AppState.filterActivas),
                 ),
                 _StatCard(
-                  label: 'Por gestionar',
-                  value: stats.porGestionar.toString(),
-                  color: gestionColor(brightness),
-                  icon: Icons.label_important,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PendingApplicationsScreen(),
-                    ),
-                  ),
+                  label: 'Con entrevista',
+                  value: stats.entrevistas.toString(),
+                  color: statusColor('entrevista', brightness),
+                  icon: Icons.record_voice_over_outlined,
                 ),
                 _StatCard(
                   label: 'Finalizadas',
@@ -131,6 +128,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             if (stats.total > 0) ...[
+              if (pending.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                PendingApplicationsCard(
+                  applications: pending,
+                  onSeeAll: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PendingApplicationsScreen(),
+                    ),
+                  ),
+                  onOpen: (app) => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ApplicationDetailScreen(application: app),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               _PipelineCard(segments: _pipelineSegments(apps)),
               const SizedBox(height: 8),

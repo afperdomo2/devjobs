@@ -228,6 +228,61 @@ void main() {
         );
         expect(app.diasSinNovedad, equals(0));
       });
+
+      test('diasSinNovedadEn usa la fecha recibida', () {
+        final fixedNow = DateTime(2026, 11, 4);
+        final application = JobApplication(
+          rowIndex: 1,
+          estado: 'En revisión',
+          fechaPostulacion: '25/10/2026',
+        );
+
+        expect(application.diasSinNovedadEn(fixedNow), equals(10));
+      });
+
+      test('diasSinNovedadEn respeta el seguimiento y los finalizados', () {
+        final fixedNow = DateTime(2026, 11, 4);
+        final active = JobApplication(
+          rowIndex: 1,
+          estado: 'En revisión',
+          fechaPostulacion: '01/10/2026',
+          fechaSeguimiento: '02/11/2026',
+        );
+        final finished = JobApplication(
+          rowIndex: 2,
+          estado: 'Rechazada',
+          fechaPostulacion: '01/10/2026',
+          fechaSeguimiento: '02/11/2026',
+        );
+
+        expect(active.diasSinNovedadEn(fixedNow), equals(2));
+        expect(finished.diasSinNovedadEn(fixedNow), isNull);
+      });
+
+      test('diasDesdeUltimaNovedadEn también funciona en finalizadas', () {
+        final fixedNow = DateTime(2026, 11, 4);
+        final finished = JobApplication(
+          rowIndex: 1,
+          estado: 'Rechazada',
+          fechaPostulacion: '01/10/2026',
+          fechaSeguimiento: '02/11/2026',
+        );
+
+        expect(finished.diasDesdeUltimaNovedadEn(fixedNow), equals(2));
+      });
+
+      test('diasDesdeUltimaNovedadEn cae a la postulación y maneja nulos', () {
+        final fixedNow = DateTime(2026, 11, 4);
+        final posted = JobApplication(
+          rowIndex: 1,
+          estado: 'En revisión',
+          fechaPostulacion: '28/10/2026',
+        );
+        const noDates = JobApplication(rowIndex: 2, estado: 'En revisión');
+
+        expect(posted.diasDesdeUltimaNovedadEn(fixedNow), equals(7));
+        expect(noDates.diasDesdeUltimaNovedadEn(fixedNow), isNull);
+      });
     });
 
     test('plataforma extrae dominio friendly', () {

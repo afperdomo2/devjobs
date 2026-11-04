@@ -230,7 +230,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, activas, **por gestionar** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Por gestionar → listado filtrado, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›` |
+| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
@@ -350,7 +350,9 @@ lib/
 │   ├── text_shortener.dart             # Truncado y abreviatura de contratos
 │   ├── network_error.dart              # Detección de errores de red
 │   ├── distribution.dart               # Conteos para las cards de distribución
-│   └── company_stats.dart              # Métricas agregadas por empresa
+│   ├── company_stats.dart              # Métricas agregadas por empresa
+│   ├── text_normalizer.dart            # Minúsculas/sin acentos para comparar
+│   └── status.dart                     # Normalización de estados y estado terminal
 ├── screens/
 │   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas)
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
@@ -363,7 +365,7 @@ lib/
 │   ├── application_detail_screen.dart  # Detalle + comentarios + descripción + toggle "Por gestionar"
 │   ├── application_form_screen.dart    # Formulario único: crear/editar en secciones
 │   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
-│   └── filtered_applications_screen.dart # Listado filtrado por campo/valor
+│   └── filtered_applications_screen.dart # Listado filtrado por campo/valor o selector
 └── widgets/
     ├── applications_filter_bar.dart    # Pills de filtro de Postulaciones (con contadores)
     ├── status_chip.dart                # Chip de estado (colores por estado)
@@ -372,6 +374,8 @@ lib/
     ├── distribution_card.dart          # Distribución con selector segmentado (plataformas/modalidades/ciudades)
     ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)
     ├── form_section.dart               # Sección de formulario (encabezado + campos)
+    ├── pending_applications_card.dart  # Tarjeta "Por gestionar" de Inicio
+    ├── application_compact_row.dart    # Fila compacta empresa/vacante para listas
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión
 apps_script_code.example.gs                # Apps Script de ejemplo (con placeholder)

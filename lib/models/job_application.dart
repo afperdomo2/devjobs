@@ -2,13 +2,11 @@ import 'dart:math' as math;
 
 import '../helpers/date_formatter.dart';
 import '../helpers/domain_parser.dart';
+import '../helpers/status.dart';
 
 /// Días sin novedad a partir de los cuales un proceso activo se marca
 /// visualmente como estancado (ámbar en card y detalles).
 const kUmbralDiasSinNovedad = 7;
-
-/// Estados que cierran el proceso (no siguen en curso).
-const _estadosFinales = {'aceptada', 'rechazada', 'retirada'};
 
 class JobApplication {
   final int rowIndex;
@@ -48,7 +46,7 @@ class JobApplication {
   });
 
   /// true si el proceso ya terminó (Aceptada, Rechazada o Retirada).
-  bool get isFinalizado => _estadosFinales.contains(estado.trim().toLowerCase());
+  bool get isFinalizado => isTerminalStatus(estado);
 
   /// Días del proceso según su estado:
   /// - Finalizado: duración total (postulación → última novedad).
@@ -70,11 +68,24 @@ class JobApplication {
   /// Días transcurridos desde la última novedad (fecha de seguimiento),
   /// solo para procesos activos. Si no hay fecha de seguimiento, se usa
   /// la de postulación (sin novedad desde que se postuló).
-  int? get diasSinNovedad {
+  int? get diasSinNovedad => diasSinNovedadEn(DateTime.now());
+
+  /// Igual que [diasSinNovedad] pero calculado contra una fecha explícita.
+  /// Permite tests determinísticos y reutilizar el cálculo en filtros.
+  int? diasSinNovedadEn(DateTime now) {
     if (isFinalizado) return null;
+    return diasDesdeUltimaNovedadEn(now);
+  }
+
+  /// Días desde la última fecha registrada, sin importar si el proceso está
+  /// finalizado. Se usa en listas de pendientes, donde una postulación
+  /// marcada "Por gestionar" puede estar cerrada y aun así necesitar acción.
+  int? get diasDesdeUltimaNovedad => diasDesdeUltimaNovedadEn(DateTime.now());
+
+  int? diasDesdeUltimaNovedadEn(DateTime now) {
     final ref = parseDate(fechaSeguimiento) ?? parseDate(fechaPostulacion);
     if (ref == null) return null;
-    return math.max(0, DateTime.now().difference(ref).inDays);
+    return math.max(0, now.difference(ref).inDays);
   }
 
   String get plataforma => extractPlatform(link);

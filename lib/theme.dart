@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'helpers/status.dart';
+
 /// Flat Design tokens for DevJobs — light theme.
 abstract final class AppColors {
   static const primary = Color(0xFF0369A1);
@@ -92,44 +94,6 @@ abstract final class StatusColorsDark {
   static const otro = Color(0xFF64748B);
 }
 
-/// Normaliza un estado para compararlo: minúsculas, sin acentos y sin
-/// espacios sobrantes. Así 'En revisión' y 'en revision' son lo mismo.
-String _normalizeStatus(String status) {
-  final t = status.trim().toLowerCase();
-  final b = StringBuffer();
-  for (var i = 0; i < t.length; i++) {
-    switch (t[i]) {
-      case 'á':
-      case 'à':
-      case 'ä':
-        b.write('a');
-      case 'é':
-      case 'è':
-      case 'ë':
-        b.write('e');
-      case 'í':
-      case 'ì':
-      case 'ï':
-        b.write('i');
-      case 'ó':
-      case 'ò':
-      case 'ö':
-        b.write('o');
-      case 'ú':
-      case 'ù':
-      case 'ü':
-        b.write('u');
-      case 'ñ':
-        b.write('n');
-      case 'ç':
-        b.write('c');
-      default:
-        b.write(t[i]);
-    }
-  }
-  return b.toString().trim();
-}
-
 /// Claves exactas de estado. Cualquier variante que *empiece* por una de
 /// ellas ('Oferta laboral') hereda su color; nada se busca en medio de la
 /// cadena, para que un estado nuevo no caiga en un color por casualidad.
@@ -151,7 +115,7 @@ const _statusKeys = <String, int>{
 };
 
 int _statusIndex(String status) {
-  final s = _normalizeStatus(status);
+  final s = normalizeStatus(status);
   if (s.isEmpty) return 9;
   if (_statusKeys.containsKey(s)) return _statusKeys[s]!;
   // Prefijo: 'oferta laboral', 'entrevista inicial', 'prueba tecnica katas'...
