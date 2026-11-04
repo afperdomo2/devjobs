@@ -133,6 +133,9 @@ void main() {
     expect(stats.finalizadas, 3);
     expect(stats.porGestionar, 1);
     expect(stats.entrevistas, 1);
+    // B (Aceptada), C (Rechazada) y E (En revisión) tuvieron respuesta.
+    // A (Enviada) y D (Retirada) no cuentan.
+    expect(stats.conRespuesta, 3);
     // Solo 'E' queda activa: 'A' es enviada, 'B' aceptada, 'C'/'D' terminales.
     expect(stats.activas, 1);
   });

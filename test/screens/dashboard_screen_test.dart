@@ -87,6 +87,9 @@ void main() {
     expect(find.text('Pendientes de acción'), findsOneWidget);
     expect(find.text('Pendiente'), findsOneWidget);
     expect(find.text('Entrevistada'), findsNothing);
+    // Los tres estados de prueba implican respuesta: 100 %.
+    expect(find.text('Con respuesta'), findsOneWidget);
+    expect(find.text('100%'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -135,27 +135,45 @@ void main() {
       expect(companiesStats(apps).first.promedioDias, isNull);
     });
 
-    test('conNovedad cuenta las que tienen fecha de seguimiento', () {
+    test('conNovedad cuenta estados con respuesta, no la fecha de seguimiento',
+        () {
       final apps = [
         JobApplication(
             rowIndex: 1,
             empresa: 'Acme',
-            estado: 'Enviada',
-            fechaPostulacion: daysAgo(5),
-            fechaSeguimiento: daysAgo(3)),
+            estado: 'En revisión',
+            fechaPostulacion: daysAgo(5)),
         JobApplication(
             rowIndex: 2,
+            empresa: 'Acme',
+            estado: 'Rechazada',
+            fechaPostulacion: daysAgo(5)),
+        JobApplication(
+            rowIndex: 3,
+            empresa: 'Acme',
+            estado: 'Aceptada',
+            fechaPostulacion: daysAgo(5)),
+        // Tiene seguimiento, pero el estado sigue sin respuesta.
+        JobApplication(
+            rowIndex: 4,
             empresa: 'Acme',
             estado: 'Enviada',
             fechaPostulacion: daysAgo(5),
             fechaSeguimiento: daysAgo(2)),
+        // Tiene seguimiento, pero no hubo respuesta de la empresa.
         JobApplication(
-            rowIndex: 3,
+            rowIndex: 5,
             empresa: 'Acme',
-            estado: 'Enviada',
+            estado: 'Sin respuesta',
+            fechaPostulacion: daysAgo(5),
+            fechaSeguimiento: daysAgo(2)),
+        JobApplication(
+            rowIndex: 6,
+            empresa: 'Acme',
+            estado: 'Retirada',
             fechaPostulacion: daysAgo(5)),
       ];
-      expect(companiesStats(apps).first.conNovedad, equals(2));
+      expect(companiesStats(apps).first.conNovedad, equals(3));
     });
 
     test('entrevistas y porGestionar cuentan por empresa', () {

@@ -17,7 +17,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 |---|---|---|---|
 | 0 | Dejar lista la base | — | `[x]` |
 | 1 | Tarjeta “Por gestionar” + card “Con entrevista” | Inicio | `[x]` |
-| 2 | Barra “Con respuesta” | Inicio | `[ ]` |
+| 2 | Barra “Con respuesta” | Inicio | `[x]` |
 | 3 | “Actividad reciente” con últimos movimientos | Inicio | `[ ]` |
 | 4 | Etapas del proceso tocables | Inicio | `[ ]` |
 | 5 | “Ritmo mensual” | Inicio | `[ ]` |
@@ -67,12 +67,13 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 2 — Barra “Con respuesta”
 
-- [ ] **Para qué sirve:** ver qué porcentaje de postulaciones ya tuvo alguna respuesta de la empresa.
-- **Qué se crea:** una barra nueva llamada **“Con respuesta”** dentro de “Tasa de conversión”.
+- [x] **Para qué sirve:** ver qué porcentaje de postulaciones ya tuvo alguna respuesta de la empresa.
+- **Qué se crea:** una barra nueva llamada **“Con respuesta”** dentro de “Tasa de conversión”, antes de “A entrevista” y “Finalizadas”.
 - **Dónde se ve:** en **Inicio**, dentro de la tarjeta de conversión.
-- **Cómo se ve:** una tercera barra con su porcentaje, igual que las otras dos.
-- **Listo cuando:** el porcentaje coincide con los datos y se ve bien en pantalla pequeña.
-- **No incluye:** tarjetas nuevas.
+- **Cómo se ve:** una barra con su porcentaje, igual que las otras dos.
+- **De dónde sale:** del estado (columna H). Cuenta como respuesta cualquier estado distinto de **Enviada**, **Sin respuesta** o **Retirada**. No usa la fecha de seguimiento.
+- **Listo cuando:** el porcentaje coincide con los datos, la card de empresa usa la misma regla para “respondieron” y se ve bien en pantalla pequeña.
+- **No incluye:** tarjetas nuevas ni columnas nuevas en la Sheet.
 
 ---
 
@@ -252,7 +253,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 - La tarjeta **“Por gestionar”** usa el switch de la columna O y se oculta si no hay pendientes.
 - **“Con entrevista”** usa el switch de la columna N y cuenta todas las postulaciones.
 - La tarjeta **“Por gestionar”** no filtra ni cuenta entrevistas: son datos separados.
-- “Respondió” significa que el estado ya no es Enviada, Sin respuesta o Retirada.
+- “Respondió” significa que el estado ya no es Enviada, Sin respuesta o Retirada. Aplica a la barra “Con respuesta” y a la card de empresa.
 
 ## Cómo marcar el avance
 

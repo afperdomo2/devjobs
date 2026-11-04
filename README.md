@@ -230,7 +230,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes |
+| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas” |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
@@ -352,7 +352,7 @@ lib/
 │   ├── distribution.dart               # Conteos para las cards de distribución
 │   ├── company_stats.dart              # Métricas agregadas por empresa
 │   ├── text_normalizer.dart            # Minúsculas/sin acentos para comparar
-│   └── status.dart                     # Normalización de estados y estado terminal
+│   └── status.dart                     # Normalización de estados, terminal y respuesta
 ├── screens/
 │   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas)
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones

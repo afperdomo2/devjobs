@@ -1,5 +1,6 @@
 import '../models/job_application.dart';
 import 'date_formatter.dart';
+import 'status.dart';
 
 /// Métricas agregadas de postulaciones por empresa.
 class CompanyStats {
@@ -15,7 +16,8 @@ class CompanyStats {
   /// Postulaciones finalizadas (aceptada, rechazada o retirada).
   final int finalizadas;
 
-  /// Postulaciones con fecha de seguimiento registrada (respuesta/novedad).
+  /// Postulaciones con respuesta de la empresa: estado distinto de
+  /// Enviada, Sin respuesta y Retirada.
   final int conNovedad;
 
   /// Postulaciones con entrevista realizada.
@@ -82,7 +84,7 @@ List<CompanyStats> companiesStats(List<JobApplication> apps) {
         activas++;
       }
 
-      if (parseDate(a.fechaSeguimiento) != null) conNovedad++;
+      if (hasResponse(a.estado)) conNovedad++;
       if (a.entrevistaRealizada) entrevistas++;
       if (a.porGestionar) porGestionar++;
 

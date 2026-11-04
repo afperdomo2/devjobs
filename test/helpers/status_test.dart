@@ -23,4 +23,29 @@ void main() {
     });
   });
 
+  group('hasResponse', () {
+    test('estados que implican respuesta', () {
+      expect(hasResponse('En revisión'), isTrue);
+      expect(hasResponse('Prueba técnica'), isTrue);
+      expect(hasResponse('Entrevista agendada'), isTrue);
+      expect(hasResponse('Entrevista realizada'), isTrue);
+      expect(hasResponse('Oferta recibida'), isTrue);
+      expect(hasResponse('Rechazada'), isTrue);
+      expect(hasResponse('Aceptada'), isTrue);
+    });
+
+    test('estados sin respuesta o vacíos', () {
+      expect(hasResponse('Enviada'), isFalse);
+      expect(hasResponse('Sin respuesta'), isFalse);
+      expect(hasResponse('Retirada'), isFalse);
+      expect(hasResponse(''), isFalse);
+      expect(hasResponse('   '), isFalse);
+    });
+
+    test('ignora mayúsculas, tildes y espacios', () {
+      expect(hasResponse('  EN REVISIÓN  '), isTrue);
+      expect(hasResponse('SIN RESPUESTA'), isFalse);
+      expect(hasResponse(' Retirada '), isFalse);
+    });
+  });
 }

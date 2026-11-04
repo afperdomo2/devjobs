@@ -305,12 +305,14 @@ void main() {
         'total': 10,
         'activas': 6,
         'entrevistas': 2,
+        'conRespuesta': 5,
         'finalizadas': 3,
         'porGestionar': 4,
       });
       expect(s.total, equals(10));
       expect(s.activas, equals(6));
       expect(s.entrevistas, equals(2));
+      expect(s.conRespuesta, equals(5));
       expect(s.finalizadas, equals(3));
       expect(s.porGestionar, equals(4));
     });
@@ -320,10 +322,12 @@ void main() {
         total: 0,
         activas: 0,
         entrevistas: 0,
+        conRespuesta: 0,
         finalizadas: 0,
         porGestionar: 0,
       );
       expect(s.total, equals(0));
+      expect(s.conRespuesta, equals(0));
       expect(s.porGestionar, equals(0));
     });
   });

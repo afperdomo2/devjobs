@@ -11,3 +11,16 @@ bool isTerminalStatus(String status) {
       normalized == 'rechazada' ||
       normalized == 'retirada';
 }
+
+/// true si la empresa ya dio alguna respuesta.
+///
+/// Se excluyen los estados que todavía no implican respuesta:
+/// `Enviada`, `Sin respuesta` y `Retirada`. Cualquier otro estado cuenta,
+/// incluida `Rechazada`.
+bool hasResponse(String status) {
+  final normalized = normalizeStatus(status);
+  if (normalized.isEmpty) return false;
+  return normalized != 'enviada' &&
+      normalized != 'sin respuesta' &&
+      normalized != 'retirada';
+}

@@ -175,6 +175,7 @@ class DashboardStats {
   final int total;
   final int activas;
   final int entrevistas;
+  final int conRespuesta;
   final int finalizadas;
   final int porGestionar;
 
@@ -182,6 +183,7 @@ class DashboardStats {
     required this.total,
     required this.activas,
     required this.entrevistas,
+    required this.conRespuesta,
     required this.finalizadas,
     required this.porGestionar,
   });
@@ -191,6 +193,7 @@ class DashboardStats {
       total: (json['total'] as num?)?.toInt() ?? 0,
       activas: (json['activas'] as num?)?.toInt() ?? 0,
       entrevistas: (json['entrevistas'] as num?)?.toInt() ?? 0,
+      conRespuesta: (json['conRespuesta'] as num?)?.toInt() ?? 0,
       finalizadas: (json['finalizadas'] as num?)?.toInt() ?? 0,
       porGestionar: (json['porGestionar'] as num?)?.toInt() ?? 0,
     );

@@ -151,9 +151,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _PipelineCard(segments: _pipelineSegments(apps)),
               const SizedBox(height: 8),
               _ConversionCard(
+                conRespuesta: stats.conRespuesta,
                 entrevistas: stats.entrevistas,
                 finalizadas: stats.finalizadas,
                 total: stats.total,
+                conRespuestaColor: successColor(brightness),
                 entrevistaColor: statusColor('entrevista', brightness),
                 finalizadasColor: neutralColor(brightness),
               ),
@@ -369,16 +371,20 @@ class _PipelineCard extends StatelessWidget {
 }
 
 class _ConversionCard extends StatelessWidget {
+  final int conRespuesta;
   final int entrevistas;
   final int finalizadas;
   final int total;
+  final Color conRespuestaColor;
   final Color entrevistaColor;
   final Color finalizadasColor;
 
   const _ConversionCard({
+    required this.conRespuesta,
     required this.entrevistas,
     required this.finalizadas,
     required this.total,
+    required this.conRespuestaColor,
     required this.entrevistaColor,
     required this.finalizadasColor,
   });
@@ -393,6 +399,13 @@ class _ConversionCard extends StatelessWidget {
           children: [
             Text('Tasa de conversión', style: AppType.section(context)),
             const SizedBox(height: AppSpace.md),
+            _ConversionBar(
+              label: 'Con respuesta',
+              part: conRespuesta,
+              total: total,
+              color: conRespuestaColor,
+            ),
+            const SizedBox(height: AppSpace.md - 2),
             _ConversionBar(
               label: 'A entrevista',
               part: entrevistas,

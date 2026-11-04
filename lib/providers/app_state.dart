@@ -74,6 +74,7 @@ class AppState extends ChangeNotifier {
         total: 0,
         activas: 0,
         entrevistas: 0,
+        conRespuesta: 0,
         finalizadas: 0,
         porGestionar: 0,
       );
@@ -82,6 +83,7 @@ class AppState extends ChangeNotifier {
       total: apps.length,
       activas: apps.where((a) => _matchesFilter(a, filterActivas)).length,
       entrevistas: apps.where((a) => a.entrevistaRealizada).length,
+      conRespuesta: apps.where((a) => hasResponse(a.estado)).length,
       finalizadas: apps.where((a) => _matchesFilter(a, filterFinalizadas)).length,
       porGestionar: apps.where((a) => a.porGestionar).length,
     );
