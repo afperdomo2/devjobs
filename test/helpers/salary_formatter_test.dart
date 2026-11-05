@@ -19,6 +19,24 @@ void main() {
     });
   });
 
+  group('formatCompactSalary', () {
+    test('abrevia millones', () {
+      expect(formatCompactSalary(5000000), equals('5M'));
+      expect(formatCompactSalary(5900000), equals('5,9M'));
+      expect(formatCompactSalary(10000000), equals('10M'));
+    });
+
+    test('abrevia miles', () {
+      expect(formatCompactSalary(100000), equals('100K'));
+      expect(formatCompactSalary(1300), equals('1,3K'));
+    });
+
+    test('deja intactos los valores pequeños', () {
+      expect(formatCompactSalary(850), equals('850'));
+      expect(formatCompactSalary(0), equals('0'));
+    });
+  });
+
   group('extractSalario', () {
     test('extrae un monto formateado', () {
       expect(extractSalario('yo puse 6.500.000'), equals('6.500.000'));

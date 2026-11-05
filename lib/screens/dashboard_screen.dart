@@ -5,6 +5,7 @@ import '../helpers/activity.dart';
 import '../helpers/distribution.dart';
 import '../helpers/network_error.dart';
 import '../helpers/pipeline.dart';
+import '../helpers/salary_insights.dart';
 import '../helpers/trends.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
@@ -14,6 +15,7 @@ import '../widgets/offline_banner.dart';
 import '../widgets/pending_applications_card.dart';
 import '../widgets/pipeline_card.dart';
 import '../widgets/recent_activity_card.dart';
+import '../widgets/salary_insights_card.dart';
 import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 import 'filtered_applications_screen.dart';
@@ -57,6 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final last7 = countApplicationsSince(apps, 7);
     final last30 = countApplicationsSince(apps, 30);
     final monthly = monthlyApplicationCounts(apps);
+    final salaryGroups = salaryInsights(apps);
     final brightness = Theme.of(context).brightness;
 
     // Full-screen error when no data and fetch failed.
@@ -195,6 +198,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 8),
               MonthlyTrendCard(counts: monthly),
+              if (salaryGroups.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SalaryInsightsCard(groups: salaryGroups),
+              ],
               const SizedBox(height: 8),
               DistributionCard(
                 plataformas: topDistribution(apps, (a) => a.plataforma, 3),

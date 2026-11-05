@@ -63,6 +63,7 @@ void main() {
         fechaPostulacion: daysAgo(20),
         porGestionar: true,
         entrevistaRealizada: true,
+        salarioOfrecido: '4.500.000 - 6.000.000',
       ),
       JobApplication(
         rowIndex: 2,
@@ -71,6 +72,7 @@ void main() {
         estado: 'Entrevista realizada',
         fechaPostulacion: daysAgo(10),
         entrevistaRealizada: true,
+        salarioOfrecido: '6.000.000',
       ),
       JobApplication(
         rowIndex: 3,
@@ -78,6 +80,7 @@ void main() {
         vacante: 'QA',
         estado: 'En revisión',
         fechaPostulacion: daysAgo(2),
+        salarioOfrecido: '1.300 USD',
       ),
     ]);
 
@@ -108,6 +111,11 @@ void main() {
     expect(find.text('Normal'), findsOneWidget);
     // Ritmo mensual aparece después de Actividad reciente.
     expect(find.text('Ritmo mensual'), findsOneWidget);
+    // Salario ofrecido separa pesos y dólares.
+    expect(find.text('Salario ofrecido'), findsOneWidget);
+    expect(find.text('COP (2)'), findsOneWidget);
+    expect(find.text('USD (1)'), findsOneWidget);
+    expect(find.text('5,6M'), findsOneWidget);
     // Una etapa del pipeline abre su listado.
     expect(
       find.text('Toca una etapa para ver las postulaciones'),

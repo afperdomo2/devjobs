@@ -21,7 +21,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 3 | “Actividad reciente” con últimos movimientos | Inicio | `[x]` |
 | 4 | Etapas del proceso tocables | Inicio | `[x]` |
 | 5 | “Ritmo mensual” | Inicio | `[x]` |
-| 6 | “Salario ofrecido” | Inicio | `[ ]` |
+| 6 | “Salario ofrecido” | Inicio | `[x]` |
 | 7 | Pestaña “Agenda” | Barra inferior | `[ ]` |
 | 8 | Nota rápida | Detalle de postulación | `[ ]` |
 | 9 | Ordenar empresas | Empresas | `[ ]` |
@@ -129,15 +129,17 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 6 — “Salario ofrecido”
 
-- [ ] **Para qué sirve:** ver cuánto ofrecen, en promedio, las vacantes registradas.
+- [x] **Para qué sirve:** ver cuánto ofrecen, en promedio, las vacantes registradas.
 - **Qué se crea:** una tarjeta nueva llamada **“Salario ofrecido”**.
 - **Dónde se ve:** en **Inicio**, después de “Ritmo mensual”.
 - **Cómo se ve:**
-  - Tres números: **promedio**, **mínimo** y **máximo**.
-  - Una nota: “Basado en N postulaciones”.
-  - Solo aparece si hay al menos **3 salarios** registrados.
-- **Listo cuando:** los cálculos coinciden y la tarjeta se oculta cuando hay pocos datos.
-- **No incluye:** convertir monedas ni comparar salarios por país.
+  - Tabla de **Moneda / Promedio / Rango** cuando hay COP y USD.
+  - Si solo hay una moneda, una fila compacta sin encabezado.
+  - Valores abreviados: `5M`, `5,9M`, `100K`, `1,3K`.
+  - Sin textos de ayuda como “Basado en…” ni “Solo valores…”.
+- **De dónde sale:** `parseSalary` interpreta valores únicos y rangos, detecta COP/USD y excluye “Yo puse…”, “puse…”, “propuse…” y “sugerí…”. Los rangos cuentan como una postulación; el promedio usa el punto medio.
+- **Listo cuando:** COP y USD se muestran separados, los rangos se aprovechan, las abreviaturas se ven bien y la tarjeta se oculta si no hay datos.
+- **No incluye:** convertir monedas ni aplicar un monto mínimo.
 
 ---
 
@@ -256,6 +258,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 - “Respondió” significa que el estado ya no es Enviada, Sin respuesta o Retirada. Aplica a la barra “Con respuesta” y a la card de empresa.
 - “Actividad reciente” usa la última fecha de seguimiento; si no existe, usa la fecha de postulación. Muestra hasta 3 movimientos.
 - “Ritmo mensual” cuenta por fecha de postulación los últimos 6 meses, incluyendo los meses en cero.
+- “Salario ofrecido” agrupa por moneda (COP/USD), interpreta rangos y excluye los valores que dicen “Yo puse…”. Las abreviaturas usan coma decimal (`5,9M`).
 
 ## Cómo marcar el avance
 

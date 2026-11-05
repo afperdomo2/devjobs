@@ -230,7 +230,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses |
+| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses. **Salario ofrecido** muestra promedio y rango por moneda (COP/USD), con abreviaturas (`5,9M`, `100K`) e interpreta rangos y dólares |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
@@ -346,7 +346,8 @@ lib/
 ├── helpers/
 │   ├── date_formatter.dart             # Fechas en español, parseo D/M e ISO y formatApiDate (yyyy-MM-dd)
 │   ├── domain_parser.dart              # Extrae la plataforma desde el link
-│   ├── salary_formatter.dart           # Extracción/formateo de salarios
+│   ├── salary_formatter.dart           # Extracción, formateo y abreviaturas de salarios
+│   ├── salary_parser.dart              # Moneda, rangos y exclusión de "yo puse"
 │   ├── text_shortener.dart             # Truncado y abreviatura de contratos
 │   ├── network_error.dart              # Detección de errores de red
 │   ├── distribution.dart               # Conteos para las cards de distribución
@@ -356,7 +357,8 @@ lib/
 │   ├── activity.dart                   # Conteos 7/30 y últimos movimientos
 │   ├── application_sort.dart           # Orden único de postulaciones
 │   ├── pipeline.dart                   # Etapas, conteos y filtro por etapa
-│   └── trends.dart                     # Conteo de postulaciones por mes
+│   ├── trends.dart                     # Conteo de postulaciones por mes
+│   └── salary_insights.dart            # Resumen salarial por moneda (COP/USD)
 ├── screens/
 │   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas)
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
@@ -382,6 +384,7 @@ lib/
     ├── recent_activity_card.dart       # Tarjeta "Actividad reciente" de Inicio
     ├── pipeline_card.dart              # Pipeline con etapas tocables
     ├── monthly_trend_card.dart         # Tarjeta "Ritmo mensual" de Inicio
+    ├── salary_insights_card.dart       # Tarjeta "Salario ofrecido" de Inicio
     ├── application_compact_row.dart    # Fila compacta empresa/vacante para listas
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión
