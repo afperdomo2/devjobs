@@ -48,6 +48,53 @@ class CompanyStats {
   });
 }
 
+/// Criterios de orden del listado de Empresas.
+enum CompanySortMode {
+  total,
+  activas,
+  entrevistas,
+  responseRate,
+  recent,
+}
+
+/// Devuelve una copia ordenada de [companies] según [mode].
+List<CompanyStats> sortCompanies(
+  List<CompanyStats> companies,
+  CompanySortMode mode,
+) {
+  final sorted = List<CompanyStats>.of(companies);
+  sorted.sort((a, b) {
+    final primary = switch (mode) {
+      CompanySortMode.total => b.total.compareTo(a.total),
+      CompanySortMode.activas => b.activas.compareTo(a.activas),
+      CompanySortMode.entrevistas => b.entrevistas.compareTo(a.entrevistas),
+      CompanySortMode.responseRate =>
+        _responseRate(b).compareTo(_responseRate(a)),
+      CompanySortMode.recent => _compareRecent(a, b),
+    };
+    if (primary != 0) return primary;
+
+    final byTotal = b.total.compareTo(a.total);
+    if (byTotal != 0) return byTotal;
+    return a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase());
+  });
+  return sorted;
+}
+
+double _responseRate(CompanyStats company) {
+  if (company.total == 0) return 0;
+  return company.conNovedad / company.total;
+}
+
+int _compareRecent(CompanyStats a, CompanyStats b) {
+  final dateA = a.ultimaPostulacion;
+  final dateB = b.ultimaPostulacion;
+  if (dateA == null && dateB == null) return 0;
+  if (dateA == null) return 1;
+  if (dateB == null) return -1;
+  return dateB.compareTo(dateA);
+}
+
 /// Agrupa las postulaciones por empresa y calcula sus métricas,
 /// ordenadas por nº de postulaciones (descendente; empate alfabético).
 ///
@@ -114,12 +161,7 @@ List<CompanyStats> companiesStats(List<JobApplication> apps) {
     ));
   }
 
-  stats.sort((a, b) {
-    final c = b.total.compareTo(a.total);
-    if (c != 0) return c;
-    return a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase());
-  });
-  return stats;
+  return sortCompanies(stats, CompanySortMode.total);
 }
 
 class _CompanyBucket {

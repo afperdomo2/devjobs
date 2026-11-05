@@ -6,6 +6,7 @@ import '../helpers/network_error.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/company_card.dart';
+import '../widgets/company_sort_bar.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/scroll_to_top_button.dart';
 import '../widgets/wheel_refresh.dart';
@@ -24,6 +25,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   String _query = '';
+  CompanySortMode _sortMode = CompanySortMode.total;
 
   @override
   void initState() {
@@ -59,7 +61,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final all = companiesStats(state.applications);
-    final companies = _filter(all);
+    final companies = sortCompanies(_filter(all), _sortMode);
 
     Widget content;
     if (state.loading && all.isEmpty) {
@@ -139,6 +141,11 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
           onChanged: (v) => setState(() => _query = v),
           onClear: _clearQuery,
         ),
+        if (all.isNotEmpty)
+          CompanySortBar(
+            selected: _sortMode,
+            onSelected: (mode) => setState(() => _sortMode = mode),
+          ),
         if (companies.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(

@@ -1,12 +1,15 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/theme_mode.dart';
 import '../models/job_application.dart';
 
 class LocalCache {
   static const _keyData = 'devjobs_cached_applications';
   static const _keyTimestamp = 'devjobs_cached_timestamp';
+  static const _keyThemeMode = 'devjobs_theme_mode';
 
   final SharedPreferences _prefs;
 
@@ -35,6 +38,13 @@ class LocalCache {
     final raw = _prefs.getString(_keyTimestamp);
     if (raw == null) return null;
     return DateTime.tryParse(raw);
+  }
+
+  /// Tema elegido por el usuario; [ThemeMode.system] si nunca eligió uno.
+  ThemeMode get themeMode => themeModeFromName(_prefs.getString(_keyThemeMode));
+
+  Future<void> saveThemeMode(ThemeMode mode) async {
+    await _prefs.setString(_keyThemeMode, themeModeName(mode));
   }
 
   Future<void> clear() async {

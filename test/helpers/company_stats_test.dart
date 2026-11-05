@@ -207,6 +207,90 @@ void main() {
       expect(otra.porGestionar, equals(1));
     });
 
+    test('sortCompanies ordena por los cinco criterios', () {
+      CompanyStats company({
+        required String nombre,
+        int total = 1,
+        int activas = 0,
+        int entrevistas = 0,
+        int conNovedad = 0,
+        DateTime? ultima,
+      }) {
+        return CompanyStats(
+          nombre: nombre,
+          total: total,
+          activas: activas,
+          finalizadas: 0,
+          conNovedad: conNovedad,
+          entrevistas: entrevistas,
+          porGestionar: 0,
+          ultimaPostulacion: ultima,
+        );
+      }
+
+      final companies = [
+        company(
+          nombre: 'A',
+          total: 2,
+          activas: 1,
+          entrevistas: 2,
+          conNovedad: 1,
+          ultima: hoy.subtract(const Duration(days: 1)),
+        ),
+        company(
+          nombre: 'B',
+          total: 3,
+          activas: 3,
+          entrevistas: 0,
+          conNovedad: 2,
+          ultima: hoy.subtract(const Duration(days: 5)),
+        ),
+        company(
+          nombre: 'C',
+          total: 5,
+          activas: 2,
+          entrevistas: 1,
+          conNovedad: 4,
+        ),
+      ];
+
+      String names(CompanySortMode mode) => sortCompanies(companies, mode)
+          .map((company) => company.nombre)
+          .join(',');
+
+      expect(names(CompanySortMode.total), equals('C,B,A'));
+      expect(names(CompanySortMode.activas), equals('B,C,A'));
+      expect(names(CompanySortMode.entrevistas), equals('A,C,B'));
+      expect(names(CompanySortMode.responseRate), equals('C,B,A'));
+      expect(names(CompanySortMode.recent), equals('A,B,C'));
+    });
+
+    test('sortCompanies no modifica la lista original', () {
+      final a = CompanyStats(
+        nombre: 'A',
+        total: 1,
+        activas: 0,
+        finalizadas: 0,
+        conNovedad: 0,
+        entrevistas: 0,
+        porGestionar: 0,
+      );
+      final b = CompanyStats(
+        nombre: 'B',
+        total: 2,
+        activas: 0,
+        finalizadas: 0,
+        conNovedad: 0,
+        entrevistas: 0,
+        porGestionar: 0,
+      );
+      final companies = [a, b];
+
+      sortCompanies(companies, CompanySortMode.total);
+
+      expect(companies.first.nombre, equals('A'));
+    });
+
     test('ultimaPostulacion toma la más reciente; null si no hay fechas', () {
       final apps = [
         JobApplication(

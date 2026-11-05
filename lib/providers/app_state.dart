@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../helpers/application_sort.dart';
 import '../helpers/network_error.dart';
@@ -19,6 +19,7 @@ class AppState extends ChangeNotifier {
   int _currentTab = tabInicio;
   String _applicationsFilter = filterAll;
   bool _cacheLoaded = false;
+  ThemeMode _themeMode;
 
   static const _cacheTtl = Duration(minutes: 3);
 
@@ -36,10 +37,16 @@ class AppState extends ChangeNotifier {
   static const filterFinalizadas = 'finalizadas';
   static const filterPorGestionar = 'porGestionar';
 
-  AppState({required this.apiService, this.localCache});
+  AppState({
+    required this.apiService,
+    this.localCache,
+    ThemeMode? initialThemeMode,
+  }) : _themeMode =
+           initialThemeMode ?? localCache?.themeMode ?? ThemeMode.system;
 
   int get currentTab => _currentTab;
   String get applicationsFilter => _applicationsFilter;
+  ThemeMode get themeMode => _themeMode;
   bool get loading => _loading;
   String? get error => _error;
   bool get offline => _offline;
@@ -52,6 +59,14 @@ class AppState extends ChangeNotifier {
   void setTab(int index) {
     _currentTab = index;
     notifyListeners();
+  }
+
+  /// Cambia el tema de inmediato y recuerda la elección para el próximo inicio.
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (_themeMode == mode) return;
+    _themeMode = mode;
+    notifyListeners();
+    await localCache?.saveThemeMode(mode);
   }
 
   /// Cambia el filtro de la pestaña Postulaciones sin mover de pestaña.

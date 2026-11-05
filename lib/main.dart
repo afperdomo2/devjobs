@@ -32,16 +32,18 @@ class DevJobsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'DevJobs',
-      debugShowCheckedModeBanner: false,
-      locale: const Locale('es'),
-      supportedLocales: const [Locale('es')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
-      home: const MainScreen(),
+    return Consumer<AppState>(
+      builder: (_, state, _) => MaterialApp(
+        title: 'DevJobs',
+        debugShowCheckedModeBanner: false,
+        locale: const Locale('es'),
+        supportedLocales: const [Locale('es')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: state.themeMode,
+        home: const MainScreen(),
+      ),
     );
   }
 }

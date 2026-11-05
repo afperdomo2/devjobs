@@ -5,6 +5,7 @@ import '../helpers/agenda.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/offline_banner.dart';
+import '../widgets/theme_settings_sheet.dart';
 import 'agenda_screen.dart';
 import 'application_form_screen.dart';
 import 'dashboard_screen.dart';
@@ -34,6 +35,11 @@ class MainScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const SearchScreen()),
                   ),
                 ),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                tooltip: 'Ajustes',
+                onPressed: () => showThemeSettingsSheet(context),
+              ),
             ],
           ),
           body: Column(

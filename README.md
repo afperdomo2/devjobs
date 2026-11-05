@@ -233,6 +233,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses. **Salario ofrecido** muestra promedio y rango por moneda (COP/USD), con abreviaturas (`5,9M`, `100K`) e interpreta rangos y dólares |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
 | **Agenda** | Cuarto tab con badge. Secciones **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**; hasta 5 filas por sección y “Ver todas” al listado completo |
+| **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes |
 | **Detalle** | Estado, datos, tiempo del proceso, comentarios, descripción, enlace, entrevista y botón **Agregar nota** con fecha |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
@@ -353,7 +354,7 @@ lib/
 │   ├── text_shortener.dart             # Truncado y abreviatura de contratos
 │   ├── network_error.dart              # Detección de errores de red
 │   ├── distribution.dart               # Conteos para las cards de distribución
-│   ├── company_stats.dart              # Métricas agregadas por empresa
+│   ├── company_stats.dart              # Métricas por empresa y orden (CompanySortMode)
 │   ├── text_normalizer.dart            # Minúsculas/sin acentos para comparar
 │   ├── status.dart                     # Normalización de estados, terminal y respuesta
 │   ├── activity.dart                   # Conteos 7/30 y últimos movimientos
@@ -382,6 +383,7 @@ lib/
     ├── status_chip.dart                # Chip de estado (colores por estado)
     ├── application_card.dart           # Card de postulación reutilizable (borde + tag "Por gestionar")
     ├── company_card.dart               # Card de empresa (chips condicionales + última actividad)
+    ├── company_sort_bar.dart           # Barra de orden del listado de Empresas
     ├── distribution_card.dart          # Distribución con selector segmentado (plataformas/modalidades/ciudades)
     ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)
     ├── form_section.dart               # Sección de formulario (encabezado + campos)

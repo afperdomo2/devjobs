@@ -24,8 +24,8 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 6 | “Salario ofrecido” | Inicio | `[x]` |
 | 7 | Pestaña “Agenda” | Barra inferior | `[x]` |
 | 8 | Nota rápida | Detalle de postulación | `[x]` |
-| 9 | Ordenar empresas | Empresas | `[ ]` |
-| 10 | Tema claro/oscuro | Barra superior | `[ ]` |
+| 9 | Ordenar empresas | Empresas | `[x]` |
+| 10 | Tema claro/oscuro | Barra superior | `[x]` |
 | 11 | Búsqueda mejorada | Buscador | `[ ]` |
 | 12 | Abrir enlace de la oferta | Detalle de postulación | `[ ]` |
 | 13 | Cierre y documentación | — | `[ ]` |
@@ -175,7 +175,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 9 — Ordenar empresas
 
-- [ ] **Para qué sirve:** ver las empresas en el orden que más te interese.
+- [x] **Para qué sirve:** ver las empresas en el orden que más te interese.
 - **Qué se crea:** una fila de opciones de orden.
 - **Dónde se ve:** en **Empresas**, debajo del buscador.
 - **Cómo se ve:** las opciones **“Más postulaciones”**, **“Más activas”**, **“Más entrevistas”**, **“Mejor respuesta”** y **“Recientes”**.
@@ -187,7 +187,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 10 — Tema claro/oscuro
 
-- [ ] **Para qué sirve:** elegir cómo se ve la app.
+- [x] **Para qué sirve:** elegir cómo se ve la app.
 - **Qué se crea:** un menú de ajustes con tres opciones.
 - **Dónde se ve:** un ícono de ajustes en la barra superior.
 - **Cómo se ve:** las opciones **“Sistema”**, **“Claro”** y **“Oscuro”**.

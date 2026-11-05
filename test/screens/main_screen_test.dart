@@ -101,4 +101,23 @@ void main() {
     expect(find.text('Pendiente'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('el ícono de ajustes abre el menú de tema', (tester) async {
+    final state = await pumpMain(tester, []);
+
+    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sistema'), findsOneWidget);
+    expect(find.text('Claro'), findsOneWidget);
+    expect(find.text('Oscuro'), findsOneWidget);
+
+    await tester.tap(find.text('Oscuro'));
+    await tester.pumpAndSettle();
+
+    expect(state.themeMode, ThemeMode.dark);
+    expect(tester.takeException(), isNull);
+  });
 }
