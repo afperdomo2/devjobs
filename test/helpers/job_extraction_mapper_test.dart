@@ -37,7 +37,11 @@ void main() {
         ai: AiJobData(
           modalidad: 'remoto',
           contacto: 'Ana Pérez',
-          descripcion: 'Descripción de la IA. ' * 2,
+          resumen: 'Rol backend para Acme.',
+          responsabilidades: ['Diseñar APIs REST.'],
+          requisitos: ['Experiencia: 3 años.'],
+          beneficios: ['Horario flexible.'],
+          observaciones: ['Viaje ocasional.'],
           datosClave: [
             'Inglés B2',
             'Horario flexible',
@@ -59,7 +63,13 @@ void main() {
         result.fields['salarioOfrecido'],
         equals('COP 6.000.000 – 8.000.000'),
       );
-      expect(result.fields['descripcion'], contains('Buscamos un backend'));
+      expect(result.fields['descripcion'], contains('## Resumen'));
+      expect(result.fields['descripcion'], contains('Rol backend para Acme.'));
+      expect(result.fields['descripcion'], contains('## Responsabilidades'));
+      expect(
+        result.fields['descripcion'],
+        contains('- **Experiencia:** 3 años.'),
+      );
       expect(result.fields['contacto'], equals('Ana Pérez'));
       expect(result.fields['link'], equals('https://linkedin.com/jobs/view/1'));
       expect(

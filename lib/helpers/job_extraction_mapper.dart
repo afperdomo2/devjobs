@@ -1,6 +1,7 @@
 import '../models/job_application.dart';
 import '../models/job_import.dart';
 import 'comments.dart';
+import 'job_description_markdown.dart';
 import 'job_duplicate.dart';
 import 'job_url.dart';
 import 'salary_formatter.dart';
@@ -79,7 +80,10 @@ JobImportResult buildJobImportResult({
 
   final city = _cleanCity(page.city ?? ai?.ciudad);
   final salary = _mapSalary(page.salaryText ?? ai?.salarioTexto, warnings);
-  final description = _pickDescription(page, ai, warnings);
+  final description = buildJobDescriptionMarkdown(
+    ai,
+    fallbackDescription: page.description,
+  );
   final contact = _cleanContact(ai?.contacto, warnings);
   final notes = _buildNotes(
     ai: ai,
@@ -359,38 +363,6 @@ SalaryMapping _mapSalary(String? raw, Set<String> warnings) {
 String _salaryNoteText(String text) {
   final clean = truncate(text, 80);
   return normalizeText(clean).startsWith('salario') ? clean : 'Salario: $clean';
-}
-
-String? _pickDescription(
-  ParsedJobPage page,
-  AiJobData? ai,
-  Set<String> warnings,
-) {
-  final fromAi = ai?.descripcion?.trim();
-  String? candidate;
-
-  if (page.hasJobPosting) {
-    candidate = _longer(page.description?.trim(), fromAi);
-  } else {
-    candidate = (fromAi != null && fromAi.isNotEmpty)
-        ? fromAi
-        : page.description?.trim();
-  }
-
-  if (candidate == null || candidate.length < 40) return null;
-  if (candidate.length > 4000) {
-    warnings.add('La descripción se recortó a 4.000 caracteres.');
-    return truncate(candidate, 4000);
-  }
-  return candidate;
-}
-
-String? _longer(String? a, String? b) {
-  final first = a?.trim() ?? '';
-  final second = b?.trim() ?? '';
-  if (first.isEmpty) return second.isEmpty ? null : second;
-  if (second.isEmpty) return first;
-  return first.length >= second.length ? first : second;
 }
 
 String? _buildNotes({

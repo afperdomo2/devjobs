@@ -26,7 +26,11 @@ class AiJobData {
   final String? modalidad;
   final String? ciudad;
   final String? salarioTexto;
-  final String? descripcion;
+  final String? resumen;
+  final List<String> responsabilidades;
+  final List<String> requisitos;
+  final List<String> beneficios;
+  final List<String> observaciones;
   final String? contacto;
   final List<String> datosClave;
 
@@ -37,7 +41,11 @@ class AiJobData {
     this.modalidad,
     this.ciudad,
     this.salarioTexto,
-    this.descripcion,
+    this.resumen,
+    this.responsabilidades = const [],
+    this.requisitos = const [],
+    this.beneficios = const [],
+    this.observaciones = const [],
     this.contacto,
     this.datosClave = const [],
   });
@@ -65,15 +73,19 @@ class AiJobData {
       modalidad: readString('modalidad'),
       ciudad: readString('ciudad'),
       salarioTexto: readString('salarioTexto'),
-      descripcion: readString('descripcion'),
+      resumen: readString('resumen'),
+      responsabilidades: _readStringList(json['responsabilidades']),
+      requisitos: _readStringList(json['requisitos']),
+      beneficios: _readStringList(json['beneficios']),
+      observaciones: _readStringList(json['observaciones']),
       contacto: readString('contacto'),
-      datosClave: _readKeyData(json['datosClave']),
+      datosClave: _readStringList(json['datosClave']),
     );
   }
 
   /// Acepta `["Inglés B2"]` o `{"ingles": "B2", "beneficios": ["..."]}`.
   /// El modelo a veces devuelve un objeto aunque se le pida un array.
-  static List<String> _readKeyData(dynamic value) {
+  static List<String> _readStringList(dynamic value) {
     final items = <String>[];
 
     void add(dynamic item) {

@@ -248,6 +248,8 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
   - Tarjeta **Autocompletar con IA** dentro del formulario de creación (solo si el build trae `AI_API_KEY`).
   - Hoja para pegar un enlace o una descripción, con progreso, errores y resumen de lo extraído.
   - Relleno de empresa, cargo, contrato, modalidad, ciudad, salario, descripción, contacto y notas.
+  - La descripción se guarda como **resumen Markdown por secciones** (`Resumen`, `Responsabilidades`, `Requisitos`, `Beneficios`, `Observaciones`), con etiquetas en negrita y sin recorte a 4.000.
+  - El **detalle** renderiza el Markdown con iconos por sección; el formulario tiene **Vista previa**.
   - Avisos, chips **IA**, botón **Vaciar IA** y detección de duplicados por enlace.
 - **Dónde se ve:** Postulaciones → **Nueva** → **Autocompletar con IA**.
 - **Cómo se usa:** pega el enlace (o la descripción), toca **Analizar**, revisa el resumen y toca **Usar estos datos**; completa lo que falte y guarda.
@@ -257,8 +259,9 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
   - Un listado, una SPA o un 403 muestran un aviso y ofrecen pegar la descripción.
   - Nunca sobrescribe campos escritos a mano.
   - Un enlace repetido avisa y no crea otra sin confirmar.
+  - La descripción se ve con secciones, negritas e iconos en el detalle, y se puede previsualizar en el formulario.
   - `flutter test` y `flutter analyze` pasan.
-- **No incluye:** fotos/cámara, compartir desde otras apps, importar en edición, importación masiva ni auto-postulación.
+- **No incluye:** fotos/cámara, compartir desde otras apps, importar en edición, importación masiva, auto-postulación ni guardar la descripción original completa (el Sheet muestra el Markdown crudo).
 
 ---
 
@@ -274,6 +277,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 - Agenda usa **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**. Se descartó “Sin novedad +7 días” porque con volumen alto no es una agenda accionable.
 - La tarjeta **“Por gestionar”** se retiró de Inicio: su única ubicación ahora es Agenda.
 - **Importación con IA:** usa OpenCode Go (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`). Sin `AI_API_KEY` no se muestra. DeepSeek V4.1 Flash va con `reasoning_effort: none`; la IA solo llena campos vacíos y nunca guarda sola.
+- La descripción es un **resumen Markdown por secciones** (no la transcripción completa). Google Sheets la muestra como texto; el render con iconos es en la app.
 
 ## Cómo marcar el avance
 

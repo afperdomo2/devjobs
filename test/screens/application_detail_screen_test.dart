@@ -77,6 +77,27 @@ void main() {
     return (state, api);
   }
 
+  testWidgets('renderiza la descripción Markdown con secciones', (
+    tester,
+  ) async {
+    const app = JobApplication(
+      rowIndex: 8,
+      empresa: 'Acme',
+      vacante: 'Dev',
+      estado: 'Enviada',
+      descripcion:
+          '## Resumen\n\nRol backend.\n\n## Requisitos\n\n- **Experiencia:** 3 años.',
+    );
+
+    await pumpDetail(tester, app: app, size: const Size(360, 1200));
+
+    expect(find.text('Resumen'), findsOneWidget);
+    expect(find.text('Requisitos'), findsOneWidget);
+    expect(find.byIcon(Icons.summarize_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.rule), findsOneWidget);
+    expect(find.textContaining('Rol backend.'), findsOneWidget);
+  });
+
   testWidgets('agrega una nota con fecha y la muestra en comentarios', (
     tester,
   ) async {
@@ -86,10 +107,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Agregar nota'), findsOneWidget);
 
-    await tester.enterText(
-      find.byType(TextField),
-      'Llamada con reclutador',
-    );
+    await tester.enterText(find.byType(TextField), 'Llamada con reclutador');
     await tester.pump();
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
@@ -185,10 +203,7 @@ void main() {
     await tester.pump();
 
     expect(clipboardCalls, hasLength(1));
-    expect(
-      (clipboardCalls.single.arguments as Map)['text'],
-      link,
-    );
+    expect((clipboardCalls.single.arguments as Map)['text'], link);
     expect(find.text('Enlace copiado al portapapeles'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

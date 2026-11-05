@@ -42,9 +42,11 @@ void main() {
 
   test('JSON-LD + IA: el JSON-LD gana y la IA completa', () async {
     final extractor = _FakeExtractor()
-      ..response = AiJobData(
+      ..response = const AiJobData(
         modalidad: 'Remoto',
-        descripcion: 'Descripción de la IA. ' * 2,
+        resumen: 'Resumen de la IA para Acme.',
+        responsabilidades: ['Diseñar APIs REST.'],
+        requisitos: ['Experiencia: 3 años.'],
         datosClave: ['Inglés B2'],
       );
     final client = MockClient((request) async {
@@ -71,7 +73,11 @@ void main() {
       result.fields['salarioOfrecido'],
       equals('COP 6.000.000 – 8.000.000'),
     );
-    expect(result.fields['descripcion'], contains('Buscamos un backend'));
+    expect(result.fields['descripcion'], contains('## Resumen'));
+    expect(
+      result.fields['descripcion'],
+      contains('Resumen de la IA para Acme.'),
+    );
     expect(result.fields['comentarios'], contains('Inglés B2'));
     expect(result.source, equals('JSON-LD + IA'));
     expect(extractor.calls, equals(1));
@@ -131,10 +137,11 @@ void main() {
 
   test('texto pegado llama a la IA y llena el formulario', () async {
     final extractor = _FakeExtractor()
-      ..response = AiJobData(
+      ..response = const AiJobData(
         empresa: 'Acme',
         vacante: 'Dev',
-        descripcion: 'Buscamos un desarrollador con experiencia. ' * 3,
+        resumen: 'Buscamos un desarrollador con experiencia.',
+        responsabilidades: ['Construir APIs.'],
         datosClave: ['Inglés B2'],
       );
 
@@ -145,6 +152,8 @@ void main() {
 
     expect(result.fields['empresa'], equals('Acme'));
     expect(result.fields['vacante'], equals('Dev'));
+    expect(result.fields['descripcion'], contains('## Resumen'));
+    expect(result.fields['descripcion'], contains('Construir APIs.'));
     expect(result.fields['comentarios'], contains('Inglés B2'));
     expect(result.fields.containsKey('link'), isFalse);
     expect(extractor.calls, equals(1));
@@ -168,6 +177,7 @@ void main() {
 
     expect(result.status, JobImportStatus.partial);
     expect(result.fields['empresa'], equals('Acme'));
+    expect(result.fields['descripcion'], contains('## Descripción'));
     expect(result.warnings.join(' '), contains('sin red'));
     expect(result.source, equals('JSON-LD'));
   });

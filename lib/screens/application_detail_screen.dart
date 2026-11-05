@@ -13,6 +13,7 @@ import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/add_note_dialog.dart';
 import '../widgets/gestion_tag.dart';
+import '../widgets/markdown_description.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/status_chip.dart';
 import 'application_form_screen.dart';
@@ -23,16 +24,16 @@ class ApplicationDetailScreen extends StatefulWidget {
   const ApplicationDetailScreen({super.key, required this.application});
 
   @override
-  State<ApplicationDetailScreen> createState() => _ApplicationDetailScreenState();
+  State<ApplicationDetailScreen> createState() =>
+      _ApplicationDetailScreenState();
 }
 
 class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   Future<void> _toggleGestion(JobApplication app) async {
     try {
-      await context.read<AppState>().updateApplication(
-        app.rowIndex,
-        {'porGestionar': (!app.porGestionar).toString()},
-      );
+      await context.read<AppState>().updateApplication(app.rowIndex, {
+        'porGestionar': (!app.porGestionar).toString(),
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -55,14 +56,13 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     );
 
     try {
-      await state.updateApplication(
-        app.rowIndex,
-        {'comentarios': appendComment(current.comentarios, text)},
-      );
+      await state.updateApplication(app.rowIndex, {
+        'comentarios': appendComment(current.comentarios, text),
+      });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nota agregada')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Nota agregada')));
       }
     } catch (e) {
       if (mounted) {
@@ -75,10 +75,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
 
   Future<void> _openLink(Uri uri) async {
     try {
-      final opened = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened && mounted) _showSnack('No se pudo abrir el enlace.');
     } catch (_) {
       if (mounted) _showSnack('No se pudo abrir el enlace.');
@@ -92,9 +89,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -142,12 +139,16 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
             ),
             tooltip: isOffline
                 ? 'Sin conexión — edición deshabilitada'
-                : (app.porGestionar ? 'Quitar "Por gestionar"' : 'Marcar "Por gestionar"'),
+                : (app.porGestionar
+                      ? 'Quitar "Por gestionar"'
+                      : 'Marcar "Por gestionar"'),
             onPressed: isOffline ? null : () => _toggleGestion(app),
           ),
           IconButton(
             icon: const Icon(Icons.edit),
-            tooltip: isOffline ? 'Sin conexión — edición deshabilitada' : 'Editar postulación',
+            tooltip: isOffline
+                ? 'Sin conexión — edición deshabilitada'
+                : 'Editar postulación',
             onPressed: isOffline
                 ? null
                 : () async {
@@ -170,7 +171,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
           if (isOffline)
             OfflineBanner(
               lastUpdated: cacheTs,
-              onRetry: () => context.read<AppState>().fetchApplications(forceRefresh: true),
+              onRetry: () => context.read<AppState>().fetchApplications(
+                forceRefresh: true,
+              ),
             ),
           Expanded(
             child: ListView(
@@ -184,7 +187,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 const SizedBox(height: 8),
                 Text(
                   app.vacante,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 ..._buildInfoSection(context, app),
@@ -192,10 +197,11 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.link,
-                          size: AppIconSize.row,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant),
+                      Icon(
+                        Icons.link,
+                        size: AppIconSize.row,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 6),
                       Text('Enlace externo', style: AppType.section(context)),
                     ],
@@ -220,8 +226,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                           onPressed: offerUri == null
                               ? null
                               : () => _openLink(offerUri),
-                          icon: const Icon(Icons.open_in_new,
-                              size: AppIconSize.row),
+                          icon: const Icon(
+                            Icons.open_in_new,
+                            size: AppIconSize.row,
+                          ),
                           label: const Text('Abrir'),
                         ),
                       ),
@@ -243,19 +251,17 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                         Icon(
                           Icons.error_outline,
                           size: AppIconSize.row,
-                          color:
-                              dangerColor(Theme.of(context).brightness),
+                          color: dangerColor(Theme.of(context).brightness),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             'El enlace no parece válido.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: dangerColor(
-                                      Theme.of(context).brightness),
+                                    Theme.of(context).brightness,
+                                  ),
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -268,10 +274,11 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.chat_bubble_outline,
-                          size: AppIconSize.row,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant),
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        size: AppIconSize.row,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 6),
                       Text('Comentarios', style: AppType.section(context)),
                     ],
@@ -283,8 +290,21 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('• ', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14)),
-                          Expanded(child: Text(c, style: const TextStyle(fontSize: 14))),
+                          Text(
+                            '• ',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              c,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -293,16 +313,20 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   const Divider(height: 32),
                   Row(
                     children: [
-                      Icon(Icons.description_outlined,
-                          size: AppIconSize.row,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant),
+                      Icon(
+                        Icons.description_outlined,
+                        size: AppIconSize.row,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 6),
                       Text('Descripción', style: AppType.section(context)),
                     ],
                   ),
                   const SizedBox(height: AppSpace.sm),
-                  Text(app.descripcion),
+                  MarkdownDescription(
+                    data: app.descripcion,
+                    onTapLink: _openLink,
+                  ),
                 ],
               ],
             ),
@@ -313,18 +337,29 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
   }
 
   List<Widget> _buildInfoSection(BuildContext context, JobApplication app) {
-    final warningColor =
-        warningTextColor(Theme.of(context).brightness);
+    final warningColor = warningTextColor(Theme.of(context).brightness);
 
     final baseFields = [
       (Icons.business, 'Empresa', app.empresa),
       (Icons.work_outline, 'Tipo de contrato', app.tipoContrato),
       (Icons.laptop_mac_outlined, 'Modalidad', app.modalidad),
       (Icons.location_on_outlined, 'Ciudad', app.ciudad),
-      (Icons.attach_money_outlined, 'Salario ofrecido', formatSalario(app.salarioOfrecido)),
+      (
+        Icons.attach_money_outlined,
+        'Salario ofrecido',
+        formatSalario(app.salarioOfrecido),
+      ),
       (Icons.language, 'Plataforma', app.plataforma),
-      (Icons.calendar_today, 'F. postulación', formatDate(app.fechaPostulacion)),
-      (Icons.notifications_outlined, 'Últ. novedad', formatDate(app.fechaSeguimiento)),
+      (
+        Icons.calendar_today,
+        'F. postulación',
+        formatDate(app.fechaPostulacion),
+      ),
+      (
+        Icons.notifications_outlined,
+        'Últ. novedad',
+        formatDate(app.fechaSeguimiento),
+      ),
     ].where((f) => f.$3.isNotEmpty).map(_fieldRow).toList();
 
     // Tiempo del proceso: duración total si finalizado; avance y
@@ -337,25 +372,25 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
             'Duración proceso',
             formatDuracion(app.diasProceso!),
           ))
-      else ...[
-        if (app.diasProceso != null)
-          _fieldRow((
-            Icons.schedule,
-            'En proceso',
-            formatDias(app.diasProceso!),
-          )),
-        if (app.diasSinNovedad != null)
-          _fieldRow(
-            (
-              Icons.notifications_outlined,
-              'Sin novedad',
-              formatSinNovedad(app.diasSinNovedad!),
+        else ...[
+          if (app.diasProceso != null)
+            _fieldRow((
+              Icons.schedule,
+              'En proceso',
+              formatDias(app.diasProceso!),
+            )),
+          if (app.diasSinNovedad != null)
+            _fieldRow(
+              (
+                Icons.notifications_outlined,
+                'Sin novedad',
+                formatSinNovedad(app.diasSinNovedad!),
+              ),
+              color: app.diasSinNovedad! >= kUmbralDiasSinNovedad
+                  ? warningColor
+                  : null,
             ),
-            color: app.diasSinNovedad! >= kUmbralDiasSinNovedad
-                ? warningColor
-                : null,
-          ),
-      ],
+        ],
     ];
 
     final afterFields = [
@@ -369,9 +404,11 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
-            Icon(Icons.people,
-                size: AppIconSize.row,
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.people,
+              size: AppIconSize.row,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: AppSpace.sm),
             SizedBox(
               width: 100,
@@ -403,9 +440,11 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(f.$1,
-              size: AppIconSize.row,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            f.$1,
+            size: AppIconSize.row,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: AppSpace.sm),
           SizedBox(
             width: 112,
@@ -415,9 +454,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
             child: Text(
               f.$3,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: color,
-                    fontWeight: color != null ? FontWeight.w600 : null,
-                  ),
+                color: color,
+                fontWeight: color != null ? FontWeight.w600 : null,
+              ),
             ),
           ),
         ],

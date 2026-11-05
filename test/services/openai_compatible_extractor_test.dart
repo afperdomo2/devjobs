@@ -50,6 +50,11 @@ void main() {
         jsonEncode({
           'empresa': 'Acme',
           'vacante': 'Dev',
+          'resumen': 'Rol backend para Acme.',
+          'responsabilidades': ['Diseñar APIs.'],
+          'requisitos': ['Experiencia: 3 años.'],
+          'beneficios': ['Horario flexible.'],
+          'observaciones': ['Viaje ocasional.'],
           'datosClave': {
             'ingles': 'B2',
             'beneficios': ['Horario flexible'],
@@ -75,6 +80,11 @@ void main() {
 
     expect(data.empresa, equals('Acme'));
     expect(data.vacante, equals('Dev'));
+    expect(data.resumen, equals('Rol backend para Acme.'));
+    expect(data.responsabilidades, equals(['Diseñar APIs.']));
+    expect(data.requisitos, equals(['Experiencia: 3 años.']));
+    expect(data.beneficios, equals(['Horario flexible.']));
+    expect(data.observaciones, equals(['Viaje ocasional.']));
     expect(data.datosClave, containsAll(['B2', 'Horario flexible']));
   });
 

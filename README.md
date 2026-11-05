@@ -32,6 +32,8 @@ Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a 
 | `intl` | `^0.20.2` | Formateo de fechas en español |
 | `flutter_dotenv` | `^6.0.1` | Carga de variables de entorno desde archivo `.env` |
 | `url_launcher` | `^6.3.3` | Abrir el enlace de la oferta en el navegador externo (Android/Linux/Windows) |
+| `flutter_markdown_plus` | `^1.0.12` | Render de la descripción Markdown en el detalle y la vista previa |
+| `markdown` | `^7.3.1` | AST para personalizar los encabezados Markdown con iconos |
 | `flutter_lints` (dev) | `^6.0.0` | Reglas de lint por defecto de Flutter |
 
 > `url_launcher` requiere declarar los intents `VIEW` para `https` y `http` en el
@@ -245,7 +247,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes |
 | **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción; aviso si el enlace no es válido), comentarios, descripción, entrevista y botón **Agregar nota** con fecha |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
-| **Importar con IA** | Tarjeta **Autocompletar con IA** dentro de Nueva postulación (solo si `AI_API_KEY` está configurada). Pega un link o la descripción y la IA prellena los campos; siempre revisas antes de guardar |
+| **Importar con IA** | Tarjeta **Autocompletar con IA** dentro de Nueva postulación (solo si `AI_API_KEY` está configurada). Pega un link o la descripción y la IA prellena los campos; la descripción se guarda como resumen Markdown por secciones y se renderiza en el detalle |
 | **Ajustes** | Ícono de engranaje en el AppBar. Tema **Sistema**, **Claro** u **Oscuro**; se aplica al instante y se recuerda al reiniciar |
 
 ### Búsqueda global
@@ -276,14 +278,20 @@ La app puede prellenar el formulario a partir del **enlace** de una vacante o de
 - Abre **Nueva** y toca **Autocompletar con IA**.
 - Pega un enlace o la descripción y toca **Analizar**.
 - La app intenta leer el JSON-LD `JobPosting` de la página; si no alcanza, consulta al modelo.
+- La descripción se guarda como un **resumen Markdown** por secciones: `Resumen`, `Responsabilidades`, `Requisitos`, `Beneficios` y `Observaciones`. La app compone el Markdown; no depende de que el modelo acierte la sintaxis.
+- En el **detalle** se renderiza con títulos, negritas, viñetas e iconos por sección. En el formulario puedes alternar **Vista previa** para verlo antes de guardar.
+- El resumen suele quedar entre ~800 y 2.000 caracteres. Ya no se recorta la descripción a 4.000: se resume y se organiza.
 - Solo rellena campos vacíos. Marca las secciones con un chip **IA**, muestra un resumen con avisos y permite **Vaciar IA** para revertir lo importado.
 - Los campos que ya habías escrito a mano nunca se sobrescriben.
+
+> 📄 **Google Sheets** guarda el Markdown como texto: en la celda vas a ver `##` y `**`. El formato con títulos, negritas e iconos se ve en la app.
 
 **Qué no hace**
 
 - No crea la postulación sin tu confirmación.
 - No actualiza una postulación existente: si detecta el mismo enlace canónico, avisa y ofrece crear otra.
 - No lee páginas con login, Indeed (HTTP 403) ni SPAs que no entregan texto; en esos casos pide pegar la descripción.
+- No guarda la descripción original completa: guarda el resumen Markdown.
 - No envía datos de la hoja ni datos personales: solo el texto de la vacante.
 
 **Privacidad y límites**
@@ -307,7 +315,7 @@ La app puede prellenar el formulario a partir del **enlace** de una vacante o de
 | G | Salario Ofrecido | Salario o rango salarial |
 | H | Estado | Enviada / En revisión / Entrevista agendada / Entrevista realizada / Prueba técnica / Oferta recibida / Rechazada / Sin respuesta / Aceptada / Retirada |
 | I | Link | URL de la oferta original |
-| J | Descripción/Notas | Descripción completa de la vacante |
+| J | Descripción/Notas | Resumen Markdown de la vacante por secciones (se renderiza en el detalle) |
 | K | Fecha Seguimiento | Fecha del último seguimiento |
 | L | Contacto | Nombre del reclutador o contacto |
 | M | Comentarios | Notas internas separadas por `- ` (guion + espacio) |
@@ -420,6 +428,7 @@ lib/
 │   ├── job_page_parser.dart            # HTML → texto, JSON-LD JobPosting y tipo de página
 │   ├── job_url.dart                    # Normalización de links (LinkedIn search → view)
 │   ├── job_extraction_mapper.dart      # IA → campos del formulario, enums, salario y notas
+│   ├── job_description_markdown.dart   # Resumen de la IA → Markdown por secciones
 │   ├── job_duplicate.dart              # Detección de duplicados por enlace canónico
 │   ├── text_shortener.dart             # Truncado y abreviatura de contratos
 │   ├── network_error.dart              # Detección de errores de red
@@ -447,7 +456,7 @@ lib/
 │   ├── applications_list_screen.dart   # Lista con pull-to-refresh (reutilizada por Postulaciones y Por gestionar)
 │   ├── pending_applications_screen.dart # Listado filtrado "Por gestionar"
 │   ├── search_screen.dart              # Búsqueda global: contador, tildes y varias palabras
-│   ├── application_detail_screen.dart  # Detalle + enlace Abrir/Copiar + comentarios + "Por gestionar"
+│   ├── application_detail_screen.dart  # Detalle + enlace Abrir/Copiar + comentarios + descripción Markdown
 │   ├── application_form_screen.dart    # Formulario único: crear/editar + importación con IA
 │   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
 │   └── filtered_applications_screen.dart # Listado filtrado por campo/valor o selector
@@ -462,6 +471,7 @@ lib/
     ├── form_section.dart               # Sección de formulario (encabezado + campos)
     ├── import_application_sheet.dart   # Hoja "Autocompletar con IA" + banner de resumen
     ├── ai_badge.dart                   # Chip "IA" para secciones importadas
+    ├── markdown_description.dart       # Render Markdown con iconos por sección (detalle y preview)
     ├── add_note_dialog.dart            # Diálogo de nota rápida con fecha
     ├── recent_activity_card.dart       # Tarjeta "Actividad reciente" de Inicio
     ├── pipeline_card.dart              # Pipeline con etapas tocables

@@ -95,7 +95,8 @@ void main() {
         'vacante': 'Dev',
         'tipoContrato': 'Indefinido',
         'modalidad': 'Remoto',
-        'descripcion': 'Buscamos un dev.',
+        'descripcion':
+            '## Resumen\n\nBuscamos un dev.\n\n## Requisitos\n\n- **Experiencia:** 3 años.',
         'comentarios': '- 5/11/2026: Datos clave: Inglés B2',
         'link': 'https://acme.com/jobs/1',
       },
@@ -145,6 +146,19 @@ void main() {
     expect(find.text('Dev'), findsOneWidget);
     expect(importer.calls, equals(1));
 
+    await tester.ensureVisible(
+      find.byKey(const Key('form-descripcion-preview')),
+    );
+    await tester.tap(find.byKey(const Key('form-descripcion-preview')));
+    await tester.pumpAndSettle();
+    expect(find.text('Resumen'), findsOneWidget);
+    expect(find.byIcon(Icons.summarize_outlined), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('form-descripcion-preview')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('form-descripcion')), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('import-clear')));
     await tester.tap(find.byKey(const Key('import-clear')));
     await tester.pumpAndSettle();
 

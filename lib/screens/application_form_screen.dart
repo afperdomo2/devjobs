@@ -14,6 +14,7 @@ import '../theme.dart';
 import '../widgets/ai_badge.dart';
 import '../widgets/form_section.dart';
 import '../widgets/import_application_sheet.dart';
+import '../widgets/markdown_description.dart';
 import '../widgets/offline_banner.dart';
 
 /// Abre el formulario de creación y, si se guarda, vuelve a la lista completa
@@ -87,6 +88,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   final Set<String> _importedFields = {};
   JobImportResult? _importResult;
   bool _bannerDismissed = false;
+  bool _showDescriptionPreview = false;
 
   static const _vacanteKeys = {
     'empresa',
@@ -803,15 +805,61 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                           ? const AiBadge()
                           : null,
                       children: [
-                        TextFormField(
-                          key: const Key('form-descripcion'),
-                          controller: _descripcionCtrl,
-                          onChanged: (_) => _markUserEdited('descripcion'),
-                          maxLines: 3,
-                          textCapitalization: TextCapitalization.sentences,
-                          decoration: const InputDecoration(
-                            labelText: 'Descripción',
-                            alignLabelWithHint: true,
+                        if (!_showDescriptionPreview)
+                          TextFormField(
+                            key: const Key('form-descripcion'),
+                            controller: _descripcionCtrl,
+                            onChanged: (_) => _markUserEdited('descripcion'),
+                            minLines: 3,
+                            maxLines: 8,
+                            keyboardType: TextInputType.multiline,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: const InputDecoration(
+                              labelText: 'Descripción',
+                              alignLabelWithHint: true,
+                            ),
+                          )
+                        else
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppSpace.md),
+                            decoration: BoxDecoration(
+                              color: scheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.control,
+                              ),
+                              border: Border.all(
+                                color: Theme.of(context).dividerColor,
+                              ),
+                            ),
+                            child: _descripcionCtrl.text.trim().isEmpty
+                                ? Text(
+                                    'Sin descripción',
+                                    style: AppType.label(context),
+                                  )
+                                : MarkdownDescription(
+                                    data: _descripcionCtrl.text,
+                                  ),
+                          ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            key: const Key('form-descripcion-preview'),
+                            onPressed: () => setState(
+                              () => _showDescriptionPreview =
+                                  !_showDescriptionPreview,
+                            ),
+                            icon: Icon(
+                              _showDescriptionPreview
+                                  ? Icons.edit_outlined
+                                  : Icons.visibility_outlined,
+                              size: 18,
+                            ),
+                            label: Text(
+                              _showDescriptionPreview
+                                  ? 'Editar'
+                                  : 'Vista previa',
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpace.md),
