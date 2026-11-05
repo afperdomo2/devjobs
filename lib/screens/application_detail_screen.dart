@@ -2,25 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
+import '../helpers/comments.dart';
 import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
 import '../helpers/salary_formatter.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
+import '../widgets/add_note_dialog.dart';
 import '../widgets/gestion_tag.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/status_chip.dart';
 import 'application_form_screen.dart';
-
-List<String> _parseComments(String raw) {
-  return raw
-      .split('\n')
-      .map((line) => line.trim())
-      .where((line) => line.isNotEmpty)
-      .map((line) => line.startsWith('- ') ? line.substring(2) : line)
-      .toList();
-}
 
 class ApplicationDetailScreen extends StatefulWidget {
   final JobApplication application;
@@ -47,6 +40,37 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     }
   }
 
+  Future<void> _addNote(JobApplication app) async {
+    final text = await showAddNoteDialog(context);
+    if (text == null || text.trim().isEmpty || !mounted) return;
+
+    final state = context.read<AppState>();
+    if (state.offline) return;
+
+    final current = state.applications.firstWhere(
+      (item) => item.rowIndex == app.rowIndex,
+      orElse: () => app,
+    );
+
+    try {
+      await state.updateApplication(
+        app.rowIndex,
+        {'comentarios': appendComment(current.comentarios, text)},
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nota agregada')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${friendlyErrorMessage(e)}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
@@ -56,7 +80,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       (a) => a.rowIndex == widget.application.rowIndex,
       orElse: () => widget.application,
     );
-    final comentarios = _parseComments(app.comentarios);
+    final comentarios = parseComments(app.comentarios);
     final isOffline = state.offline;
     final cacheTs = state.cacheTimestamp;
 
@@ -72,6 +96,13 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 child: Icon(Icons.wifi_off, size: 20),
               ),
             ),
+          IconButton(
+            icon: const Icon(Icons.note_add_outlined),
+            tooltip: isOffline
+                ? 'Sin conexión — edición deshabilitada'
+                : 'Agregar nota',
+            onPressed: isOffline ? null : () => _addNote(app),
+          ),
           IconButton(
             icon: Icon(
               app.porGestionar

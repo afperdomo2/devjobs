@@ -23,7 +23,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 5 | “Ritmo mensual” | Inicio | `[x]` |
 | 6 | “Salario ofrecido” | Inicio | `[x]` |
 | 7 | Pestaña “Agenda” | Barra inferior | `[x]` |
-| 8 | Nota rápida | Detalle de postulación | `[ ]` |
+| 8 | Nota rápida | Detalle de postulación | `[x]` |
 | 9 | Ordenar empresas | Empresas | `[ ]` |
 | 10 | Tema claro/oscuro | Barra superior | `[ ]` |
 | 11 | Búsqueda mejorada | Buscador | `[ ]` |
@@ -158,13 +158,13 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 8 — Nota rápida
 
-- [ ] **Para qué sirve:** agregar una nota sin abrir el formulario completo de edición.
+- [x] **Para qué sirve:** agregar una nota sin abrir el formulario completo de edición.
 - **Qué se crea:**
   1. Un botón de nota en la barra superior del detalle.
   2. Una ventana pequeña para escribir la nota.
 - **Dónde se ve:** en el **detalle de una postulación**.
 - **Cómo se ve:** un ícono de nota; al tocarlo, una ventana con un cuadro de texto y el botón **“Guardar”**.
-- **Cómo se usa:** escribir la nota, tocar “Guardar”, y la nota aparece en **Comentarios** con la fecha.
+- **Cómo se usa:** escribir la nota, tocar “Guardar”, y la nota aparece en **Comentarios** con la fecha en formato `- d/M/yyyy: texto`.
 - **Listo cuando:**
   - La nota se guarda en la hoja.
   - La nota sigue ahí al cerrar y volver a abrir la postulación.
