@@ -6,6 +6,7 @@ import 'package:devjobs/screens/application_detail_screen.dart';
 import 'package:devjobs/services/sheets_api_service.dart';
 import 'package:devjobs/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -50,13 +51,16 @@ void main() {
   Future<(AppState, _FakeApi)> pumpDetail(
     WidgetTester tester, {
     bool offline = false,
+    JobApplication? app,
+    Size size = const Size(360, 900),
   }) async {
-    tester.view.physicalSize = const Size(360, 900);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final api = _FakeApi([application])..failFetch = offline;
+    final target = app ?? application;
+    final api = _FakeApi([target])..failFetch = offline;
     final state = AppState(apiService: api);
     await state.fetchApplications(forceRefresh: true);
 
@@ -65,7 +69,7 @@ void main() {
         value: state,
         child: MaterialApp(
           theme: AppTheme.light,
-          home: const ApplicationDetailScreen(application: application),
+          home: ApplicationDetailScreen(application: target),
         ),
       ),
     );
@@ -108,6 +112,110 @@ void main() {
     );
 
     expect(button.onPressed, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('el enlace aparece antes de comentarios y descripción', (
+    tester,
+  ) async {
+    await pumpDetail(
+      tester,
+      size: const Size(480, 2000),
+      app: const JobApplication(
+        rowIndex: 7,
+        empresa: 'Acme',
+        vacante: 'Dev',
+        estado: 'En revisión',
+        link: 'https://www.linkedin.com/jobs/1',
+        comentarios: '- Nota previa',
+        descripcion: 'Descripción larga de la vacante.',
+      ),
+    );
+
+    final linkY = tester.getTopLeft(find.text('Enlace externo')).dy;
+    final commentsY = tester.getTopLeft(find.text('Comentarios')).dy;
+    final descriptionY = tester.getTopLeft(find.text('Descripción')).dy;
+
+    expect(linkY, lessThan(commentsY));
+    expect(linkY, lessThan(descriptionY));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Abrir y Copiar están disponibles y copian el enlace', (
+    tester,
+  ) async {
+    final clipboardCalls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') clipboardCalls.add(call);
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    const link = 'https://www.linkedin.com/jobs/1';
+    await pumpDetail(
+      tester,
+      app: const JobApplication(
+        rowIndex: 7,
+        empresa: 'Acme',
+        vacante: 'Dev',
+        estado: 'En revisión',
+        link: link,
+      ),
+    );
+
+    expect(find.text('Enlace externo'), findsOneWidget);
+    expect(find.text('Abrir'), findsOneWidget);
+    expect(find.text('Copiar'), findsOneWidget);
+    expect(find.text('linkedin.com'), findsWidgets);
+
+    final openButton = tester.widget<FilledButton>(
+      find.byWidgetPredicate((w) => w is FilledButton),
+    );
+    expect(openButton.onPressed, isNotNull);
+
+    await tester.tap(find.text('Copiar'));
+    await tester.pump();
+
+    expect(clipboardCalls, hasLength(1));
+    expect(
+      (clipboardCalls.single.arguments as Map)['text'],
+      link,
+    );
+    expect(find.text('Enlace copiado al portapapeles'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('un enlace inválido avisa y deshabilita Abrir', (tester) async {
+    await pumpDetail(
+      tester,
+      app: const JobApplication(
+        rowIndex: 7,
+        empresa: 'Acme',
+        vacante: 'Dev',
+        estado: 'En revisión',
+        link: 'no-es-un-link',
+      ),
+    );
+
+    expect(find.text('El enlace no parece válido.'), findsOneWidget);
+
+    final openButton = tester.widget<FilledButton>(
+      find.byWidgetPredicate((w) => w is FilledButton),
+    );
+    expect(openButton.onPressed, isNull);
+
+    final copyButton = tester.widget<OutlinedButton>(
+      find.byWidgetPredicate((w) => w is OutlinedButton),
+    );
+    expect(copyButton.onPressed, isNotNull);
     expect(tester.takeException(), isNull);
   });
 }

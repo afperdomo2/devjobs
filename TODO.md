@@ -26,8 +26,8 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 8 | Nota rápida | Detalle de postulación | `[x]` |
 | 9 | Ordenar empresas | Empresas | `[x]` |
 | 10 | Tema claro/oscuro | Barra superior | `[x]` |
-| 11 | Búsqueda mejorada | Buscador | `[ ]` |
-| 12 | Abrir enlace de la oferta | Detalle de postulación | `[ ]` |
+| 11 | Búsqueda mejorada | Buscador | `[x]` |
+| 12 | Abrir enlace de la oferta | Detalle de postulación | `[x]` |
 | 13 | Cierre y documentación | — | `[ ]` |
 
 ---
@@ -199,7 +199,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 11 — Búsqueda mejorada
 
-- [ ] **Para qué sirve:** encontrar postulaciones por más datos y sin preocuparte por las tildes.
+- [x] **Para qué sirve:** encontrar postulaciones por más datos y sin preocuparte por las tildes.
 - **Qué se crea:** una mejora del buscador actual.
 - **Dónde se ve:** en el ícono de lupa de la barra superior.
 - **Cómo se ve:**
@@ -214,7 +214,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 12 — Abrir enlace de la oferta
 
-- [ ] **Para qué sirve:** abrir la oferta original con un solo toque.
+- [x] **Para qué sirve:** abrir la oferta original con un solo toque.
 - **Qué se crea:**
   1. Un botón **“Abrir”** junto al enlace.
   2. Se mantiene el botón para copiar el enlace.

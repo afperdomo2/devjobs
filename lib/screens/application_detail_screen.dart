@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../helpers/comments.dart';
 import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
+import '../helpers/offer_link.dart';
 import '../helpers/salary_formatter.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
@@ -71,6 +73,30 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     }
   }
 
+  Future<void> _openLink(Uri uri) async {
+    try {
+      final opened = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && mounted) _showSnack('No se pudo abrir el enlace.');
+    } catch (_) {
+      if (mounted) _showSnack('No se pudo abrir el enlace.');
+    }
+  }
+
+  Future<void> _copyLink(String link) async {
+    await Clipboard.setData(ClipboardData(text: link));
+    if (!mounted) return;
+    _showSnack('Enlace copiado al portapapeles');
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
@@ -81,6 +107,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       orElse: () => widget.application,
     );
     final comentarios = parseComments(app.comentarios);
+    final offerUri = parseOfferUri(app.link);
+    final offerDomain = offerLinkDomain(app.link);
     final isOffline = state.offline;
     final cacheTs = state.cacheTimestamp;
 
@@ -160,6 +188,82 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 ..._buildInfoSection(context, app),
+                if (app.link.isNotEmpty) ...[
+                  const Divider(height: 32),
+                  Row(
+                    children: [
+                      Icon(Icons.link,
+                          size: AppIconSize.row,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 6),
+                      Text('Enlace externo', style: AppType.section(context)),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpace.sm),
+                  if (offerDomain.isNotEmpty)
+                    Tooltip(
+                      message: app.link,
+                      child: Text(
+                        offerDomain,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppType.label(context),
+                      ),
+                    ),
+                  if (offerDomain.isNotEmpty)
+                    const SizedBox(height: AppSpace.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: offerUri == null
+                              ? null
+                              : () => _openLink(offerUri),
+                          icon: const Icon(Icons.open_in_new,
+                              size: AppIconSize.row),
+                          label: const Text('Abrir'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpace.sm),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _copyLink(app.link),
+                          icon: const Icon(Icons.copy, size: AppIconSize.row),
+                          label: const Text('Copiar'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (offerUri == null) ...[
+                    const SizedBox(height: AppSpace.sm),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: AppIconSize.row,
+                          color:
+                              dangerColor(Theme.of(context).brightness),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'El enlace no parece válido.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: dangerColor(
+                                      Theme.of(context).brightness),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
                 if (comentarios.isNotEmpty) ...[
                   const Divider(height: 32),
                   Row(
@@ -199,32 +303,6 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   ),
                   const SizedBox(height: AppSpace.sm),
                   Text(app.descripcion),
-                ],
-                if (app.link.isNotEmpty) ...[
-                  const Divider(height: 32),
-                  Row(
-                    children: [
-                      Icon(Icons.link,
-                          size: AppIconSize.row,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(width: 6),
-                      Text('Enlace externo', style: AppType.section(context)),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpace.sm),
-                  GestureDetector(
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: app.link));
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('Enlace copiado al portapapeles')));
-                    },
-                    child: Text(app.link,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontSize: 13)),
-                  ),
                 ],
               ],
             ),

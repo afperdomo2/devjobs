@@ -31,7 +31,11 @@ Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a 
 | `provider` | `^6.1.5+1` | Estado global con `ChangeNotifier` (caché, pestañas, filtros) |
 | `intl` | `^0.20.2` | Formateo de fechas en español |
 | `flutter_dotenv` | `^6.0.1` | Carga de variables de entorno desde archivo `.env` |
+| `url_launcher` | `^6.3.3` | Abrir el enlace de la oferta en el navegador externo (Android/Linux/Windows) |
 | `flutter_lints` (dev) | `^6.0.0` | Reglas de lint por defecto de Flutter |
+
+> `url_launcher` requiere declarar los intents `VIEW` para `https` y `http` en el
+> bloque `<queries>` de `android/app/src/main/AndroidManifest.xml` (Android 11+).
 
 ## 📱 Permisos
 
@@ -234,7 +238,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
 | **Agenda** | Cuarto tab con badge. Secciones **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**; hasta 5 filas por sección y “Ver todas” al listado completo |
 | **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes |
-| **Detalle** | Estado, datos, tiempo del proceso, comentarios, descripción, enlace, entrevista y botón **Agregar nota** con fecha |
+| **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción), comentarios, descripción, entrevista y botón **Agregar nota** con fecha |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
 ### Columnas de Postulaciones

@@ -457,6 +457,18 @@ abstract final class AppTheme {
               fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 48),
+          foregroundColor: scheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius:
+                const BorderRadius.all(Radius.circular(AppRadius.control)),
+          ),
+          textStyle: const TextStyle(
+              fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: scheme.primary,
