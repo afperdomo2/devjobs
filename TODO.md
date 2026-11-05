@@ -28,7 +28,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 10 | Tema claro/oscuro | Barra superior | `[x]` |
 | 11 | Búsqueda mejorada | Buscador | `[x]` |
 | 12 | Abrir enlace de la oferta | Detalle de postulación | `[x]` |
-| 13 | Cierre y documentación | — | `[ ]` |
+| 13 | Cierre y documentación | — | `[x]` |
 
 ---
 
@@ -230,7 +230,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 13 — Cierre y documentación
 
-- [ ] **Para qué sirve:** dejar el proyecto documentado y verificado.
+- [x] **Para qué sirve:** dejar el proyecto documentado y verificado.
 - **Qué se crea:** actualización de la documentación del proyecto.
 - **Listo cuando:**
   - La app compila.

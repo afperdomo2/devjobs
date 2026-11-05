@@ -29,7 +29,7 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 - **Instalador Windows (opcional)** → `installer/devjobs.iss` (Inno Setup 6): compilar con `ISCC.exe installer\devjobs.iss` → `installer/Output/DevJobsSetup.exe` (requiere `flutter build windows --release` previo).
 - **Linux** → `build/linux/x64/release/bundle/` (binario + `data/` + `lib/`); para distribuir copiar **toda la carpeta `bundle/`**. Requiere toolchain `clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev`. Ventana 420×880 centrada y mínima 360×600 (`linux/runner/my_application.cc`); ícono de ventana desde `linux/devjobs.png` (256×256, copiado al bundle por `linux/CMakeLists.txt`). `APPLICATION_ID=com.example.devjobs`.
 - **Instalación Linux (sin sudo)** → `scripts/install-linux.sh` copia el bundle a `~/.local/opt/devjobs`, symlink en `~/.local/bin/devjobs`, `.desktop` en `~/.local/share/applications` e ícono en `~/.local/share/icons/hicolor/256x256/apps`; `--uninstall` revierte. Plantilla del entry: `linux/devjobs.desktop`.
-- Web → `build/web/`. Todos los artefactos quedan bajo `build/` (gitignored).
+- Web → `build/web/` (opcional: requiere habilitar `web/` con `flutter create --platforms=web .`). Todos los artefactos quedan bajo `build/` (gitignored).
 - El `.env` (con `API_URL`) se embebe en el bundle: debe existir antes de compilar. Ver README → Despliegue.
 
 ## Config

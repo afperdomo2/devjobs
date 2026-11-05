@@ -108,7 +108,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
-              childAspectRatio: 1.9,
+              childAspectRatio: 1.8,
               children: [
                 _StatCard(
                   label: 'Total postulaciones',

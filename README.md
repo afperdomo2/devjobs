@@ -1,6 +1,6 @@
 # 💼 DevJobs
 
-Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a Google Sheets vía Apps Script como backend, permite registrar, filtrar y dar seguimiento a ofertas de empleo con dashboard de métricas interactivas, estados personalizados, indicadores por checkbox (entrevista realizada y **por gestionar**), tiempo del proceso y búsqueda global.
+Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a Google Sheets vía Apps Script como backend, permite registrar, filtrar y dar seguimiento a ofertas de empleo con dashboard de métricas interactivas, estados personalizados, indicadores por checkbox (entrevista realizada y **por gestionar**), tiempo del proceso, **tema claro/oscuro**, **búsqueda global sin tildes** y **apertura directa del enlace de la oferta**.
 
 ## 📸 Capturas
 
@@ -51,13 +51,13 @@ La app requiere permiso de **Internet** para comunicarse con la API REST del App
 | Acción | Comando |
 |--------|---------|
 | Ejecutar (debug) | `flutter run` |
-| Ejecutar (release) | `flutter run --release` |
+| Ejecutar (release) | `flutter run --release --no-tree-shake-icons` |
 | Analizar código | `flutter analyze` |
 | Ejecutar tests | `flutter test` |
 | Obtener paquetes | `flutter pub get` |
 | Limpiar build | `flutter clean` |
-| Build Android (APK) | `flutter build apk --release` |
-| Build Windows | `flutter build windows --release` |
+| Build Android (APK) | `flutter build apk --release --no-tree-shake-icons` |
+| Build Windows | `flutter build windows --release --no-tree-shake-icons` |
 | Build Linux | `flutter build linux --release --no-tree-shake-icons` |
 
 ## 📱 Seleccionar dispositivo
@@ -77,11 +77,11 @@ flutter run -d <device_id>
 Ejemplos:
 
 ```bash
-flutter run -d chrome        # Navegador web
+flutter run -d chrome        # Navegador web (requiere habilitar web/)
 flutter run -d emulator-5554 # Emulador Android
 flutter run -d linux         # Linux desktop
-flutter run -d macos         # macOS (desktop)
-flutter run -d ios           # iOS simulator
+flutter run -d macos         # macOS (desktop, requiere macOS)
+flutter run -d ios           # iOS simulator (requiere macOS)
 ```
 
 ## 📦 Despliegue
@@ -187,11 +187,14 @@ Destinos: `~/.local/opt/devjobs` (bundle completo), `~/.local/bin/devjobs` (syml
 
 La entrada de escritorio está en [`linux/devjobs.desktop`](linux/devjobs.desktop) y usa `APPLICATION_ID=com.example.devjobs` (el mismo identificador que Android).
 
-### Web
+### Web (opcional, plataforma no habilitada)
+
+El repositorio no incluye la carpeta `web/`. Para habilitar la versión web:
 
 ```bash
-flutter build web
-# Salida: build\web\
+flutter create --platforms=web .
+flutter build web --release
+# Salida: build/web/
 ```
 
 ### iOS (requiere macOS)
@@ -220,6 +223,8 @@ flutter test
 flutter test test/widgets/application_form_test.dart
 ```
 
+La suite cubre helpers, modelos, proveedor, servicios, temas y widgets. Incluye pruebas de layout a **360 px** y de renderizado en **tema claro/oscuro**.
+
 ## 🧹 Linter
 
 El proyecto usa `flutter_lints` con la configuración por defecto de Flutter.
@@ -232,14 +237,23 @@ flutter analyze
 
 La app se conecta a una **Google Sheet** como backend. No necesita servidor propio — usa un **Google Apps Script** desplegado como Web App que actúa como API REST (lectura y escritura).
 
-| Pestaña | Contenido |
+| Sección | Contenido |
 |---------|-----------|
 | **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses. **Salario ofrecido** muestra promedio y rango por moneda (COP/USD), con abreviaturas (`5,9M`, `100K`) e interpreta rangos y dólares |
-| **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
+| **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global con contador y acceso al detalle |
 | **Agenda** | Cuarto tab con badge. Secciones **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**; hasta 5 filas por sección y “Ver todas” al listado completo |
 | **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes |
-| **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción), comentarios, descripción, entrevista y botón **Agregar nota** con fecha |
+| **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción; aviso si el enlace no es válido), comentarios, descripción, entrevista y botón **Agregar nota** con fecha |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
+| **Ajustes** | Ícono de engranaje en el AppBar. Tema **Sistema**, **Claro** u **Oscuro**; se aplica al instante y se recuerda al reiniciar |
+
+### Búsqueda global
+
+La lupa del AppBar busca en empresa, vacante, ciudad, contacto, tipo de contrato, modalidad, salario, descripción, **estado**, **comentarios**, **enlace** y **plataforma**. Ignora mayúsculas y tildes (`Bogota` encuentra “Bogotá”), acepta varias palabras en AND (`acme remoto`) y muestra un contador **“N resultados”** con opción de limpiar la búsqueda.
+
+### Tema y apariencia
+
+El menú de ajustes del AppBar permite elegir entre **Sistema**, **Claro** y **Oscuro**. El cambio se aplica de inmediato y se persiste en `SharedPreferences`, por lo que se mantiene después de cerrar y volver a abrir la app. Los temas están definidos en `lib/theme.dart` con tokens de color para ambos modos.
 
 ### Columnas de Postulaciones
 
@@ -340,16 +354,17 @@ La hoja debe ser **públicamente visible** para que el script funcione con "Ejec
 
 ```
 lib/
-├── main.dart                           # MultiProvider + entrada de la app
+├── main.dart                           # ChangeNotifierProvider + entrada de la app
 ├── config.dart                         # Carga API_URL desde .env
 ├── theme.dart                          # Tokens de color (claro/oscuro) + helpers semánticos
 ├── models/
 │   ├── job_application.dart            # Modelo (16 campos) + DashboardStats + getters de tiempo
 │   └── application_options.dart        # Opciones de contrato, modalidad y estado
 ├── providers/
-│   └── app_state.dart                  # Estado global con caché (TTL 3 min)
+│   └── app_state.dart                  # Estado global: caché (TTL 3 min), filtros y tema
 ├── services/
-│   └── sheets_api_service.dart         # HTTP client para el Apps Script
+│   ├── sheets_api_service.dart         # HTTP client para el Apps Script
+│   └── local_cache.dart                # Caché persistente y preferencia de tema
 ├── helpers/
 │   ├── date_formatter.dart             # Fechas en español, parseo D/M e ISO y formatApiDate (yyyy-MM-dd)
 │   ├── domain_parser.dart              # Extrae la plataforma desde el link
@@ -367,9 +382,12 @@ lib/
 │   ├── trends.dart                     # Conteo de postulaciones por mes
 │   ├── salary_insights.dart            # Resumen salarial por moneda (COP/USD)
 │   ├── agenda.dart                     # Secciones de Agenda y conteo de pendientes
-│   └── comments.dart                   # Parseo y nota con fecha
+│   ├── comments.dart                   # Parseo y nota con fecha
+│   ├── theme_mode.dart                 # Serialización y etiquetas de ThemeMode
+│   ├── search.dart                     # Búsqueda global sin tildes y en AND
+│   └── offer_link.dart                 # Validación del enlace y dominio visible
 ├── screens/
-│   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas/Agenda)
+│   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas/Agenda) + ajustes de tema
 │   ├── agenda_screen.dart              # Agenda: Por gestionar, Entrevistas agendadas, Ofertas
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
 │   ├── empresas_screen.dart            # Listado de empresas: buscador, contador y cards
@@ -377,8 +395,8 @@ lib/
 │   ├── postulaciones_screen.dart       # Postulaciones: pills Todas/Activas/Enviadas/Finalizadas + lista
 │   ├── applications_list_screen.dart   # Lista con pull-to-refresh (reutilizada por Postulaciones y Por gestionar)
 │   ├── pending_applications_screen.dart # Listado filtrado "Por gestionar"
-│   ├── search_screen.dart              # Búsqueda global (todas las postulaciones)
-│   ├── application_detail_screen.dart  # Detalle + comentarios + descripción + toggle "Por gestionar"
+│   ├── search_screen.dart              # Búsqueda global: contador, tildes y varias palabras
+│   ├── application_detail_screen.dart  # Detalle + enlace Abrir/Copiar + comentarios + "Por gestionar"
 │   ├── application_form_screen.dart    # Formulario único: crear/editar en secciones
 │   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
 │   └── filtered_applications_screen.dart # Listado filtrado por campo/valor o selector
@@ -398,6 +416,7 @@ lib/
     ├── salary_insights_card.dart       # Tarjeta "Salario ofrecido" de Inicio
     ├── agenda_section_card.dart        # Sección de Agenda con hasta 5 filas
     ├── application_compact_row.dart    # Fila compacta empresa/vacante para listas
+    ├── theme_settings_sheet.dart       # Menú Sistema/Claro/Oscuro
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión
 apps_script_code.example.gs                # Apps Script de ejemplo (con placeholder)
