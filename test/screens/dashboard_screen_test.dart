@@ -106,6 +106,15 @@ void main() {
     // Actividad reciente muestra el movimiento más nuevo.
     expect(find.text('Actividad reciente'), findsOneWidget);
     expect(find.text('Normal'), findsOneWidget);
+    // Una etapa del pipeline abre su listado.
+    expect(
+      find.text('Toca una etapa para ver las postulaciones'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Entrevista 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pipeline · Entrevista'), findsOneWidget);
+    expect(find.text('Entrevistada'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

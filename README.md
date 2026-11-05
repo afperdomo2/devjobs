@@ -230,7 +230,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos |
+| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
@@ -353,7 +353,9 @@ lib/
 │   ├── company_stats.dart              # Métricas agregadas por empresa
 │   ├── text_normalizer.dart            # Minúsculas/sin acentos para comparar
 │   ├── status.dart                     # Normalización de estados, terminal y respuesta
-│   └── activity.dart                   # Conteos 7/30 y últimos movimientos
+│   ├── activity.dart                   # Conteos 7/30 y últimos movimientos
+│   ├── application_sort.dart           # Orden único de postulaciones
+│   └── pipeline.dart                   # Etapas, conteos y filtro por etapa
 ├── screens/
 │   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas)
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
@@ -377,6 +379,7 @@ lib/
     ├── form_section.dart               # Sección de formulario (encabezado + campos)
     ├── pending_applications_card.dart  # Tarjeta "Por gestionar" de Inicio
     ├── recent_activity_card.dart       # Tarjeta "Actividad reciente" de Inicio
+    ├── pipeline_card.dart              # Pipeline con etapas tocables
     ├── application_compact_row.dart    # Fila compacta empresa/vacante para listas
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../helpers/date_formatter.dart';
+import '../helpers/application_sort.dart';
 import '../helpers/network_error.dart';
 import '../helpers/status.dart';
 import '../models/job_application.dart';
@@ -107,15 +107,13 @@ class AppState extends ChangeNotifier {
           }
         })
         .toList();
-    apps.sort(_sortByDate);
-    return apps;
+    return sortApplications(apps);
   }
 
   List<JobApplication> getApplications(String filterMode) {
-    final apps =
-        (_cached ?? []).where((a) => _matchesFilter(a, filterMode)).toList();
-    apps.sort(_sortByDate);
-    return apps;
+    return sortApplications(
+      (_cached ?? []).where((a) => _matchesFilter(a, filterMode)),
+    );
   }
 
   /// Número de postulaciones de un filtro, sin ordenar ni copiar la lista.
@@ -139,34 +137,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  int _sortByDate(JobApplication a, JobApplication b) {
-    // Las marcadas "Por gestionar" suben al frente para no perderlas de vista.
-    if (a.porGestionar != b.porGestionar) return a.porGestionar ? -1 : 1;
-
-    final aHasSeg = a.fechaSeguimiento.isNotEmpty;
-    final bHasSeg = b.fechaSeguimiento.isNotEmpty;
-
-    if (aHasSeg && !bHasSeg) return -1;
-    if (!aHasSeg && bHasSeg) return 1;
-
-    if (aHasSeg && bHasSeg) {
-      final c = _compareDateStrings(b.fechaSeguimiento, a.fechaSeguimiento);
-      if (c != 0) return c;
-    }
-
-    return _compareDateStrings(b.fechaPostulacion, a.fechaPostulacion);
-  }
-
   bool _isTerminal(String estado) => isTerminalStatus(estado);
-
-  int _compareDateStrings(String a, String b) {
-    final dA = parseDate(a);
-    final dB = parseDate(b);
-    if (dA == null && dB == null) return 0;
-    if (dA == null) return 1;
-    if (dB == null) return -1;
-    return dA.compareTo(dB);
-  }
 
   Future<void> updateApplication(int rowIndex, Map<String, String> updates) async {
     if (_offline) {

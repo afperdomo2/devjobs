@@ -4,15 +4,17 @@ import 'package:provider/provider.dart';
 import '../helpers/activity.dart';
 import '../helpers/distribution.dart';
 import '../helpers/network_error.dart';
-import '../models/job_application.dart';
+import '../helpers/pipeline.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/distribution_card.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/pending_applications_card.dart';
+import '../widgets/pipeline_card.dart';
 import '../widgets/recent_activity_card.dart';
 import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
+import 'filtered_applications_screen.dart';
 import 'pending_applications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -152,7 +154,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
               const SizedBox(height: 8),
-              _PipelineCard(segments: _pipelineSegments(apps)),
+              PipelineCard(
+                segments: pipelineSegments(apps),
+                onStageTap: (stage) => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FilteredApplicationsScreen(
+                      title: 'Pipeline · ${stage.label}',
+                      selector: (apps) => applicationsInStage(apps, stage),
+                      emptyMessage: 'No hay postulaciones en esta etapa',
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               _ConversionCard(
                 conRespuesta: stats.conRespuesta,
@@ -259,114 +273,6 @@ class _StatCard extends StatelessWidget {
     }
 
     return card;
-  }
-}
-
-class _PipelineStage {
-  final String label;
-  final bool Function(String estado) matches;
-
-  const _PipelineStage(this.label, this.matches);
-}
-
-final _pipelineStages = <_PipelineStage>[
-  _PipelineStage('Sin respuesta', (e) => e == 'sin respuesta'),
-  _PipelineStage(
-    'En revisión',
-    (e) => e.contains('revisión') || e.contains('revision'),
-  ),
-  _PipelineStage('Prueba técnica', (e) => e.contains('prueba')),
-  _PipelineStage('Entrevista', (e) => e.contains('entrevista')),
-  _PipelineStage('Oferta', (e) => e.contains('oferta')),
-  _PipelineStage('Aceptada', (e) => e == 'aceptada'),
-  _PipelineStage('Enviada', (e) => e.contains('enviada')),
-  _PipelineStage('Rechazada', (e) => e.contains('rechazada')),
-  _PipelineStage('Retirada', (e) => e.contains('retirada')),
-  _PipelineStage('Otros', (_) => true),
-];
-
-_PipelineStage _stageOf(String estado) {
-  final e = estado.trim().toLowerCase();
-  for (final st in _pipelineStages) {
-    if (st.matches(e)) return st;
-  }
-  return _pipelineStages.last;
-}
-
-List<(_PipelineStage, int)> _pipelineSegments(List<JobApplication> apps) {
-  final counts = <String, int>{};
-  for (final a in apps) {
-    final label = _stageOf(a.estado).label;
-    counts[label] = (counts[label] ?? 0) + 1;
-  }
-  return [
-    for (final st in _pipelineStages)
-      if (counts.containsKey(st.label)) (st, counts[st.label]!),
-  ];
-}
-
-class _PipelineCard extends StatelessWidget {
-  final List<(_PipelineStage, int)> segments;
-
-  const _PipelineCard({required this.segments});
-
-  @override
-  Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Pipeline de postulaciones', style: AppType.section(context)),
-            const SizedBox(height: AppSpace.md),
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.all(Radius.circular(AppRadius.bar)),
-              child: Row(
-                children: [
-                  for (final (stage, count) in segments)
-                    Expanded(
-                      flex: count,
-                      child: Container(
-                        height: 10,
-                        color: pipelineColor(stage.label, brightness),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpace.md),
-            Wrap(
-              spacing: AppSpace.md,
-              runSpacing: AppSpace.xs + 2,
-              children: [
-                for (final (stage, count) in segments)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: pipelineColor(stage.label, brightness),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpace.xs),
-                      Text(
-                        '${stage.label} $count',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

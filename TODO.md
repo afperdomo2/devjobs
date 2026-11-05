@@ -19,7 +19,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 1 | Tarjeta “Por gestionar” + card “Con entrevista” | Inicio | `[x]` |
 | 2 | Barra “Con respuesta” | Inicio | `[x]` |
 | 3 | “Actividad reciente” con últimos movimientos | Inicio | `[x]` |
-| 4 | Etapas del proceso tocables | Inicio | `[ ]` |
+| 4 | Etapas del proceso tocables | Inicio | `[x]` |
 | 5 | “Ritmo mensual” | Inicio | `[ ]` |
 | 6 | “Salario ofrecido” | Inicio | `[ ]` |
 | 7 | Pestaña “Agenda” | Barra inferior | `[ ]` |
@@ -98,14 +98,14 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 4 — Etapas del proceso tocables
 
-- [ ] **Para qué sirve:** pasar del resumen a ver las postulaciones de una etapa concreta.
+- [x] **Para qué sirve:** pasar del resumen a ver las postulaciones de una etapa concreta.
 - **Qué se crea:** no se crea una tarjeta nueva; se hace tocable la leyenda de “Pipeline de postulaciones”.
 - **Dónde se ve:** en **Inicio**, dentro de la tarjeta “Pipeline de postulaciones”.
 - **Cómo se ve:**
   - Cada etapa (Sin respuesta, En revisión, Entrevista, etc.) se puede tocar.
   - Un texto pequeño indica: **“Toca una etapa para ver las postulaciones”**.
 - **Cómo se usa:** tocar “Entrevista” abre la lista de postulaciones de esa etapa.
-- **Listo cuando:** cada etapa abre el grupo correcto.
+- **Listo cuando:** cada etapa abre el grupo correcto, la lista respeta el orden general (Por gestionar primero) y el texto de ayuda se ve en Inicio.
 - **No incluye:** cambiar los colores ni las etapas existentes.
 
 ---
