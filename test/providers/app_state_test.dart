@@ -174,6 +174,12 @@ void main() {
     expect(state.applicationsFilter, AppState.filterAll);
   });
 
+  test('setTab acepta la pestaña Agenda', () async {
+    final state = await build();
+    state.setTab(AppState.tabAgenda);
+    expect(state.currentTab, AppState.tabAgenda);
+  });
+
   test('setApplicationsFilter cambia el filtro y solo notifica si cambió', () async {
     final state = await build();
     var notified = 0;

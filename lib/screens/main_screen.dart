@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../helpers/agenda.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/offline_banner.dart';
+import 'agenda_screen.dart';
 import 'application_form_screen.dart';
 import 'dashboard_screen.dart';
 import 'empresas_screen.dart';
@@ -17,6 +19,7 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (_, state, _) {
+        final agenda = agendaCount(state.applications);
         return Scaffold(
           appBar: AppBar(
             title: Text(_titles[state.currentTab]),
@@ -47,6 +50,7 @@ class MainScreen extends StatelessWidget {
                     DashboardScreen(),
                     PostulacionesScreen(),
                     EmpresasScreen(),
+                    AgendaScreen(),
                   ],
                 ),
               ),
@@ -66,21 +70,32 @@ class MainScreen extends StatelessWidget {
               selectedIndex: state.currentTab,
               onDestinationSelected: (i) => state.setTab(i),
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-              destinations: const [
-                NavigationDestination(
+              destinations: [
+                const NavigationDestination(
                   icon: Icon(Icons.home_outlined),
                   selectedIcon: Icon(Icons.home),
                   label: 'Inicio',
                 ),
-                NavigationDestination(
+                const NavigationDestination(
                   icon: Icon(Icons.assignment_outlined),
                   selectedIcon: Icon(Icons.assignment),
                   label: 'Postulaciones',
                 ),
-                NavigationDestination(
+                const NavigationDestination(
                   icon: Icon(Icons.business_outlined),
                   selectedIcon: Icon(Icons.business),
                   label: 'Empresas',
+                ),
+                NavigationDestination(
+                  icon: _AgendaIcon(
+                    icon: Icons.event_note_outlined,
+                    count: agenda,
+                  ),
+                  selectedIcon: _AgendaIcon(
+                    icon: Icons.event_note,
+                    count: agenda,
+                  ),
+                  label: 'Agenda',
                 ),
               ],
             ),
@@ -105,5 +120,22 @@ class MainScreen extends StatelessWidget {
     'DevJobs',
     'Postulaciones',
     'Empresas',
+    'Agenda',
   ];
+}
+
+class _AgendaIcon extends StatelessWidget {
+  final IconData icon;
+  final int count;
+
+  const _AgendaIcon({required this.icon, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Badge(
+      isLabelVisible: count > 0,
+      label: Text(count > 99 ? '99+' : '$count'),
+      child: Icon(icon),
+    );
+  }
 }

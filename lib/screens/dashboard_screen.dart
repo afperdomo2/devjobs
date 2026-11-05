@@ -12,14 +12,12 @@ import '../theme.dart';
 import '../widgets/distribution_card.dart';
 import '../widgets/monthly_trend_card.dart';
 import '../widgets/offline_banner.dart';
-import '../widgets/pending_applications_card.dart';
 import '../widgets/pipeline_card.dart';
 import '../widgets/recent_activity_card.dart';
 import '../widgets/salary_insights_card.dart';
 import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 import 'filtered_applications_screen.dart';
-import 'pending_applications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,6 +28,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final ScrollController _scrollCtrl = ScrollController();
+  final ScrollController _errorScrollCtrl = ScrollController();
 
   @override
   void initState() {
@@ -42,6 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _scrollCtrl.dispose();
+    _errorScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -54,7 +54,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final state = context.watch<AppState>();
     final stats = state.dashboardStats;
     final apps = state.applications;
-    final pending = state.getApplications(AppState.filterPorGestionar);
     final movements = recentMovements(apps);
     final last7 = countApplicationsSince(apps, 7);
     final last30 = countApplicationsSince(apps, 30);
@@ -67,10 +66,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return RefreshIndicator(
         onRefresh: _refresh,
         child: WheelRefreshIndicator(
-          controller: _scrollCtrl,
+          controller: _errorScrollCtrl,
           onRefresh: _refresh,
           child: ListView(
-            controller: _scrollCtrl,
+            controller: _errorScrollCtrl,
             physics: const AlwaysScrollableScrollPhysics(),
             children: [
               SizedBox(
@@ -140,25 +139,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             if (stats.total > 0) ...[
-              if (pending.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                PendingApplicationsCard(
-                  applications: pending,
-                  onSeeAll: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PendingApplicationsScreen(),
-                    ),
-                  ),
-                  onOpen: (app) => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ApplicationDetailScreen(application: app),
-                    ),
-                  ),
-                ),
-              ],
               const SizedBox(height: 8),
               PipelineCard(
                 segments: pipelineSegments(apps),

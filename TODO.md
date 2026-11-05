@@ -16,13 +16,13 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | # | Entregable | Dónde se ve | Estado |
 |---|---|---|---|
 | 0 | Dejar lista la base | — | `[x]` |
-| 1 | Tarjeta “Por gestionar” + card “Con entrevista” | Inicio | `[x]` |
+| 1 | Card “Con entrevista” en Inicio | Inicio | `[x]` |
 | 2 | Barra “Con respuesta” | Inicio | `[x]` |
 | 3 | “Actividad reciente” con últimos movimientos | Inicio | `[x]` |
 | 4 | Etapas del proceso tocables | Inicio | `[x]` |
 | 5 | “Ritmo mensual” | Inicio | `[x]` |
 | 6 | “Salario ofrecido” | Inicio | `[x]` |
-| 7 | Pestaña “Agenda” | Barra inferior | `[ ]` |
+| 7 | Pestaña “Agenda” | Barra inferior | `[x]` |
 | 8 | Nota rápida | Detalle de postulación | `[ ]` |
 | 9 | Ordenar empresas | Empresas | `[ ]` |
 | 10 | Tema claro/oscuro | Barra superior | `[ ]` |
@@ -42,26 +42,16 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ---
 
-## Entregable 1 — Tarjeta “Por gestionar” y card “Con entrevista” en Inicio
+## Entregable 1 — Card “Con entrevista” en Inicio
 
-- [x] **Para qué sirve:** ver lo que marcaste para gestionar y, aparte, cuántas vacantes ya tuvieron entrevista.
-- **Qué se crea:**
-  1. Una tarjeta **“Por gestionar”** debajo de los números.
-  2. Una card **“Con entrevista”** en la grilla de números (reemplaza a “Por gestionar”).
+- [x] **Para qué sirve:** ver cuántas vacantes ya tuvieron entrevista y mantener la grilla de cuatro números.
+- **Qué se crea:** una card **“Con entrevista”** en la grilla de números. Reemplaza a “Por gestionar” en la grilla; esa lista vive ahora en **Agenda**.
 - **Dónde se ve:** en **Inicio**.
 - **Cómo se ve:**
   - La grilla queda: **Total**, **Activas**, **Con entrevista**, **Finalizadas**.
   - “Con entrevista” cuenta el switch de la columna N.
-  - La tarjeta “Por gestionar” muestra el total, hasta 3 filas con empresa, cargo y “hace X días”, y **“Ver todas (N)”** si hay más de 3.
-  - Si no hay pendientes, la tarjeta **no se muestra**.
-- **Cómo se usa:** tocar una fila abre esa postulación; tocar “Ver todas” abre el listado de “Por gestionar”.
-- **Listo cuando:**
-  - El número coincide con las marcadas con el switch O.
-  - Se muestran 3 filas y el total real.
-  - La tarjeta se oculta si no hay pendientes.
-  - “Con entrevista” cuenta todas las que tienen el switch N.
-  - La tarjeta “Por gestionar” **no** filtra por entrevista.
-- **No incluye:** motivos de comentarios dentro de la tarjeta ni notificaciones automáticas.
+- **Listo cuando:** el número coincide con las que tienen el switch N y la grilla se ve bien en pantalla pequeña.
+- **No incluye:** la tarjeta de lista “Por gestionar” en Inicio; esa se movió a Agenda.
 
 ---
 
@@ -145,7 +135,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 7 — Pestaña “Agenda”
 
-- [ ] **Para qué sirve:** tener en un solo lugar lo que necesita atención hoy.
+- [x] **Para qué sirve:** tener en un solo lugar lo que necesita atención hoy.
 - **Qué se crea:**
   1. Un cuarto botón en la barra inferior llamado **“Agenda”**.
   2. Una pantalla nueva con tres secciones.
@@ -154,7 +144,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 - **Cómo se ve:**
   - Sección **“Por gestionar”**.
   - Sección **“Entrevistas agendadas”**.
-  - Sección **“Sin novedad +7 días”**.
+  - Sección **“Ofertas recibidas”**.
   - Cada sección muestra hasta 5 filas y un enlace “Ver todas”.
   - Si no hay nada pendiente: **“Todo al día”**.
 - **Cómo se usa:** tocar una fila abre la postulación; “Ver todas” abre la lista completa de esa sección.
@@ -252,13 +242,15 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Notas
 
-- La tarjeta **“Por gestionar”** usa el switch de la columna O y se oculta si no hay pendientes.
+- La sección **“Por gestionar”** de Agenda usa el switch de la columna O.
 - **“Con entrevista”** usa el switch de la columna N y cuenta todas las postulaciones.
-- La tarjeta **“Por gestionar”** no filtra ni cuenta entrevistas: son datos separados.
+- La sección **“Por gestionar”** no filtra ni cuenta entrevistas: son datos separados.
 - “Respondió” significa que el estado ya no es Enviada, Sin respuesta o Retirada. Aplica a la barra “Con respuesta” y a la card de empresa.
 - “Actividad reciente” usa la última fecha de seguimiento; si no existe, usa la fecha de postulación. Muestra hasta 3 movimientos.
 - “Ritmo mensual” cuenta por fecha de postulación los últimos 6 meses, incluyendo los meses en cero.
 - “Salario ofrecido” agrupa por moneda (COP/USD), interpreta rangos y excluye los valores que dicen “Yo puse…”. Las abreviaturas usan coma decimal (`5,9M`).
+- Agenda usa **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**. Se descartó “Sin novedad +7 días” porque con volumen alto no es una agenda accionable.
+- La tarjeta **“Por gestionar”** se retiró de Inicio: su única ubicación ahora es Agenda.
 
 ## Cómo marcar el avance
 

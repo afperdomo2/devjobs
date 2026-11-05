@@ -99,15 +99,8 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
         onRetry: () =>
             context.read<AppState>().fetchApplications(forceRefresh: true),
       );
-    } else if (apps.isEmpty) {
-      content = ListView(
-        controller: _scrollCtrl,
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          _EmptyHint(message: _emptyMessage, onCreate: widget.onCreate),
-        ],
-      );
     } else {
+      final isEmpty = apps.isEmpty;
       content = ListView.separated(
         controller: _scrollCtrl,
         physics: const AlwaysScrollableScrollPhysics(),
@@ -117,9 +110,16 @@ class _ApplicationsListScreenState extends State<ApplicationsListScreen> {
           AppSpace.lg,
           widget.hasFloatingAction ? 88 : AppSpace.sm,
         ),
-        itemCount: apps.length,
-        separatorBuilder: (_, _) => const SizedBox(height: AppSpace.sm),
+        itemCount: isEmpty ? 1 : apps.length,
+        separatorBuilder: (_, _) =>
+            isEmpty ? const SizedBox.shrink() : const SizedBox(height: AppSpace.sm),
         itemBuilder: (context, index) {
+          if (isEmpty) {
+            return _EmptyHint(
+              message: _emptyMessage,
+              onCreate: widget.onCreate,
+            );
+          }
           final app = apps[index];
           return ApplicationCard(
             key: ValueKey(app.rowIndex),

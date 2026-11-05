@@ -1,38 +1,51 @@
 import 'package:flutter/material.dart';
 
+import '../helpers/agenda.dart';
 import '../helpers/date_formatter.dart';
 import '../models/job_application.dart';
 import '../theme.dart';
 import 'application_compact_row.dart';
 
-/// Tarjeta de Inicio con las postulaciones marcadas "Por gestionar"
-/// (switch de la columna O).
-///
-/// Muestra hasta [maxRows] filas y el total. Si la lista está vacía no pinta
-/// nada: la decisión de ocultarla vive en la pantalla.
-class PendingApplicationsCard extends StatelessWidget {
-  final List<JobApplication> applications;
-  final VoidCallback onSeeAll;
+/// Bloque de una sección de Agenda con hasta [maxRows] postulaciones.
+class AgendaSectionCard extends StatelessWidget {
+  final AgendaSection section;
   final ValueChanged<JobApplication> onOpen;
+  final VoidCallback onSeeAll;
   final int maxRows;
 
-  const PendingApplicationsCard({
+  const AgendaSectionCard({
     super.key,
-    required this.applications,
-    required this.onSeeAll,
+    required this.section,
     required this.onOpen,
-    this.maxRows = 3,
+    required this.onSeeAll,
+    this.maxRows = 5,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (applications.isEmpty) return const SizedBox.shrink();
+    if (section.applications.isEmpty) return const SizedBox.shrink();
 
     final brightness = Theme.of(context).brightness;
-    final gestion = gestionColor(brightness);
+    final (title, icon, color) = switch (section.kind) {
+      AgendaSectionKind.porGestionar => (
+          'Por gestionar',
+          Icons.label_important,
+          gestionColor(brightness),
+        ),
+      AgendaSectionKind.entrevistaAgendada => (
+          'Entrevistas agendadas',
+          Icons.event_available,
+          statusColor('entrevista', brightness),
+        ),
+      AgendaSectionKind.ofertaRecibida => (
+          'Ofertas recibidas',
+          Icons.workspace_premium,
+          statusColor('oferta', brightness),
+        ),
+    };
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    final count = applications.length;
-    final visible = applications.take(maxRows).toList();
+    final count = section.applications.length;
+    final visible = section.applications.take(maxRows).toList();
 
     return Card(
       child: Padding(
@@ -42,29 +55,10 @@ class PendingApplicationsCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.label_important,
-                  size: AppIconSize.metric,
-                  color: gestion,
-                ),
+                Icon(icon, size: AppIconSize.metric, color: color),
                 const SizedBox(width: AppSpace.sm),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Por gestionar',
-                        style: AppType.section(context),
-                      ),
-                      Text(
-                        'Pendientes de acción',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: muted),
-                      ),
-                    ],
-                  ),
+                  child: Text(title, style: AppType.section(context)),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -72,7 +66,7 @@ class PendingApplicationsCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: gestion.withValues(alpha: 0.12),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: const BorderRadius.all(
                       Radius.circular(AppRadius.bar),
                     ),
@@ -82,7 +76,7 @@ class PendingApplicationsCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: gestion,
+                      color: color,
                     ),
                   ),
                 ),
@@ -96,7 +90,7 @@ class PendingApplicationsCard extends StatelessWidget {
                 trailingLabel: formatSinNovedad(
                   visible[i].diasDesdeUltimaNovedad ?? 0,
                 ),
-                trailingColor: gestion,
+                trailingColor: muted,
               ),
               if (i < visible.length - 1) const Divider(height: 1),
             ],

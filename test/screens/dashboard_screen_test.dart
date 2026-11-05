@@ -3,7 +3,6 @@ import 'package:devjobs/providers/app_state.dart';
 import 'package:devjobs/screens/dashboard_screen.dart';
 import 'package:devjobs/services/sheets_api_service.dart';
 import 'package:devjobs/theme.dart';
-import 'package:devjobs/widgets/pending_applications_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -53,7 +52,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Inicio muestra Por gestionar y Con entrevista', (tester) async {
+  testWidgets('Inicio muestra Con entrevista y el resto del dashboard', (
+    tester,
+  ) async {
     await pumpDashboard(tester, [
       JobApplication(
         rowIndex: 1,
@@ -84,25 +85,9 @@ void main() {
       ),
     ]);
 
-    // La grilla ya no tiene "Por gestionar": ahora muestra "Con entrevista".
+    // Inicio ya no muestra "Por gestionar"; esa lista vive en Agenda.
     expect(find.text('Con entrevista'), findsOneWidget);
-    // La card de lista usa el switch O y aparece con su título.
-    expect(find.text('Por gestionar'), findsOneWidget);
-    expect(find.text('Pendientes de acción'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(PendingApplicationsCard),
-        matching: find.text('Pendiente'),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(
-        of: find.byType(PendingApplicationsCard),
-        matching: find.text('Entrevistada'),
-      ),
-      findsNothing,
-    );
+    expect(find.text('Por gestionar'), findsNothing);
     // Los tres estados de prueba implican respuesta: 100 %.
     expect(find.text('Con respuesta'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
@@ -128,23 +113,4 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('sin pendientes no muestra la tarjeta Por gestionar', (
-    tester,
-  ) async {
-    await pumpDashboard(tester, [
-      JobApplication(
-        rowIndex: 1,
-        empresa: 'Entrevistada',
-        vacante: 'Mobile',
-        estado: 'Entrevista realizada',
-        fechaPostulacion: daysAgo(10),
-        entrevistaRealizada: true,
-      ),
-    ]);
-
-    expect(find.text('Con entrevista'), findsOneWidget);
-    expect(find.text('Por gestionar'), findsNothing);
-    expect(find.text('Pendientes de acción'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
 }

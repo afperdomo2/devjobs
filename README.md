@@ -230,8 +230,9 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses. **Salario ofrecido** muestra promedio y rango por moneda (COP/USD), con abreviaturas (`5,9M`, `100K`) e interpreta rangos y dólares |
+| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses. **Salario ofrecido** muestra promedio y rango por moneda (COP/USD), con abreviaturas (`5,9M`, `100K`) e interpreta rangos y dólares |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
+| **Agenda** | Cuarto tab con badge. Secciones **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**; hasta 5 filas por sección y “Ver todas” al listado completo |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
 ### Columnas de Postulaciones
@@ -358,9 +359,11 @@ lib/
 │   ├── application_sort.dart           # Orden único de postulaciones
 │   ├── pipeline.dart                   # Etapas, conteos y filtro por etapa
 │   ├── trends.dart                     # Conteo de postulaciones por mes
-│   └── salary_insights.dart            # Resumen salarial por moneda (COP/USD)
+│   ├── salary_insights.dart            # Resumen salarial por moneda (COP/USD)
+│   └── agenda.dart                     # Secciones de Agenda y conteo de pendientes
 ├── screens/
-│   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas)
+│   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas/Agenda)
+│   ├── agenda_screen.dart              # Agenda: Por gestionar, Entrevistas agendadas, Ofertas
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
 │   ├── empresas_screen.dart            # Listado de empresas: buscador, contador y cards
 │   ├── company_detail_screen.dart      # Detalle de empresa (métricas en grilla + vacantes)
@@ -380,11 +383,11 @@ lib/
     ├── distribution_card.dart          # Distribución con selector segmentado (plataformas/modalidades/ciudades)
     ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)
     ├── form_section.dart               # Sección de formulario (encabezado + campos)
-    ├── pending_applications_card.dart  # Tarjeta "Por gestionar" de Inicio
     ├── recent_activity_card.dart       # Tarjeta "Actividad reciente" de Inicio
     ├── pipeline_card.dart              # Pipeline con etapas tocables
     ├── monthly_trend_card.dart         # Tarjeta "Ritmo mensual" de Inicio
     ├── salary_insights_card.dart       # Tarjeta "Salario ofrecido" de Inicio
+    ├── agenda_section_card.dart        # Sección de Agenda con hasta 5 filas
     ├── application_compact_row.dart    # Fila compacta empresa/vacante para listas
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión

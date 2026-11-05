@@ -23,6 +23,21 @@ void main() {
     });
   });
 
+  group('isInterviewScheduled', () {
+    test('reconoce la entrevista agendada sin importar mayúsculas', () {
+      expect(isInterviewScheduled('Entrevista agendada'), isTrue);
+      expect(isInterviewScheduled('ENTREVISTA AGENDADA'), isTrue);
+      expect(isInterviewScheduled('Entrevista agendada (virtual)'), isTrue);
+    });
+
+    test('la entrevista realizada no cuenta como agendada', () {
+      expect(isInterviewScheduled('Entrevista realizada'), isFalse);
+      expect(isInterviewScheduled('Entrevista'), isFalse);
+      expect(isInterviewScheduled('En revisión'), isFalse);
+      expect(isInterviewScheduled(''), isFalse);
+    });
+  });
+
   group('hasResponse', () {
     test('estados que implican respuesta', () {
       expect(hasResponse('En revisión'), isTrue);

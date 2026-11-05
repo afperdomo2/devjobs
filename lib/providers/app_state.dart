@@ -27,6 +27,7 @@ class AppState extends ChangeNotifier {
   static const tabInicio = 0;
   static const tabPostulaciones = 1;
   static const tabEmpresas = 2;
+  static const tabAgenda = 3;
 
   /// Filtros de la pestaña Postulaciones.
   static const filterAll = 'all';

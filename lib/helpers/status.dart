@@ -12,6 +12,13 @@ bool isTerminalStatus(String status) {
       normalized == 'retirada';
 }
 
+/// true si el estado indica una entrevista agendada (aún no realizada).
+///
+/// Tolera variantes como "Entrevista agendada (virtual)".
+bool isInterviewScheduled(String status) {
+  return normalizeStatus(status).contains('entrevista agendada');
+}
+
 /// true si la empresa ya dio alguna respuesta.
 ///
 /// Se excluyen los estados que todavía no implican respuesta:
