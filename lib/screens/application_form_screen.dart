@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config.dart';
 import '../helpers/date_formatter.dart';
+import '../helpers/job_duplicate.dart';
 import '../helpers/network_error.dart';
 import '../models/application_options.dart';
 import '../models/job_application.dart';
+import '../models/job_import.dart';
 import '../providers/app_state.dart';
+import '../services/job_import_service.dart';
 import '../theme.dart';
+import '../widgets/ai_badge.dart';
 import '../widgets/form_section.dart';
+import '../widgets/import_application_sheet.dart';
 import '../widgets/offline_banner.dart';
 
 /// Abre el formulario de creación y, si se guarda, vuelve a la lista completa
@@ -32,13 +38,16 @@ Future<void> startCreateApplication(BuildContext context) async {
 /// ([ApplicationFormScreen.edit]) precarga la postulación recibida.
 class ApplicationFormScreen extends StatefulWidget {
   final JobApplication? initial;
+  final JobImporter? importService;
 
-  const ApplicationFormScreen.create({super.key}) : initial = null;
+  const ApplicationFormScreen.create({super.key, this.importService})
+    : initial = null;
 
   const ApplicationFormScreen.edit({
     super.key,
     required JobApplication application,
-  }) : initial = application;
+  }) : initial = application,
+       importService = null;
 
   bool get isEditing => initial != null;
 
@@ -70,6 +79,30 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   DateTime? _fechaSeguimiento;
 
   bool _saving = false;
+
+  final _tipoContratoFieldKey = GlobalKey<FormFieldState<String>>();
+  final _modalidadFieldKey = GlobalKey<FormFieldState<String>>();
+  final _vacanteSectionKey = GlobalKey();
+
+  final Set<String> _importedFields = {};
+  JobImportResult? _importResult;
+  bool _bannerDismissed = false;
+
+  static const _vacanteKeys = {
+    'empresa',
+    'vacante',
+    'tipoContrato',
+    'modalidad',
+    'ciudad',
+    'salarioOfrecido',
+    'link',
+  };
+
+  static const _notasKeys = {'descripcion', 'contacto', 'comentarios'};
+
+  bool get _aiAvailable => kAiEnabled && !widget.isEditing;
+
+  bool _hasImported(Set<String> keys) => keys.any(_importedFields.contains);
 
   @override
   void initState() {
@@ -181,6 +214,168 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
     });
   }
 
+  void _markUserEdited(String key) {
+    if (!_importedFields.contains(key)) return;
+    setState(() => _importedFields.remove(key));
+  }
+
+  Future<void> _openImport() async {
+    final description = _descripcionCtrl.text.trim();
+    final result = await showImportApplicationSheet(
+      context,
+      initialLink: _linkCtrl.text.trim(),
+      initialText: description.length >= 40 ? description : null,
+      service: widget.importService,
+    );
+    if (!mounted || result == null) return;
+    _applyImport(result);
+  }
+
+  void _applyImport(JobImportResult result) {
+    final applied = <String>{};
+
+    void putText(TextEditingController controller, String key) {
+      final value = (result.fields[key] ?? '').trim();
+      if (value.isEmpty || controller.text.trim().isNotEmpty) return;
+      controller.text = value;
+      applied.add(key);
+    }
+
+    putText(_empresaCtrl, 'empresa');
+    putText(_vacanteCtrl, 'vacante');
+    putText(_ciudadCtrl, 'ciudad');
+    putText(_salarioCtrl, 'salarioOfrecido');
+    putText(_linkCtrl, 'link');
+    putText(_descripcionCtrl, 'descripcion');
+    putText(_contactoCtrl, 'contacto');
+    putText(_comentariosCtrl, 'comentarios');
+
+    String? contractValue;
+    if (_tipoContrato.trim().isEmpty) {
+      final value = (result.fields['tipoContrato'] ?? '').trim();
+      if (value.isNotEmpty) {
+        _tipoContrato = value;
+        contractValue = value;
+        applied.add('tipoContrato');
+      }
+    }
+
+    String? modalityValue;
+    if (_modalidad.trim().isEmpty) {
+      final value = (result.fields['modalidad'] ?? '').trim();
+      if (value.isNotEmpty) {
+        _modalidad = value;
+        modalityValue = value;
+        applied.add('modalidad');
+      }
+    }
+
+    setState(() {
+      _importedFields
+        ..clear()
+        ..addAll(applied);
+      _importResult = result;
+      _bannerDismissed = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Se actualiza después del rebuild para que los ítems del dropdown ya
+      // incluyan el valor importado (p. ej. "Indefinido").
+      if (contractValue != null) {
+        _tipoContratoFieldKey.currentState?.didChange(contractValue);
+      }
+      if (modalityValue != null) {
+        _modalidadFieldKey.currentState?.didChange(modalityValue);
+      }
+
+      final section = _vacanteSectionKey.currentContext;
+      if (section != null) {
+        Scrollable.ensureVisible(
+          section,
+          duration: const Duration(milliseconds: 300),
+          alignment: 0.05,
+        );
+      }
+    });
+
+    if (applied.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Los campos ya estaban completos; no se sobrescribió nada.',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _clearImported() {
+    setState(() {
+      for (final key in _importedFields) {
+        switch (key) {
+          case 'empresa':
+            _empresaCtrl.clear();
+          case 'vacante':
+            _vacanteCtrl.clear();
+          case 'ciudad':
+            _ciudadCtrl.clear();
+          case 'salarioOfrecido':
+            _salarioCtrl.clear();
+          case 'link':
+            _linkCtrl.clear();
+          case 'descripcion':
+            _descripcionCtrl.clear();
+          case 'contacto':
+            _contactoCtrl.clear();
+          case 'comentarios':
+            _comentariosCtrl.clear();
+          case 'tipoContrato':
+            _tipoContrato = '';
+            _tipoContratoFieldKey.currentState?.didChange('');
+          case 'modalidad':
+            _modalidad = '';
+            _modalidadFieldKey.currentState?.didChange('');
+        }
+      }
+      _importedFields.clear();
+      _importResult = null;
+      _bannerDismissed = false;
+    });
+  }
+
+  void _dismissBanner() {
+    setState(() => _bannerDismissed = true);
+  }
+
+  Future<bool> _confirmDuplicate(JobApplication duplicate) async {
+    final date = parseDate(duplicate.fechaPostulacion);
+    final dateLabel = date != null ? formatDateValue(date) : 'sin fecha';
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Ya existe una postulación'),
+        content: Text(
+          'Ya registraste "${duplicate.vacante}" en ${duplicate.empresa} '
+          'el $dateLabel (${duplicate.estado}).\n\n'
+          '¿Crear otra de todos modos?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Crear otra'),
+          ),
+        ],
+      ),
+    );
+
+    return result == true;
+  }
+
   String? _validateRequired(String? value, String message) {
     return (value == null || value.trim().isEmpty) ? message : null;
   }
@@ -240,11 +435,22 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
       return;
     }
 
+    final payload = _buildPayload();
+
+    if (!widget.isEditing) {
+      final duplicate = findDuplicateByLink(
+        state.applications,
+        payload['link'] ?? '',
+      );
+      if (duplicate != null) {
+        final proceed = await _confirmDuplicate(duplicate);
+        if (!proceed || !mounted) return;
+      }
+    }
+
     setState(() => _saving = true);
 
     try {
-      final payload = _buildPayload();
-
       if (widget.isEditing) {
         await state.updateApplication(widget.initial!.rowIndex, payload);
       } else {
@@ -312,6 +518,17 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   Widget build(BuildContext context) {
     final isOffline = context.watch<AppState>().offline;
     final scheme = Theme.of(context).colorScheme;
+    final showImportEntry =
+        _aiAvailable && (_importedFields.isEmpty || _bannerDismissed);
+    final showImportBanner =
+        _aiAvailable && _importedFields.isNotEmpty && !_bannerDismissed;
+    final importWarnings = _importResult == null
+        ? const <String>[]
+        : (_importResult!.warnings.isNotEmpty
+              ? _importResult!.warnings
+              : <String>[
+                  if (_importResult!.message != null) _importResult!.message!,
+                ]);
 
     return Scaffold(
       appBar: AppBar(
@@ -342,102 +559,147 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    FormSection(
-                      icon: Icons.work_outline,
-                      title: 'Vacante',
-                      subtitle: 'Datos de la oferta',
-                      children: [
-                        TextFormField(
-                          key: const Key('form-empresa'),
-                          controller: _empresaCtrl,
-                          textInputAction: TextInputAction.next,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(
-                            labelText: 'Empresa',
-                            hintText: 'Ej. Acme',
+                    if (showImportEntry) ...[
+                      ImportEntryCard(
+                        key: const Key('import-entry'),
+                        onTap: isOffline ? null : _openImport,
+                        subtitle: isOffline
+                            ? 'Sin conexión'
+                            : (_importedFields.isEmpty
+                                  ? 'Pega el link o la descripción'
+                                  : 'Volver a importar'),
+                      ),
+                      const SizedBox(height: AppSpace.xl),
+                    ],
+                    if (showImportBanner) ...[
+                      ImportSummaryBanner(
+                        key: const Key('import-summary'),
+                        count: _importedFields.length,
+                        warnings: importWarnings,
+                        duplicate: _importResult?.duplicate,
+                        onClear: _clearImported,
+                        onDismiss: _dismissBanner,
+                      ),
+                      const SizedBox(height: AppSpace.xl),
+                    ],
+                    KeyedSubtree(
+                      key: _vacanteSectionKey,
+                      child: FormSection(
+                        icon: Icons.work_outline,
+                        title: 'Vacante',
+                        subtitle: 'Datos de la oferta',
+                        trailing: _hasImported(_vacanteKeys)
+                            ? const AiBadge()
+                            : null,
+                        children: [
+                          TextFormField(
+                            key: const Key('form-empresa'),
+                            controller: _empresaCtrl,
+                            onChanged: (_) => _markUserEdited('empresa'),
+                            textInputAction: TextInputAction.next,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'Empresa',
+                              hintText: 'Ej. Acme',
+                            ),
+                            validator: (v) =>
+                                _validateRequired(v, 'Ingresa la empresa'),
                           ),
-                          validator: (v) =>
-                              _validateRequired(v, 'Ingresa la empresa'),
-                        ),
-                        const SizedBox(height: AppSpace.md),
-                        TextFormField(
-                          key: const Key('form-vacante'),
-                          controller: _vacanteCtrl,
-                          textInputAction: TextInputAction.next,
-                          textCapitalization: TextCapitalization.sentences,
-                          decoration: const InputDecoration(
-                            labelText: 'Vacante',
-                            hintText: 'Ej. Desarrollador Backend',
+                          const SizedBox(height: AppSpace.md),
+                          TextFormField(
+                            key: const Key('form-vacante'),
+                            controller: _vacanteCtrl,
+                            onChanged: (_) => _markUserEdited('vacante'),
+                            textInputAction: TextInputAction.next,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: const InputDecoration(
+                              labelText: 'Vacante',
+                              hintText: 'Ej. Desarrollador Backend',
+                            ),
+                            validator: (v) =>
+                                _validateRequired(v, 'Ingresa la vacante'),
                           ),
-                          validator: (v) =>
-                              _validateRequired(v, 'Ingresa la vacante'),
-                        ),
-                        const SizedBox(height: AppSpace.md),
-                        TextFormField(
-                          key: const Key('form-link'),
-                          controller: _linkCtrl,
-                          keyboardType: TextInputType.url,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Link de la oferta',
-                            hintText: 'https://...',
+                          const SizedBox(height: AppSpace.md),
+                          TextFormField(
+                            key: const Key('form-link'),
+                            controller: _linkCtrl,
+                            onChanged: (_) => _markUserEdited('link'),
+                            keyboardType: TextInputType.url,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Link de la oferta',
+                              hintText: 'https://...',
+                            ),
+                            validator: _validateLink,
                           ),
-                          validator: _validateLink,
-                        ),
-                        const SizedBox(height: AppSpace.md),
-                        DropdownButtonFormField<String>(
-                          key: const Key('form-tipo-contrato'),
-                          initialValue: _tipoContrato,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Tipo de contrato',
+                          const SizedBox(height: AppSpace.md),
+                          KeyedSubtree(
+                            key: const Key('form-tipo-contrato'),
+                            child: DropdownButtonFormField<String>(
+                              key: _tipoContratoFieldKey,
+                              initialValue: _tipoContrato,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Tipo de contrato',
+                              ),
+                              items: _optionalItems(
+                                applicationContractTypes,
+                                _tipoContrato,
+                              ),
+                              onChanged: (v) {
+                                if (v == null) return;
+                                setState(() => _tipoContrato = v);
+                                _markUserEdited('tipoContrato');
+                              },
+                            ),
                           ),
-                          items: _optionalItems(
-                            applicationContractTypes,
-                            _tipoContrato,
+                          const SizedBox(height: AppSpace.md),
+                          KeyedSubtree(
+                            key: const Key('form-modalidad'),
+                            child: DropdownButtonFormField<String>(
+                              key: _modalidadFieldKey,
+                              initialValue: _modalidad,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Modalidad',
+                              ),
+                              items: _optionalItems(
+                                applicationModalities,
+                                _modalidad,
+                              ),
+                              onChanged: (v) {
+                                if (v == null) return;
+                                setState(() => _modalidad = v);
+                                _markUserEdited('modalidad');
+                              },
+                            ),
                           ),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _tipoContrato = v);
-                          },
-                        ),
-                        const SizedBox(height: AppSpace.md),
-                        DropdownButtonFormField<String>(
-                          key: const Key('form-modalidad'),
-                          initialValue: _modalidad,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Modalidad',
+                          const SizedBox(height: AppSpace.md),
+                          TextFormField(
+                            key: const Key('form-ciudad'),
+                            controller: _ciudadCtrl,
+                            onChanged: (_) => _markUserEdited('ciudad'),
+                            textInputAction: TextInputAction.next,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'Ciudad',
+                              hintText: 'Ej. Bogotá',
+                            ),
                           ),
-                          items: _optionalItems(
-                            applicationModalities,
-                            _modalidad,
+                          const SizedBox(height: AppSpace.md),
+                          TextFormField(
+                            key: const Key('form-salario'),
+                            controller: _salarioCtrl,
+                            onChanged: (_) =>
+                                _markUserEdited('salarioOfrecido'),
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Salario ofrecido',
+                              hintText: 'Ej. 3.500.000',
+                            ),
                           ),
-                          onChanged: (v) {
-                            if (v != null) setState(() => _modalidad = v);
-                          },
-                        ),
-                        const SizedBox(height: AppSpace.md),
-                        TextFormField(
-                          key: const Key('form-ciudad'),
-                          controller: _ciudadCtrl,
-                          textInputAction: TextInputAction.next,
-                          textCapitalization: TextCapitalization.words,
-                          decoration: const InputDecoration(
-                            labelText: 'Ciudad',
-                            hintText: 'Ej. Bogotá',
-                          ),
-                        ),
-                        const SizedBox(height: AppSpace.md),
-                        TextFormField(
-                          key: const Key('form-salario'),
-                          controller: _salarioCtrl,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Salario ofrecido',
-                            hintText: 'Ej. 3.500.000',
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: AppSpace.xl),
                     FormSection(
@@ -537,10 +799,14 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                       icon: Icons.notes,
                       title: 'Notas',
                       subtitle: 'Información adicional',
+                      trailing: _hasImported(_notasKeys)
+                          ? const AiBadge()
+                          : null,
                       children: [
                         TextFormField(
                           key: const Key('form-descripcion'),
                           controller: _descripcionCtrl,
+                          onChanged: (_) => _markUserEdited('descripcion'),
                           maxLines: 3,
                           textCapitalization: TextCapitalization.sentences,
                           decoration: const InputDecoration(
@@ -552,6 +818,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                         TextFormField(
                           key: const Key('form-contacto'),
                           controller: _contactoCtrl,
+                          onChanged: (_) => _markUserEdited('contacto'),
                           textInputAction: TextInputAction.next,
                           textCapitalization: TextCapitalization.words,
                           decoration: const InputDecoration(
@@ -563,6 +830,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                         TextFormField(
                           key: const Key('form-comentarios'),
                           controller: _comentariosCtrl,
+                          onChanged: (_) => _markUserEdited('comentarios'),
                           maxLines: 3,
                           textCapitalization: TextCapitalization.sentences,
                           decoration: const InputDecoration(

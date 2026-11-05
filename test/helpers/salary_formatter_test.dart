@@ -1,4 +1,5 @@
 import 'package:devjobs/helpers/salary_formatter.dart';
+import 'package:devjobs/helpers/salary_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -34,6 +35,47 @@ void main() {
     test('deja intactos los valores pequeños', () {
       expect(formatCompactSalary(850), equals('850'));
       expect(formatCompactSalary(0), equals('0'));
+    });
+  });
+
+  group('formatSalaryOffer', () {
+    test('formatea un valor único en COP', () {
+      expect(
+        formatSalaryOffer(
+          const ParsedSalary(
+            currency: SalaryCurrency.cop,
+            min: 4500000,
+            max: 4500000,
+          ),
+        ),
+        equals('COP 4.500.000'),
+      );
+    });
+
+    test('formatea un rango en COP', () {
+      expect(
+        formatSalaryOffer(
+          const ParsedSalary(
+            currency: SalaryCurrency.cop,
+            min: 4500000,
+            max: 6000000,
+          ),
+        ),
+        equals('COP 4.500.000 – 6.000.000'),
+      );
+    });
+
+    test('conserva USD', () {
+      expect(
+        formatSalaryOffer(
+          const ParsedSalary(
+            currency: SalaryCurrency.usd,
+            min: 2000,
+            max: 2500,
+          ),
+        ),
+        equals('USD 2.000 – 2.500'),
+      );
     });
   });
 

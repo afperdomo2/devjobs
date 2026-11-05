@@ -10,6 +10,7 @@ class FormSection extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
+  final Widget? trailing;
   final List<Widget> children;
 
   const FormSection({
@@ -17,6 +18,7 @@ class FormSection extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.trailing,
     required this.children,
   });
 
@@ -32,6 +34,7 @@ class FormSection extends StatelessWidget {
             Icon(icon, size: AppIconSize.row, color: scheme.onSurfaceVariant),
             const SizedBox(width: AppSpace.sm),
             Expanded(child: Text(title, style: AppType.section(context))),
+            ?trailing,
           ],
         ),
         if (subtitle != null) ...[

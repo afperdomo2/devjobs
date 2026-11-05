@@ -100,6 +100,7 @@ void main() {
     await pumpForm(tester);
 
     expect(find.text('Nueva postulación'), findsOneWidget);
+    expect(find.byKey(const Key('import-entry')), findsNothing);
     expect(find.text('Vacante'), findsWidgets);
     expect(find.text('Proceso'), findsOneWidget);
     expect(find.text('Notas'), findsOneWidget);

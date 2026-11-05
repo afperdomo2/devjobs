@@ -211,7 +211,7 @@ flutter build macos
 # Salida: build\macos\Build\Products\Release\
 ```
 
-> 📝 El `.env` (con `API_URL`) se embebe en el bundle durante el build — asegúrate de tenerlo configurado antes de compilar cualquier plataforma.
+> 📝 El `.env` (con `API_URL` y, si usas la importación con IA, `AI_API_KEY`) se embebe en el bundle durante el build — asegúrate de tenerlo configurado antes de compilar cualquier plataforma.
 
 ## 🧪 Tests
 
@@ -245,6 +245,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes |
 | **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción; aviso si el enlace no es válido), comentarios, descripción, entrevista y botón **Agregar nota** con fecha |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
+| **Importar con IA** | Tarjeta **Autocompletar con IA** dentro de Nueva postulación (solo si `AI_API_KEY` está configurada). Pega un link o la descripción y la IA prellena los campos; siempre revisas antes de guardar |
 | **Ajustes** | Ícono de engranaje en el AppBar. Tema **Sistema**, **Claro** u **Oscuro**; se aplica al instante y se recuerda al reiniciar |
 
 ### Búsqueda global
@@ -254,6 +255,44 @@ La lupa del AppBar busca en empresa, vacante, ciudad, contacto, tipo de contrato
 ### Tema y apariencia
 
 El menú de ajustes del AppBar permite elegir entre **Sistema**, **Claro** y **Oscuro**. El cambio se aplica de inmediato y se persiste en `SharedPreferences`, por lo que se mantiene después de cerrar y volver a abrir la app. Los temas están definidos en `lib/theme.dart` con tokens de color para ambos modos.
+
+### Importar con IA
+
+La app puede prellenar el formulario a partir del **enlace** de una vacante o del **texto de su descripción**. La función solo existe si el build trae `AI_API_KEY` en `.env`; sin key, el formulario se ve exactamente igual que antes.
+
+**Configuración**
+
+1. Crea una API key en [OpenCode Console](https://opencode.ai/console) → **Account** → **Personal API keys**.
+2. En `.env`:
+   ```env
+   AI_API_KEY=oc_sk_...
+   AI_BASE_URL=https://opencode.ai/inference/go/openai/v1
+   AI_MODEL=deepseek-v4.1-flash
+   ```
+3. Recompila. `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, se usan OpenCode Go y DeepSeek V4.1 Flash.
+
+**Cómo se usa**
+
+- Abre **Nueva** y toca **Autocompletar con IA**.
+- Pega un enlace o la descripción y toca **Analizar**.
+- La app intenta leer el JSON-LD `JobPosting` de la página; si no alcanza, consulta al modelo.
+- Solo rellena campos vacíos. Marca las secciones con un chip **IA**, muestra un resumen con avisos y permite **Vaciar IA** para revertir lo importado.
+- Los campos que ya habías escrito a mano nunca se sobrescriben.
+
+**Qué no hace**
+
+- No crea la postulación sin tu confirmación.
+- No actualiza una postulación existente: si detecta el mismo enlace canónico, avisa y ofrece crear otra.
+- No lee páginas con login, Indeed (HTTP 403) ni SPAs que no entregan texto; en esos casos pide pegar la descripción.
+- No envía datos de la hoja ni datos personales: solo el texto de la vacante.
+
+**Privacidad y límites**
+
+- DeepSeek V4.1 Flash en OpenCode Go no entrena con los datos y tiene retención 0 días.
+- Una importación tarda ~4–6 s y consume pocos miles de tokens del allowance de Go.
+- La key queda embebida en el build. Es aceptable para uso personal; si compartes el binario, crea otra key o revócala.
+- OpenCode Go está pensado para agentes de código. El uso personal de bajo volumen es razonable; si prefieres cero ambigüedad, cambia `AI_BASE_URL` a `https://opencode.ai/inference/openai/v1` (pay-as-you-go).
+- El modelo se configura con `AI_MODEL`; si DeepSeek no está disponible, `glm-5.3-flash` es una alternativa con buena calidad de JSON.
 
 ### Columnas de Postulaciones
 
@@ -333,10 +372,15 @@ El script está vinculado a la hoja, se despliega como **Web App** (Ejecutar com
    ```bash
    cp .env.example .env
    ```
-2. Edita `.env` y pega la URL del deployment:
+2. Edita `.env` y pega la URL del deployment. Si vas a usar la importación con IA, agrega también la key:
    ```env
    API_URL=https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec
+
+   AI_API_KEY=oc_sk_...
+   AI_BASE_URL=https://opencode.ai/inference/go/openai/v1
+   AI_MODEL=deepseek-v4.1-flash
    ```
+   `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, la app usa OpenCode Go y DeepSeek V4.1 Flash. Sin `AI_API_KEY` la tarjeta **Autocompletar con IA** no aparece.
 3. La app carga automáticamente las variables desde `.env` al iniciar.
 
 > ⚠️ El archivo `.env` está en `.gitignore`. **Nunca** hagas commit de la URL real. Usa `.env.example` como referencia para otros desarrolladores.
@@ -355,21 +399,28 @@ La hoja debe ser **públicamente visible** para que el script funcione con "Ejec
 ```
 lib/
 ├── main.dart                           # ChangeNotifierProvider + entrada de la app
-├── config.dart                         # Carga API_URL desde .env
+├── config.dart                         # API_URL y configuración de IA desde .env
 ├── theme.dart                          # Tokens de color (claro/oscuro) + helpers semánticos
 ├── models/
 │   ├── job_application.dart            # Modelo (16 campos) + DashboardStats + getters de tiempo
+│   ├── job_import.dart                 # Resultado de importación, datos de IA y tipo de página
 │   └── application_options.dart        # Opciones de contrato, modalidad y estado
 ├── providers/
 │   └── app_state.dart                  # Estado global: caché (TTL 3 min), filtros y tema
 ├── services/
 │   ├── sheets_api_service.dart         # HTTP client para el Apps Script
+│   ├── job_import_service.dart         # Fetch de la vacante + orquestación de la extracción
+│   ├── openai_compatible_extractor.dart # Cliente OpenAI-compatible (OpenCode Go / DeepSeek)
 │   └── local_cache.dart                # Caché persistente y preferencia de tema
 ├── helpers/
 │   ├── date_formatter.dart             # Fechas en español, parseo D/M e ISO y formatApiDate (yyyy-MM-dd)
 │   ├── domain_parser.dart              # Extrae la plataforma desde el link
-│   ├── salary_formatter.dart           # Extracción, formateo y abreviaturas de salarios
+│   ├── salary_formatter.dart           # Extracción, formateo, abreviaturas y formatSalaryOffer
 │   ├── salary_parser.dart              # Moneda, rangos y exclusión de "yo puse"
+│   ├── job_page_parser.dart            # HTML → texto, JSON-LD JobPosting y tipo de página
+│   ├── job_url.dart                    # Normalización de links (LinkedIn search → view)
+│   ├── job_extraction_mapper.dart      # IA → campos del formulario, enums, salario y notas
+│   ├── job_duplicate.dart              # Detección de duplicados por enlace canónico
 │   ├── text_shortener.dart             # Truncado y abreviatura de contratos
 │   ├── network_error.dart              # Detección de errores de red
 │   ├── distribution.dart               # Conteos para las cards de distribución
@@ -397,7 +448,7 @@ lib/
 │   ├── pending_applications_screen.dart # Listado filtrado "Por gestionar"
 │   ├── search_screen.dart              # Búsqueda global: contador, tildes y varias palabras
 │   ├── application_detail_screen.dart  # Detalle + enlace Abrir/Copiar + comentarios + "Por gestionar"
-│   ├── application_form_screen.dart    # Formulario único: crear/editar en secciones
+│   ├── application_form_screen.dart    # Formulario único: crear/editar + importación con IA
 │   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
 │   └── filtered_applications_screen.dart # Listado filtrado por campo/valor o selector
 └── widgets/
@@ -409,6 +460,8 @@ lib/
     ├── distribution_card.dart          # Distribución con selector segmentado (plataformas/modalidades/ciudades)
     ├── gestion_tag.dart                # Tag del flag "Por gestionar" (tappable)
     ├── form_section.dart               # Sección de formulario (encabezado + campos)
+    ├── import_application_sheet.dart   # Hoja "Autocompletar con IA" + banner de resumen
+    ├── ai_badge.dart                   # Chip "IA" para secciones importadas
     ├── add_note_dialog.dart            # Diálogo de nota rápida con fecha
     ├── recent_activity_card.dart       # Tarjeta "Actividad reciente" de Inicio
     ├── pipeline_card.dart              # Pipeline con etapas tocables

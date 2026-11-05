@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import 'salary_parser.dart';
 import 'text_shortener.dart';
 
 final _salarioFormat = NumberFormat.decimalPattern('es');
@@ -24,6 +25,16 @@ String formatCompactSalary(int value) {
 String _formatCompact(double value) {
   final rounded = (value * 10).round() / 10;
   return _compactFormat.format(rounded);
+}
+
+/// Formatea un salario ya interpretado, conservando la moneda.
+///
+/// `COP 4.500.000` o `COP 4.500.000 – 6.000.000`; `USD 2.000`.
+String formatSalaryOffer(ParsedSalary salary) {
+  final min = _salarioFormat.format(salary.min);
+  if (!salary.isRange) return '${salary.currency.label} $min';
+  final max = _salarioFormat.format(salary.max);
+  return '${salary.currency.label} $min – $max';
 }
 
 final _moneyRegex = RegExp(r'\d{1,3}(?:[.,]\d{3})+|\d{4,}');
