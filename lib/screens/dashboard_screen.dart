@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../helpers/date_formatter.dart';
+import '../helpers/activity.dart';
 import '../helpers/distribution.dart';
 import '../helpers/network_error.dart';
 import '../models/job_application.dart';
@@ -10,6 +10,7 @@ import '../theme.dart';
 import '../widgets/distribution_card.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/pending_applications_card.dart';
+import '../widgets/recent_activity_card.dart';
 import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 import 'pending_applications_screen.dart';
@@ -48,6 +49,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final stats = state.dashboardStats;
     final apps = state.applications;
     final pending = state.getApplications(AppState.filterPorGestionar);
+    final movements = recentMovements(apps);
+    final last7 = countApplicationsSince(apps, 7);
+    final last30 = countApplicationsSince(apps, 30);
     final brightness = Theme.of(context).brightness;
 
     // Full-screen error when no data and fetch failed.
@@ -160,11 +164,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 finalizadasColor: neutralColor(brightness),
               ),
               const SizedBox(height: 8),
-              _RecentActivityCard(
-                ultimos7: _countSince(apps, 7),
-                ultimos30: _countSince(apps, 30),
-                color7: tealColor(brightness),
-                color30: successColor(brightness),
+              RecentActivityCard(
+                movements: movements,
+                last7: last7,
+                last30: last30,
+                onOpen: (app) => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ApplicationDetailScreen(application: app),
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               DistributionCard(
@@ -250,16 +260,6 @@ class _StatCard extends StatelessWidget {
 
     return card;
   }
-}
-
-int _countSince(List<JobApplication> apps, int days) {
-  final cutoff = DateTime.now().subtract(Duration(days: days));
-  var count = 0;
-  for (final a in apps) {
-    final d = parseDate(a.fechaPostulacion);
-    if (d != null && !d.isBefore(cutoff)) count++;
-  }
-  return count;
 }
 
 class _PipelineStage {
@@ -468,94 +468,6 @@ class _ConversionBar extends StatelessWidget {
             textAlign: TextAlign.right,
             style: AppType.section(context),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RecentActivityCard extends StatelessWidget {
-  final int ultimos7;
-  final int ultimos30;
-  final Color color7;
-  final Color color30;
-
-  const _RecentActivityCard({
-    required this.ultimos7,
-    required this.ultimos30,
-    required this.color7,
-    required this.color30,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpace.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Postulaciones recientes', style: AppType.section(context)),
-            const SizedBox(height: AppSpace.md),
-            Row(
-              children: [
-                Expanded(
-                  child: _ActivityItem(
-                    icon: Icons.today,
-                    label: 'Últimos 7 días',
-                    value: '$ultimos7',
-                    color: color7,
-                  ),
-                ),
-                Expanded(
-                  child: _ActivityItem(
-                    icon: Icons.calendar_month,
-                    label: 'Últimos 30 días',
-                    value: '$ultimos30',
-                    color: color30,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ActivityItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _ActivityItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: AppIconSize.metric, color: color),
-        const SizedBox(width: AppSpace.sm),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-            ),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ],
         ),
       ],
     );

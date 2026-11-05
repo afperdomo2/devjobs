@@ -18,7 +18,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 0 | Dejar lista la base | — | `[x]` |
 | 1 | Tarjeta “Por gestionar” + card “Con entrevista” | Inicio | `[x]` |
 | 2 | Barra “Con respuesta” | Inicio | `[x]` |
-| 3 | “Actividad reciente” con últimos movimientos | Inicio | `[ ]` |
+| 3 | “Actividad reciente” con últimos movimientos | Inicio | `[x]` |
 | 4 | Etapas del proceso tocables | Inicio | `[ ]` |
 | 5 | “Ritmo mensual” | Inicio | `[ ]` |
 | 6 | “Salario ofrecido” | Inicio | `[ ]` |
@@ -79,14 +79,14 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 3 — “Actividad reciente” con últimos movimientos
 
-- [ ] **Para qué sirve:** ver los últimos movimientos, no solo cuántos hubo.
+- [x] **Para qué sirve:** ver los últimos movimientos, no solo cuántos hubo.
 - **Qué se crea:**
   1. Se reemplaza la tarjeta actual “Postulaciones recientes” por **“Actividad reciente”**.
   2. La nueva tarjeta muestra los conteos de 7 y 30 días **y** una lista corta de movimientos.
 - **Dónde se ve:** en **Inicio**.
 - **Cómo se ve:**
   - Arriba, los números de “Últimos 7 días” y “Últimos 30 días”.
-  - Debajo, hasta 4 filas con empresa, estado y “hace X”.
+  - Debajo, hasta 3 filas con empresa, estado y “hace X”.
 - **Cómo se usa:** tocar una fila abre esa postulación.
 - **Listo cuando:**
   - Los movimientos aparecen del más reciente al más antiguo.
@@ -254,6 +254,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 - **“Con entrevista”** usa el switch de la columna N y cuenta todas las postulaciones.
 - La tarjeta **“Por gestionar”** no filtra ni cuenta entrevistas: son datos separados.
 - “Respondió” significa que el estado ya no es Enviada, Sin respuesta o Retirada. Aplica a la barra “Con respuesta” y a la card de empresa.
+- “Actividad reciente” usa la última fecha de seguimiento; si no existe, usa la fecha de postulación. Muestra hasta 3 movimientos.
 
 ## Cómo marcar el avance
 

@@ -3,6 +3,7 @@ import 'package:devjobs/providers/app_state.dart';
 import 'package:devjobs/screens/dashboard_screen.dart';
 import 'package:devjobs/services/sheets_api_service.dart';
 import 'package:devjobs/theme.dart';
+import 'package:devjobs/widgets/pending_applications_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -85,11 +86,26 @@ void main() {
     // La card de lista usa el switch O y aparece con su título.
     expect(find.text('Por gestionar'), findsOneWidget);
     expect(find.text('Pendientes de acción'), findsOneWidget);
-    expect(find.text('Pendiente'), findsOneWidget);
-    expect(find.text('Entrevistada'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(PendingApplicationsCard),
+        matching: find.text('Pendiente'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(PendingApplicationsCard),
+        matching: find.text('Entrevistada'),
+      ),
+      findsNothing,
+    );
     // Los tres estados de prueba implican respuesta: 100 %.
     expect(find.text('Con respuesta'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
+    // Actividad reciente muestra el movimiento más nuevo.
+    expect(find.text('Actividad reciente'), findsOneWidget);
+    expect(find.text('Normal'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
