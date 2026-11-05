@@ -4,13 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  /// A 360 px de ancho los tres segmentos deben entrar sin desbordar.
+  /// A 360 px de ancho los dos segmentos deben entrar sin desbordar.
   Future<void> pumpCard(
     WidgetTester tester, {
-    List<(String, int)> plataformas = const [
-      ('Linkedin', 2),
-      ('Computrabajo', 1),
-    ],
     List<(String, int)> modalidades = const [('Remoto', 2), ('Híbrido', 1)],
     List<(String, int)> ciudades = const [('Bogotá', 2)],
   }) async {
@@ -26,10 +22,8 @@ void main() {
           body: Padding(
             padding: const EdgeInsets.all(AppSpace.lg),
             child: DistributionCard(
-              plataformas: plataformas,
               modalidades: modalidades,
               ciudades: ciudades,
-              colorPlataformas: AppColors.teal,
               colorModalidades: AppColors.indigo,
               colorCiudades: AppColors.info,
             ),
@@ -39,34 +33,33 @@ void main() {
     );
   }
 
-  testWidgets('pinta los tres segmentos y por defecto plataformas', (
+  testWidgets('pinta los dos segmentos y por defecto modalidades', (
     tester,
   ) async {
     await pumpCard(tester);
 
-    expect(find.text('Plataformas'), findsOneWidget);
     expect(find.text('Modalidades'), findsOneWidget);
     expect(find.text('Ciudades'), findsOneWidget);
-    // Empresas ya tiene su propia pestaña, así que no es un segmento.
+    // Plataformas tiene su propia card y Empresas su propia pestaña.
+    expect(find.text('Plataformas'), findsNothing);
     expect(find.text('Empresas'), findsNothing);
 
     // Solo se pinta el grupo activo.
-    expect(find.text('Linkedin'), findsOneWidget);
-    expect(find.text('Computrabajo'), findsOneWidget);
-    expect(find.text('Remoto'), findsNothing);
+    expect(find.text('Remoto'), findsOneWidget);
+    expect(find.text('Híbrido'), findsOneWidget);
+    expect(find.text('Bogotá'), findsNothing);
     expect(find.text('Ver todas'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('al tocar Modalidades cambia el grupo visible', (tester) async {
+  testWidgets('al tocar Ciudades cambia el grupo visible', (tester) async {
     await pumpCard(tester);
 
-    await tester.tap(find.text('Modalidades'));
+    await tester.tap(find.text('Ciudades'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Remoto'), findsOneWidget);
-    expect(find.text('Híbrido'), findsOneWidget);
-    expect(find.text('Linkedin'), findsNothing);
+    expect(find.text('Bogotá'), findsOneWidget);
+    expect(find.text('Remoto'), findsNothing);
     expect(find.text('Ver todas'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

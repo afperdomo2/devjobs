@@ -122,12 +122,7 @@ class MainScreen extends StatelessWidget {
 
   static const _empresasTabIndex = AppState.tabEmpresas;
 
-  static const _titles = [
-    'DevJobs',
-    'Postulaciones',
-    'Empresas',
-    'Agenda',
-  ];
+  static const _titles = ['DevJobs', 'Postulaciones', 'Empresas', 'Agenda'];
 }
 
 class _AgendaIcon extends StatelessWidget {

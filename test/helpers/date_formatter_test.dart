@@ -65,9 +65,15 @@ void main() {
 
   group('formatDateValue', () {
     test('formatea un DateTime al formato largo español', () {
+      expect(formatDateValue(DateTime(2026, 6, 2)), equals('2 de junio, 2026'));
+    });
+  });
+
+  group('formatDateValueShort', () {
+    test('formatea un DateTime al formato corto español', () {
       expect(
-        formatDateValue(DateTime(2026, 6, 2)),
-        equals('2 de junio, 2026'),
+        formatDateValueShort(DateTime(2026, 10, 15)),
+        equals('15 oct 2026'),
       );
     });
   });

@@ -19,24 +19,22 @@ class _DistributionSegment {
   });
 }
 
-/// Distribución por plataforma / modalidad / ciudad.
+/// Distribución por modalidad / ciudad.
 ///
 /// Muestra un selector segmentado de ancho completo y debajo solo el grupo
-/// activo. "Empresas" queda fuera a propósito: tiene su propia pestaña.
+/// activo. "Plataformas" y "Empresas" quedan fuera a propósito: las
+/// plataformas tienen su propia card (`PlatformActivityCard`) y las empresas
+/// su propia pestaña.
 class DistributionCard extends StatefulWidget {
-  final List<(String, int)> plataformas;
   final List<(String, int)> modalidades;
   final List<(String, int)> ciudades;
-  final Color colorPlataformas;
   final Color colorModalidades;
   final Color colorCiudades;
 
   const DistributionCard({
     super.key,
-    required this.plataformas,
     required this.modalidades,
     required this.ciudades,
-    required this.colorPlataformas,
     required this.colorModalidades,
     required this.colorCiudades,
   });
@@ -48,15 +46,9 @@ class DistributionCard extends StatefulWidget {
 class _DistributionCardState extends State<DistributionCard> {
   /// Campo activo por defecto. La pantalla vive en un `IndexedStack`, así que
   /// la selección se conserva al cambiar de pestaña durante la sesión.
-  String _field = 'plataforma';
+  String _field = 'modalidad';
 
   List<_DistributionSegment> get _segments => [
-    _DistributionSegment(
-      field: 'plataforma',
-      label: 'Plataformas',
-      icon: Icons.language,
-      color: widget.colorPlataformas,
-    ),
     _DistributionSegment(
       field: 'modalidad',
       label: 'Modalidades',
@@ -75,9 +67,8 @@ class _DistributionCardState extends State<DistributionCard> {
       _segments.firstWhere((s) => s.field == _field);
 
   List<(String, int)> get _items => switch (_field) {
-    'modalidad' => widget.modalidades,
     'ciudad' => widget.ciudades,
-    _ => widget.plataformas,
+    _ => widget.modalidades,
   };
 
   void _openDetail() {

@@ -5,6 +5,7 @@ import '../helpers/activity.dart';
 import '../helpers/distribution.dart';
 import '../helpers/network_error.dart';
 import '../helpers/pipeline.dart';
+import '../helpers/platform_stats.dart';
 import '../helpers/salary_insights.dart';
 import '../helpers/trends.dart';
 import '../providers/app_state.dart';
@@ -13,11 +14,13 @@ import '../widgets/distribution_card.dart';
 import '../widgets/monthly_trend_card.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/pipeline_card.dart';
+import '../widgets/platforms_review_button.dart';
 import '../widgets/recent_activity_card.dart';
 import '../widgets/salary_insights_card.dart';
 import '../widgets/wheel_refresh.dart';
 import 'application_detail_screen.dart';
 import 'filtered_applications_screen.dart';
+import 'platforms_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -59,6 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final last30 = countApplicationsSince(apps, 30);
     final monthly = monthlyApplicationCounts(apps);
     final salaryGroups = salaryInsights(apps);
+    final platforms = platformsStats(apps);
     final brightness = Theme.of(context).brightness;
 
     // Full-screen error when no data and fetch failed.
@@ -134,10 +138,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: stats.finalizadas.toString(),
                   color: neutralColor(brightness),
                   icon: Icons.check_circle,
-                  onTap: () => state.openApplications(AppState.filterFinalizadas),
+                  onTap: () =>
+                      state.openApplications(AppState.filterFinalizadas),
                 ),
               ],
             ),
+            if (platforms.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              PlatformsReviewButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PlatformsScreen()),
+                ),
+              ),
+            ],
             if (stats.total > 0) ...[
               const SizedBox(height: 8),
               PipelineCard(
@@ -171,8 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onOpen: (app) => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        ApplicationDetailScreen(application: app),
+                    builder: (_) => ApplicationDetailScreen(application: app),
                   ),
                 ),
               ),
@@ -184,10 +197,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
               const SizedBox(height: 8),
               DistributionCard(
-                plataformas: topDistribution(apps, (a) => a.plataforma, 3),
                 modalidades: topDistribution(apps, (a) => a.modalidad, 3),
                 ciudades: topDistribution(apps, (a) => a.ciudad, 3),
-                colorPlataformas: tealColor(brightness),
                 colorModalidades: indigoColor(brightness),
                 colorCiudades: infoColor(brightness),
               ),
@@ -258,8 +269,7 @@ class _StatCard extends StatelessWidget {
     if (onTap != null) {
       return InkWell(
         onTap: onTap,
-        borderRadius:
-            const BorderRadius.all(Radius.circular(AppRadius.card)),
+        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.card)),
         child: card,
       );
     }
@@ -348,8 +358,9 @@ class _ConversionBar extends StatelessWidget {
         ),
         Expanded(
           child: ClipRRect(
-            borderRadius:
-                const BorderRadius.all(Radius.circular(AppRadius.bar)),
+            borderRadius: const BorderRadius.all(
+              Radius.circular(AppRadius.bar),
+            ),
             child: LinearProgressIndicator(
               value: pct,
               minHeight: 8,

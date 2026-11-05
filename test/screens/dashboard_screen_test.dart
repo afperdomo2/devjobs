@@ -80,14 +80,25 @@ void main() {
         empresa: 'Normal',
         vacante: 'QA',
         estado: 'En revisión',
+        link: 'https://www.linkedin.com/jobs/view/333',
         fechaPostulacion: daysAgo(2),
         salarioOfrecido: '1.300 USD',
+      ),
+      JobApplication(
+        rowIndex: 4,
+        empresa: 'Olvidada',
+        vacante: 'Frontend',
+        estado: 'En revisión',
+        link: 'https://www.computrabajo.com.co/ofertas/444',
+        fechaPostulacion: daysAgo(12),
       ),
     ]);
 
     // Inicio ya no muestra "Por gestionar"; esa lista vive en Agenda.
     expect(find.text('Con entrevista'), findsOneWidget);
     expect(find.text('Por gestionar'), findsNothing);
+    // El acceso a plataformas está disponible siempre que haya datos.
+    expect(find.text('Revisar plataformas'), findsOneWidget);
     // Los tres estados de prueba implican respuesta: 100 %.
     expect(find.text('Con respuesta'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
@@ -113,4 +124,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('el botón de plataformas abre el listado', (tester) async {
+    await pumpDashboard(tester, [
+      JobApplication(
+        rowIndex: 1,
+        empresa: 'Reciente',
+        vacante: 'Backend',
+        estado: 'En revisión',
+        link: 'https://www.linkedin.com/jobs/view/111',
+        fechaPostulacion: daysAgo(1),
+      ),
+    ]);
+
+    await tester.tap(find.text('Revisar plataformas'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Plataformas'), findsOneWidget);
+    expect(find.text('1 plataforma'), findsOneWidget);
+    expect(find.text('Linkedin'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('sin enlaces no muestra el acceso a plataformas', (tester) async {
+    await pumpDashboard(tester, [
+      JobApplication(
+        rowIndex: 1,
+        empresa: 'Sin enlace',
+        vacante: 'Backend',
+        estado: 'En revisión',
+        fechaPostulacion: daysAgo(1),
+      ),
+    ]);
+
+    expect(find.text('Revisar plataformas'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

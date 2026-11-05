@@ -33,10 +33,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
         value: state,
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const MainScreen(),
-        ),
+        child: MaterialApp(theme: AppTheme.light, home: const MainScreen()),
       ),
     );
     await tester.pumpAndSettle();

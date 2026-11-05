@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 final _formatter = DateFormat('d \'de\' MMMM, yyyy', 'es');
+final _shortFormatter = DateFormat('d MMM yyyy', 'es');
 final _isoRegex = RegExp(r'(\d{4})-(\d{2})-(\d{2})');
 
 /// Valida que [DateTime] no haya normalizado la fecha (p.ej. 31/02 -> 03/03).
@@ -49,6 +50,9 @@ String formatApiDate(DateTime date) {
 
 /// Fecha ya parseada -> formato largo español (`4 de noviembre, 2026`).
 String formatDateValue(DateTime date) => _formatter.format(date);
+
+/// Fecha ya parseada -> formato corto español (`4 nov 2026`).
+String formatDateValueShort(DateTime date) => _shortFormatter.format(date);
 
 String formatDate(String rawDate) {
   final date = _parseRawDate(rawDate);
