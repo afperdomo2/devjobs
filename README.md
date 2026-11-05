@@ -230,7 +230,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 
 | Pestaña | Contenido |
 |---------|-----------|
-| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones |
+| **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. Debajo aparece la tarjeta **Por gestionar**: las marcadas con el switch O, con hasta 3 filas y acceso al listado completo; se oculta si no hay pendientes. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global y acceso al detalle |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 
@@ -355,7 +355,8 @@ lib/
 │   ├── status.dart                     # Normalización de estados, terminal y respuesta
 │   ├── activity.dart                   # Conteos 7/30 y últimos movimientos
 │   ├── application_sort.dart           # Orden único de postulaciones
-│   └── pipeline.dart                   # Etapas, conteos y filtro por etapa
+│   ├── pipeline.dart                   # Etapas, conteos y filtro por etapa
+│   └── trends.dart                     # Conteo de postulaciones por mes
 ├── screens/
 │   ├── main_screen.dart                # NavigationBar (Inicio/Postulaciones/Empresas)
 │   ├── dashboard_screen.dart           # Dashboard: stats, pipeline, conversión, distribuciones
@@ -380,6 +381,7 @@ lib/
     ├── pending_applications_card.dart  # Tarjeta "Por gestionar" de Inicio
     ├── recent_activity_card.dart       # Tarjeta "Actividad reciente" de Inicio
     ├── pipeline_card.dart              # Pipeline con etapas tocables
+    ├── monthly_trend_card.dart         # Tarjeta "Ritmo mensual" de Inicio
     ├── application_compact_row.dart    # Fila compacta empresa/vacante para listas
     ├── meta_chip.dart                  # Chip de meta-datos compartido
     └── offline_banner.dart             # Banner de modo sin conexión

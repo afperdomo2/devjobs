@@ -106,6 +106,8 @@ void main() {
     // Actividad reciente muestra el movimiento más nuevo.
     expect(find.text('Actividad reciente'), findsOneWidget);
     expect(find.text('Normal'), findsOneWidget);
+    // Ritmo mensual aparece después de Actividad reciente.
+    expect(find.text('Ritmo mensual'), findsOneWidget);
     // Una etapa del pipeline abre su listado.
     expect(
       find.text('Toca una etapa para ver las postulaciones'),

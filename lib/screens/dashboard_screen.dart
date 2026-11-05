@@ -5,9 +5,11 @@ import '../helpers/activity.dart';
 import '../helpers/distribution.dart';
 import '../helpers/network_error.dart';
 import '../helpers/pipeline.dart';
+import '../helpers/trends.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/distribution_card.dart';
+import '../widgets/monthly_trend_card.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/pending_applications_card.dart';
 import '../widgets/pipeline_card.dart';
@@ -54,6 +56,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final movements = recentMovements(apps);
     final last7 = countApplicationsSince(apps, 7);
     final last30 = countApplicationsSince(apps, 30);
+    final monthly = monthlyApplicationCounts(apps);
     final brightness = Theme.of(context).brightness;
 
     // Full-screen error when no data and fetch failed.
@@ -190,6 +193,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+              MonthlyTrendCard(counts: monthly),
               const SizedBox(height: 8),
               DistributionCard(
                 plataformas: topDistribution(apps, (a) => a.plataforma, 3),

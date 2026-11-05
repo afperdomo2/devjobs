@@ -20,7 +20,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 2 | Barra “Con respuesta” | Inicio | `[x]` |
 | 3 | “Actividad reciente” con últimos movimientos | Inicio | `[x]` |
 | 4 | Etapas del proceso tocables | Inicio | `[x]` |
-| 5 | “Ritmo mensual” | Inicio | `[ ]` |
+| 5 | “Ritmo mensual” | Inicio | `[x]` |
 | 6 | “Salario ofrecido” | Inicio | `[ ]` |
 | 7 | Pestaña “Agenda” | Barra inferior | `[ ]` |
 | 8 | Nota rápida | Detalle de postulación | `[ ]` |
@@ -112,7 +112,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 ## Entregable 5 — “Ritmo mensual”
 
-- [ ] **Para qué sirve:** ver cuántas postulaciones hiciste en los últimos 6 meses.
+- [x] **Para qué sirve:** ver cuántas postulaciones hiciste en los últimos 6 meses.
 - **Qué se crea:** una tarjeta nueva llamada **“Ritmo mensual”**.
 - **Dónde se ve:** en **Inicio**, después de “Actividad reciente”.
 - **Cómo se ve:**
@@ -255,6 +255,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 - La tarjeta **“Por gestionar”** no filtra ni cuenta entrevistas: son datos separados.
 - “Respondió” significa que el estado ya no es Enviada, Sin respuesta o Retirada. Aplica a la barra “Con respuesta” y a la card de empresa.
 - “Actividad reciente” usa la última fecha de seguimiento; si no existe, usa la fecha de postulación. Muestra hasta 3 movimientos.
+- “Ritmo mensual” cuenta por fecha de postulación los últimos 6 meses, incluyendo los meses en cero.
 
 ## Cómo marcar el avance
 
