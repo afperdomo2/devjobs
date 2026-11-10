@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../helpers/comments.dart';
 import '../helpers/date_formatter.dart';
+import '../helpers/finalization.dart';
 import '../helpers/network_error.dart';
 import '../helpers/offer_link.dart';
 import '../helpers/salary_formatter.dart';
@@ -12,6 +13,7 @@ import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/add_note_dialog.dart';
+import '../widgets/finalize_application_dialog.dart';
 import '../widgets/gestion_tag.dart';
 import '../widgets/markdown_description.dart';
 import '../widgets/offline_banner.dart';
@@ -70,6 +72,38 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
           SnackBar(content: Text('Error: ${friendlyErrorMessage(e)}')),
         );
       }
+    }
+  }
+
+  Future<void> _finalize(JobApplication app) async {
+    final state = context.read<AppState>();
+    if (state.offline) return;
+
+    final current = state.applications.firstWhere(
+      (item) => item.rowIndex == app.rowIndex,
+      orElse: () => app,
+    );
+
+    final result = await showFinalizeApplicationDialog(
+      context,
+      empresa: current.empresa,
+      vacante: current.vacante,
+    );
+    if (result == null || !mounted) return;
+
+    try {
+      await state.updateApplication(
+        app.rowIndex,
+        finalizationUpdates(
+          estado: result.estado,
+          fecha: result.fecha,
+          comentariosActuales: current.comentarios,
+          nota: result.nota,
+        ),
+      );
+      if (mounted) _showSnack('Proceso finalizado como ${result.estado}');
+    } catch (e) {
+      if (mounted) _showSnack('Error: ${friendlyErrorMessage(e)}');
     }
   }
 
@@ -193,6 +227,25 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 ..._buildInfoSection(context, app),
+                if (!app.isFinalizado) ...[
+                  const SizedBox(height: AppSpace.md),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Tooltip(
+                      message: isOffline
+                          ? 'Sin conexión — edición deshabilitada'
+                          : 'Cierra el proceso y elige el estado final',
+                      child: FilledButton.tonalIcon(
+                        onPressed: isOffline ? null : () => _finalize(app),
+                        icon: const Icon(
+                          Icons.task_alt,
+                          size: AppIconSize.row,
+                        ),
+                        label: const Text('Finalizar proceso'),
+                      ),
+                    ),
+                  ),
+                ],
                 if (app.link.isNotEmpty) ...[
                   const Divider(height: 32),
                   Row(

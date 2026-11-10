@@ -32,3 +32,12 @@ const List<String> applicationStatuses = [
   'Aceptada',
   'Retirada',
 ];
+
+/// Estados que cierran el proceso. Son los que ofrece el diálogo de
+/// "Finalizar proceso" y los que cuentan como finalizadas en filtros y
+/// métricas.
+const List<String> applicationFinalStatuses = [
+  'Aceptada',
+  'Rechazada',
+  'Retirada',
+];

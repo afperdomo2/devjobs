@@ -245,7 +245,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global con contador y acceso al detalle |
 | **Agenda** | Cuarto tab con badge. Secciones **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**; hasta 5 filas por sección y “Ver todas” al listado completo |
 | **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes |
-| **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción; aviso si el enlace no es válido), comentarios, descripción, entrevista y botón **Agregar nota** con fecha |
+| **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción; aviso si el enlace no es válido), comentarios, descripción, entrevista, botón **Agregar nota** con fecha y botón **Finalizar proceso** (estado final, fecha editable y nota opcional) |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
 | **Importar con IA** | Tarjeta **Autocompletar con IA** dentro de Nueva postulación (solo si `AI_API_KEY` está configurada). Pega un link o la descripción y la IA prellena los campos; la descripción se guarda como resumen Markdown por secciones y se renderiza en el detalle |
 | **Ajustes** | Ícono de engranaje en el AppBar. Tema **Sistema**, **Claro** u **Oscuro**; se aplica al instante y se recuerda al reiniciar |
@@ -443,6 +443,7 @@ lib/
 │   ├── salary_insights.dart            # Resumen salarial por moneda (COP/USD)
 │   ├── agenda.dart                     # Secciones de Agenda y conteo de pendientes
 │   ├── comments.dart                   # Parseo y nota con fecha
+│   ├── finalization.dart               # Payload para finalizar un proceso (estado, fecha y nota)
 │   ├── theme_mode.dart                 # Serialización y etiquetas de ThemeMode
 │   ├── search.dart                     # Búsqueda global sin tildes y en AND
 │   └── offer_link.dart                 # Validación del enlace y dominio visible
@@ -456,7 +457,7 @@ lib/
 │   ├── applications_list_screen.dart   # Lista con pull-to-refresh (reutilizada por Postulaciones y Por gestionar)
 │   ├── pending_applications_screen.dart # Listado filtrado "Por gestionar"
 │   ├── search_screen.dart              # Búsqueda global: contador, tildes y varias palabras
-│   ├── application_detail_screen.dart  # Detalle + enlace Abrir/Copiar + comentarios + descripción Markdown
+│   ├── application_detail_screen.dart  # Detalle + enlace Abrir/Copiar + comentarios + finalizar proceso
 │   ├── application_form_screen.dart    # Formulario único: crear/editar + importación con IA
 │   ├── distribution_detail_screen.dart # "Ver todas" de una distribución
 │   └── filtered_applications_screen.dart # Listado filtrado por campo/valor o selector
@@ -473,6 +474,7 @@ lib/
     ├── ai_badge.dart                   # Chip "IA" para secciones importadas
     ├── markdown_description.dart       # Render Markdown con iconos por sección (detalle y preview)
     ├── add_note_dialog.dart            # Diálogo de nota rápida con fecha
+    ├── finalize_application_dialog.dart # Diálogo Finalizar proceso (estado, fecha y nota)
     ├── recent_activity_card.dart       # Tarjeta "Actividad reciente" de Inicio
     ├── pipeline_card.dart              # Pipeline con etapas tocables
     ├── monthly_trend_card.dart         # Tarjeta "Ritmo mensual" de Inicio

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:devjobs/helpers/date_formatter.dart';
 import 'package:devjobs/models/job_application.dart';
 import 'package:devjobs/providers/app_state.dart';
 import 'package:devjobs/screens/application_detail_screen.dart';
@@ -122,6 +123,67 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('finaliza el proceso con estado, fecha y nota', (tester) async {
+    final (_, api) = await pumpDetail(tester);
+
+    await tester.tap(find.text('Finalizar proceso'));
+    await tester.pumpAndSettle();
+    expect(find.text('Estado final'), findsOneWidget);
+
+    await tester.tap(find.text('Rechazada'));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('finalize-nota')),
+      'Rechacé por el salario',
+    );
+    await tester.tap(find.text('Finalizar'));
+    await tester.pumpAndSettle();
+
+    final today = DateTime.now();
+    expect(api.updateCalls, equals(1));
+    expect(api.lastRow, equals(7));
+    final updates = api.lastUpdates!;
+    expect(updates['estado'], equals('Rechazada'));
+    expect(updates['fechaSeguimiento'], equals(formatApiDate(today)));
+    expect(updates['porGestionar'], equals('false'));
+    expect(
+      updates['comentarios'],
+      contains('${today.day}/${today.month}/${today.year}'),
+    );
+    expect(updates['comentarios'], contains('Rechacé por el salario'));
+    expect(find.text('Proceso finalizado como Rechazada'), findsOneWidget);
+    expect(find.text('Finalizar proceso'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('no muestra Finalizar si el proceso ya terminó', (tester) async {
+    await pumpDetail(
+      tester,
+      app: const JobApplication(
+        rowIndex: 7,
+        empresa: 'Acme',
+        vacante: 'Dev',
+        estado: 'Aceptada',
+        fechaPostulacion: '01/11/2026',
+        fechaSeguimiento: '05/11/2026',
+      ),
+    );
+
+    expect(find.text('Finalizar proceso'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('sin conexión deshabilita Finalizar proceso', (tester) async {
+    await pumpDetail(tester, offline: true);
+
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Finalizar proceso'),
+    );
+
+    expect(button.onPressed, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('sin conexión deshabilita el botón de nota', (tester) async {
     await pumpDetail(tester, offline: true);
 
@@ -195,7 +257,7 @@ void main() {
     expect(find.text('linkedin.com'), findsWidgets);
 
     final openButton = tester.widget<FilledButton>(
-      find.byWidgetPredicate((w) => w is FilledButton),
+      find.widgetWithText(FilledButton, 'Abrir'),
     );
     expect(openButton.onPressed, isNotNull);
 
@@ -223,12 +285,12 @@ void main() {
     expect(find.text('El enlace no parece válido.'), findsOneWidget);
 
     final openButton = tester.widget<FilledButton>(
-      find.byWidgetPredicate((w) => w is FilledButton),
+      find.widgetWithText(FilledButton, 'Abrir'),
     );
     expect(openButton.onPressed, isNull);
 
     final copyButton = tester.widget<OutlinedButton>(
-      find.byWidgetPredicate((w) => w is OutlinedButton),
+      find.widgetWithText(OutlinedButton, 'Copiar'),
     );
     expect(copyButton.onPressed, isNotNull);
     expect(tester.takeException(), isNull);
