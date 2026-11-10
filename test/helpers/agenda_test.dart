@@ -8,12 +8,16 @@ void main() {
     String empresa = 'Acme',
     String estado = 'En revisión',
     bool porGestionar = false,
+    String fechaPostulacion = '',
+    String fechaSeguimiento = '',
   }) {
     return JobApplication(
       rowIndex: rowIndex,
       empresa: empresa,
       estado: estado,
       porGestionar: porGestionar,
+      fechaPostulacion: fechaPostulacion,
+      fechaSeguimiento: fechaSeguimiento,
     );
   }
 
@@ -138,6 +142,28 @@ void main() {
       expect(sections[1].applications.length, equals(1));
       expect(sections[2].kind, equals(AgendaSectionKind.ofertaRecibida));
       expect(sections[2].applications.length, equals(1));
+    });
+
+    test('ordena cada sección por última novedad', () {
+      final sections = agendaSections([
+        app(
+          rowIndex: 1,
+          empresa: 'Antigua',
+          porGestionar: true,
+          fechaPostulacion: '01/01/2026',
+        ),
+        app(
+          rowIndex: 2,
+          empresa: 'Reciente',
+          porGestionar: true,
+          fechaPostulacion: '10/01/2026',
+        ),
+      ]);
+
+      expect(
+        sections.first.applications.map((application) => application.empresa),
+        equals(['Reciente', 'Antigua']),
+      );
     });
 
     test('lista vacía devuelve secciones vacías', () {

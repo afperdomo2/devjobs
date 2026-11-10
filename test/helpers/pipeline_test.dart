@@ -110,7 +110,7 @@ void main() {
       expect(result.first.empresa, equals('Entrevista'));
     });
 
-    test('ordena con el criterio general: Por gestionar primero', () {
+    test('ordena con el criterio general: última novedad primero', () {
       final entrevista = pipelineStages.firstWhere(
         (stage) => stage.label == 'Entrevista',
       );
@@ -134,7 +134,7 @@ void main() {
 
       expect(
         result.map((application) => application.empresa).toList(),
-        equals(['Pendiente', 'Reciente']),
+        equals(['Reciente', 'Pendiente']),
       );
     });
 

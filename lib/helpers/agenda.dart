@@ -1,4 +1,5 @@
 import '../models/job_application.dart';
+import 'application_sort.dart';
 import 'status.dart';
 
 /// Secciones de la pestaña Agenda.
@@ -40,15 +41,18 @@ bool isInAgendaSection(JobApplication application, AgendaSectionKind kind) {
   };
 }
 
-/// Secciones en el orden de [AgendaSectionKind]. Cada una puede estar vacía.
+/// Secciones en el orden de [AgendaSectionKind]. Cada una puede estar vacía
+/// y sus postulaciones respetan el orden general (última novedad primero).
 List<AgendaSection> agendaSections(List<JobApplication> applications) {
   return [
     for (final kind in AgendaSectionKind.values)
       AgendaSection(
         kind: kind,
-        applications: applications
-            .where((application) => isInAgendaSection(application, kind))
-            .toList(),
+        applications: sortApplications(
+          applications.where((application) {
+            return isInAgendaSection(application, kind);
+          }),
+        ),
       ),
   ];
 }

@@ -1,41 +1,29 @@
 import '../models/job_application.dart';
 import 'date_formatter.dart';
 
-/// Orden único de postulaciones en toda la app:
-/// 1. Las marcadas "Por gestionar".
-/// 2. Las que tienen fecha de seguimiento, de más reciente a más antigua.
-/// 3. El resto, por fecha de postulación de más reciente a más antigua.
+/// Orden único de postulaciones en toda la app: por última novedad
+/// (`fechaSeguimiento` o, si no hay, `fechaPostulacion`) de más reciente a
+/// más antigua.
+///
+/// El flag "Por gestionar" no altera el orden: esas vacantes se ven en la
+/// pestaña Agenda. Las postulaciones sin fecha válida quedan al final y el
+/// desempate es por `rowIndex` ascendente para que el orden sea estable.
 int compareApplications(JobApplication a, JobApplication b) {
-  if (a.porGestionar != b.porGestionar) return a.porGestionar ? -1 : 1;
+  final dateA = parseDate(a.fechaSeguimiento) ?? parseDate(a.fechaPostulacion);
+  final dateB = parseDate(b.fechaSeguimiento) ?? parseDate(b.fechaPostulacion);
 
-  final aHasSeguimiento = a.fechaSeguimiento.isNotEmpty;
-  final bHasSeguimiento = b.fechaSeguimiento.isNotEmpty;
+  if (dateA == null && dateB == null) return a.rowIndex.compareTo(b.rowIndex);
+  if (dateA == null) return 1;
+  if (dateB == null) return -1;
 
-  if (aHasSeguimiento && !bHasSeguimiento) return -1;
-  if (!aHasSeguimiento && bHasSeguimiento) return 1;
+  final byDate = dateB.compareTo(dateA);
+  if (byDate != 0) return byDate;
 
-  if (aHasSeguimiento && bHasSeguimiento) {
-    final bySeguimiento = _compareDateStrings(
-      b.fechaSeguimiento,
-      a.fechaSeguimiento,
-    );
-    if (bySeguimiento != 0) return bySeguimiento;
-  }
-
-  return _compareDateStrings(b.fechaPostulacion, a.fechaPostulacion);
+  return a.rowIndex.compareTo(b.rowIndex);
 }
 
 /// Devuelve una copia ordenada con [compareApplications].
 List<JobApplication> sortApplications(Iterable<JobApplication> applications) {
   final list = applications.toList()..sort(compareApplications);
   return list;
-}
-
-int _compareDateStrings(String a, String b) {
-  final dateA = parseDate(a);
-  final dateB = parseDate(b);
-  if (dateA == null && dateB == null) return 0;
-  if (dateA == null) return 1;
-  if (dateB == null) return -1;
-  return dateA.compareTo(dateB);
 }

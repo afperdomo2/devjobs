@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../helpers/application_sort.dart';
 import '../helpers/network_error.dart';
 import '../helpers/search.dart';
 import '../models/job_application.dart';
@@ -49,7 +50,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final state = context.watch<AppState>();
     final hasQuery = _hasQuery;
     final results = hasQuery
-        ? searchApplications(state.applications, _query)
+        ? sortApplications(searchApplications(state.applications, _query))
         : const <JobApplication>[];
     final showCount =
         hasQuery &&

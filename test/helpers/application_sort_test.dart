@@ -24,70 +24,12 @@ void main() {
       expect(sortApplications([]), isEmpty);
     });
 
-    test('las marcadas Por gestionar van primero', () {
+    test('el flag Por gestionar no altera el orden', () {
       final applications = [
-        app(rowIndex: 1, empresa: 'Normal', fechaPostulacion: '10/01/2026'),
         app(
-          rowIndex: 2,
-          empresa: 'Pendiente',
+          rowIndex: 1,
+          empresa: 'Pendiente antigua',
           porGestionar: true,
-          fechaPostulacion: '01/01/2026',
-        ),
-      ];
-
-      final sorted = sortApplications(applications);
-      expect(sorted.first.empresa, equals('Pendiente'));
-    });
-
-    test('ordena por fecha de seguimiento descendente', () {
-      final applications = [
-        app(
-          rowIndex: 1,
-          empresa: 'Antigua',
-          fechaSeguimiento: '01/01/2026',
-        ),
-        app(
-          rowIndex: 2,
-          empresa: 'Reciente',
-          fechaSeguimiento: '10/01/2026',
-        ),
-        app(
-          rowIndex: 3,
-          empresa: 'Media',
-          fechaSeguimiento: '05/01/2026',
-        ),
-      ];
-
-      final sorted = sortApplications(applications);
-      expect(
-        sorted.map((application) => application.empresa).toList(),
-        equals(['Reciente', 'Media', 'Antigua']),
-      );
-    });
-
-    test('las que tienen seguimiento van antes que las que no', () {
-      final applications = [
-        app(
-          rowIndex: 1,
-          empresa: 'Sin seguimiento',
-          fechaPostulacion: '20/01/2026',
-        ),
-        app(
-          rowIndex: 2,
-          empresa: 'Con seguimiento',
-          fechaSeguimiento: '01/01/2026',
-        ),
-      ];
-
-      final sorted = sortApplications(applications);
-      expect(sorted.first.empresa, equals('Con seguimiento'));
-    });
-
-    test('sin seguimiento ordena por postulación descendente', () {
-      final applications = [
-        app(
-          rowIndex: 1,
-          empresa: 'Antigua',
           fechaPostulacion: '01/01/2026',
         ),
         app(
@@ -100,7 +42,110 @@ void main() {
       final sorted = sortApplications(applications);
       expect(
         sorted.map((application) => application.empresa).toList(),
-        equals(['Reciente', 'Antigua']),
+        equals(['Reciente', 'Pendiente antigua']),
+      );
+    });
+
+    test('ordena por última novedad descendente', () {
+      final applications = [
+        app(
+          rowIndex: 1,
+          empresa: 'Antigua',
+          fechaPostulacion: '01/01/2026',
+          fechaSeguimiento: '02/01/2026',
+        ),
+        app(
+          rowIndex: 2,
+          empresa: 'Reciente',
+          fechaPostulacion: '10/01/2026',
+        ),
+        app(
+          rowIndex: 3,
+          empresa: 'Media',
+          fechaPostulacion: '03/01/2026',
+          fechaSeguimiento: '05/01/2026',
+        ),
+      ];
+
+      final sorted = sortApplications(applications);
+      expect(
+        sorted.map((application) => application.empresa).toList(),
+        equals(['Reciente', 'Media', 'Antigua']),
+      );
+    });
+
+    test('un seguimiento viejo no supera a una postulación más reciente', () {
+      final applications = [
+        app(
+          rowIndex: 1,
+          empresa: 'Con seguimiento',
+          fechaPostulacion: '01/01/2026',
+          fechaSeguimiento: '01/02/2026',
+        ),
+        app(
+          rowIndex: 2,
+          empresa: 'Postulación nueva',
+          fechaPostulacion: '01/10/2026',
+        ),
+      ];
+
+      final sorted = sortApplications(applications);
+      expect(sorted.first.empresa, equals('Postulación nueva'));
+    });
+
+    test('el seguimiento manda sobre la postulación si es más reciente', () {
+      final applications = [
+        app(
+          rowIndex: 1,
+          empresa: 'Nueva sin seguimiento',
+          fechaPostulacion: '10/01/2026',
+        ),
+        app(
+          rowIndex: 2,
+          empresa: 'Seguimiento reciente',
+          fechaPostulacion: '01/01/2026',
+          fechaSeguimiento: '20/01/2026',
+        ),
+      ];
+
+      final sorted = sortApplications(applications);
+      expect(sorted.first.empresa, equals('Seguimiento reciente'));
+    });
+
+    test('desempata por rowIndex ascendente', () {
+      final applications = [
+        app(rowIndex: 5, empresa: 'Fila 5', fechaPostulacion: '10/01/2026'),
+        app(rowIndex: 2, empresa: 'Fila 2', fechaPostulacion: '10/01/2026'),
+        app(rowIndex: 3, empresa: 'Fila 3', fechaPostulacion: '10/01/2026'),
+      ];
+
+      final sorted = sortApplications(applications);
+      expect(
+        sorted.map((application) => application.empresa).toList(),
+        equals(['Fila 2', 'Fila 3', 'Fila 5']),
+      );
+    });
+
+    test('las postulaciones sin fecha válida quedan al final', () {
+      final applications = [
+        app(rowIndex: 1, empresa: 'Sin fecha'),
+        app(
+          rowIndex: 2,
+          empresa: 'Con fecha',
+          fechaPostulacion: '10/01/2026',
+        ),
+        app(
+          rowIndex: 3,
+          empresa: 'Fecha inválida',
+          fechaPostulacion: '31/02/2026',
+        ),
+      ];
+
+      final sorted = sortApplications(applications);
+      expect(sorted.first.empresa, equals('Con fecha'));
+      expect(
+        sorted.map((application) => application.empresa).skip(1),
+        equals(['Sin fecha', 'Fecha inválida']),
       );
     });
 

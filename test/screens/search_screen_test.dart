@@ -134,6 +134,20 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('ordena los resultados por última novedad', (tester) async {
+    await pumpSearch(tester);
+
+    await type(tester, 'a');
+
+    expect(find.text('3 resultados'), findsOneWidget);
+    final disenador = tester.getTopLeft(find.text('Diseñador')).dy;
+    final backend = tester.getTopLeft(find.text('Backend Engineer')).dy;
+    final flutter = tester.getTopLeft(find.text('Flutter Developer')).dy;
+    expect(disenador, lessThan(backend));
+    expect(backend, lessThan(flutter));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('sin coincidencias muestra 0 resultados y permite limpiar', (
     tester,
   ) async {

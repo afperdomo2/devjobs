@@ -96,7 +96,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
   - Cada etapa (Sin respuesta, En revisión, Entrevista, etc.) se puede tocar.
   - Un texto pequeño indica: **“Toca una etapa para ver las postulaciones”**.
 - **Cómo se usa:** tocar “Entrevista” abre la lista de postulaciones de esa etapa.
-- **Listo cuando:** cada etapa abre el grupo correcto, la lista respeta el orden general (Por gestionar primero) y el texto de ayuda se ve en Inicio.
+- **Listo cuando:** cada etapa abre el grupo correcto, la lista respeta el orden general (última novedad primero) y el texto de ayuda se ve en Inicio.
 - **No incluye:** cambiar los colores ni las etapas existentes.
 
 ---

@@ -320,7 +320,7 @@ La app puede prellenar el formulario a partir del **enlace** de una vacante o de
 | L | Contacto | Nombre del reclutador o contacto |
 | M | Comentarios | Notas internas separadas por `- ` (guion + espacio) |
 | N | ¿Entrevista? | Checkbox: indica si se realizó entrevista (✓ = sí) |
-| O | Por gestionar | Checkbox: marca manual de vacantes con algo pendiente (prueba, ejercicio, documento). La razón se anota en `Comentarios`. No se auto-limpia; las marcadas se ordenan primero en cualquier listado |
+| O | Por gestionar | Checkbox: marca manual de vacantes con algo pendiente (prueba, ejercicio, documento). La razón se anota en `Comentarios`. No se auto-limpia; se ve en la sección "Por gestionar" de Agenda y no altera el orden de los listados |
 
 ### Contrato de fechas
 

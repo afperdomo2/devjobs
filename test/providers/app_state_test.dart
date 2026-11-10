@@ -162,10 +162,10 @@ void main() {
     expect(only.map((a) => a.rowIndex), equals([1]));
   });
 
-  test('las marcadas porGestionar se ordenan primero en cualquier listado', () async {
+  test('ordena por última novedad sin priorizar porGestionar', () async {
     final all = (await build()).getApplications(AppState.filterAll);
-    expect(all.first.rowIndex, 1);
-    expect(all.first.porGestionar, isTrue);
+    expect(all.map((a) => a.rowIndex), equals([5, 4, 3, 2, 1]));
+    expect(all.first.porGestionar, isFalse);
   });
 
   test('arranca en Inicio y con el filtro Todas', () async {
