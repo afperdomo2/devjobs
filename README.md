@@ -247,8 +247,8 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes |
 | **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción; aviso si el enlace no es válido), comentarios, descripción, entrevista, botón **Agregar nota** con fecha y botón **Finalizar proceso** (estado final, fecha editable y nota opcional) |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, y vuelve a la lista al guardar |
-| **Importar con IA** | Tarjeta **Autocompletar con IA** dentro de Nueva postulación (solo si `AI_API_KEY` está configurada). Pega un link o la descripción y la IA prellena los campos; la descripción se guarda como resumen Markdown por secciones y se renderiza en el detalle |
-| **Ajustes** | Ícono de engranaje en el AppBar. Tema **Sistema**, **Claro** u **Oscuro**; se aplica al instante y se recuerda al reiniciar |
+| **Importar con IA** | Tarjeta **Autocompletar con IA** dentro de Nueva postulación (solo si hay proveedor y al menos un modelo configurados). Pega un link o la descripción y la IA prellena los campos; la descripción se guarda como resumen Markdown por secciones y se renderiza en el detalle |
+| **Ajustes** | Ícono de engranaje en el AppBar. Tema **Sistema**, **Claro** u **Oscuro** (se aplica al instante y se recuerda) y acceso a la configuración de la **importación con IA**: proveedor y lista de modelos con respaldo automático |
 
 ### Búsqueda global
 
@@ -256,22 +256,27 @@ La lupa del AppBar busca en empresa, vacante, ciudad, contacto, tipo de contrato
 
 ### Tema y apariencia
 
-El menú de ajustes del AppBar permite elegir entre **Sistema**, **Claro** y **Oscuro**. El cambio se aplica de inmediato y se persiste en `SharedPreferences`, por lo que se mantiene después de cerrar y volver a abrir la app. Los temas están definidos en `lib/theme.dart` con tokens de color para ambos modos.
+El menú de ajustes del AppBar permite elegir entre **Sistema**, **Claro** y **Oscuro**. El cambio se aplica de inmediato y se persiste en `SharedPreferences`, por lo que se mantiene después de cerrar y volver a abrir la app. En el mismo menú está la sección **Importación con IA**, que abre la pantalla de configuración de proveedor y modelos. Los temas están definidos en `lib/theme.dart` con tokens de color para ambos modos.
 
 ### Importar con IA
 
-La app puede prellenar el formulario a partir del **enlace** de una vacante o del **texto de su descripción**. La función solo existe si el build trae `AI_API_KEY` en `.env`; sin key, el formulario se ve exactamente igual que antes.
+La app puede prellenar el formulario a partir del **enlace** de una vacante o del **texto de su descripción**. La función solo existe si hay un proveedor y al menos un modelo configurados; sin ellos, el formulario se ve exactamente igual que antes.
 
 **Configuración**
 
 1. Crea una API key en [OpenCode Console](https://opencode.ai/console) → **Account** → **Personal API keys**.
-2. En `.env`:
+2. **Desde la app (recomendada):** **Ajustes → Importación con IA**. Pones la *Base URL*, la *API key* y la lista de modelos; se guarda en el dispositivo y aplica sin recompilar.
+3. **Desde `.env` (semilla):**
    ```env
    AI_API_KEY=oc_sk_...
    AI_BASE_URL=https://opencode.ai/inference/go/openai/v1
    AI_MODEL=deepseek-v4.1-flash
    ```
-3. Recompila. `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, se usan OpenCode Go y DeepSeek V4.1 Flash.
+   `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, se usan OpenCode Go y DeepSeek V4.1 Flash. Los valores del `.env` solo dan el **inicio**: si ya guardaste una configuración en la app, esa es la que manda.
+
+**Respaldo entre modelos**
+
+En **Ajustes → Importación con IA** puedes agregar varios modelos y reordenarlos. El primero es el modelo principal; si falla por **cuota agotada** (429), **clave no habilitada** (401/403), **modelo no disponible** (404) o **proveedor caído** (5xx), la app prueba el siguiente automáticamente. Un error de **red** o una **respuesta inválida** no cambia de modelo: son problemas de conexión o de calidad. Si todos fallan, el aviso lista los modelos intentados y ofrece **Configurar IA**. El botón **Restablecer a los valores del .env** borra lo guardado y vuelve a la semilla.
 
 **Cómo se usa**
 
@@ -298,9 +303,9 @@ La app puede prellenar el formulario a partir del **enlace** de una vacante o de
 
 - DeepSeek V4.1 Flash en OpenCode Go no entrena con los datos y tiene retención 0 días.
 - Una importación tarda ~4–6 s y consume pocos miles de tokens del allowance de Go.
-- La key queda embebida en el build. Es aceptable para uso personal; si compartes el binario, crea otra key o revócala.
+- La key queda en el build si viene del `.env`, y en `SharedPreferences` si la configuras desde la app. Es aceptable para uso personal; si compartes el binario, crea otra key o revócala.
 - OpenCode Go está pensado para agentes de código. El uso personal de bajo volumen es razonable; si prefieres cero ambigüedad, cambia `AI_BASE_URL` a `https://opencode.ai/inference/openai/v1` (pay-as-you-go).
-- El modelo se configura con `AI_MODEL`; si DeepSeek no está disponible, `glm-5.3-flash` es una alternativa con buena calidad de JSON.
+- El modelo principal es el primero de la lista de **Ajustes → Importación con IA** (`AI_MODEL` solo aporta el valor inicial). Si DeepSeek no está disponible, `glm-5.3-flash` es una alternativa con buena calidad de JSON.
 
 ### Columnas de Postulaciones
 
@@ -388,7 +393,7 @@ El script está vinculado a la hoja, se despliega como **Web App** (Ejecutar com
    AI_BASE_URL=https://opencode.ai/inference/go/openai/v1
    AI_MODEL=deepseek-v4.1-flash
    ```
-   `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, la app usa OpenCode Go y DeepSeek V4.1 Flash. Sin `AI_API_KEY` la tarjeta **Autocompletar con IA** no aparece.
+   `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, la app usa OpenCode Go y DeepSeek V4.1 Flash. Son la **semilla** inicial: desde **Ajustes → Importación con IA** puedes cambiar el proveedor y la lista de modelos sin recompilar. Sin `AI_API_KEY` ni configuración en la app, la tarjeta **Autocompletar con IA** no aparece.
 3. La app carga automáticamente las variables desde `.env` al iniciar.
 
 > ⚠️ El archivo `.env` está en `.gitignore`. **Nunca** hagas commit de la URL real. Usa `.env.example` como referencia para otros desarrolladores.

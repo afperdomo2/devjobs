@@ -30,6 +30,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 | 12 | Abrir enlace de la oferta | Detalle de postulación | `[x]` |
 | 13 | Cierre y documentación | — | `[x]` |
 | 14 | Importar vacante con IA | Postulaciones → Nueva | `[x]` |
+| 15 | Modelos de IA con respaldo | Ajustes | `[x]` |
 
 ---
 
@@ -245,7 +246,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 
 - [x] **Para qué sirve:** registrar una postulación sin transcribir a mano, usando el enlace o la descripción de la vacante.
 - **Qué se crea:**
-  - Tarjeta **Autocompletar con IA** dentro del formulario de creación (solo si el build trae `AI_API_KEY`).
+  - Tarjeta **Autocompletar con IA** dentro del formulario de creación (solo si hay proveedor y al menos un modelo configurados).
   - Hoja para pegar un enlace o una descripción, con progreso, errores y resumen de lo extraído.
   - Relleno de empresa, cargo, contrato, modalidad, ciudad, salario, descripción, contacto y notas.
   - La descripción se guarda como **resumen Markdown por secciones** (`Resumen`, `Responsabilidades`, `Requisitos`, `Beneficios`, `Observaciones`), con etiquetas en negrita y sin recorte a 4.000.
@@ -254,7 +255,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 - **Dónde se ve:** Postulaciones → **Nueva** → **Autocompletar con IA**.
 - **Cómo se usa:** pega el enlace (o la descripción), toca **Analizar**, revisa el resumen y toca **Usar estos datos**; completa lo que falte y guarda.
 - **Listo cuando:**
-  - Sin `AI_API_KEY` la tarjeta no aparece.
+  - Sin proveedor ni modelos configurados la tarjeta no aparece.
   - Con key, un texto pegado llena al menos empresa/cargo/descripción cuando existen.
   - Un listado, una SPA o un 403 muestran un aviso y ofrecen pegar la descripción.
   - Nunca sobrescribe campos escritos a mano.
@@ -262,6 +263,26 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
   - La descripción se ve con secciones, negritas e iconos en el detalle, y se puede previsualizar en el formulario.
   - `flutter test` y `flutter analyze` pasan.
 - **No incluye:** fotos/cámara, compartir desde otras apps, importar en edición, importación masiva, auto-postulación ni guardar la descripción original completa (el Sheet muestra el Markdown crudo).
+
+---
+
+## Entregable 15 — Modelos de IA con respaldo
+
+- [x] **Para qué sirve:** no quedarte sin IA cuando se agota la cuota de un modelo o cuando el proveedor lo deja de ofrecer en la suscripción.
+- **Qué se crea:**
+  - Pantalla **Ajustes → Importación con IA**: proveedor (Base URL + API key) y lista de modelos que se agrega, edita, reordena o borra a mano.
+  - Guardado en el dispositivo: los cambios aplican sin recompilar. Los valores del `.env` quedan como semilla inicial.
+  - **Respaldo automático:** si el modelo principal falla por cuota (429), clave no habilitada (401/403), modelo no disponible (404) o proveedor caído (5xx), se prueba el siguiente.
+  - Aviso con los modelos intentados y botón **Configurar IA** cuando ninguno responde.
+- **Dónde se ve:** Ajustes → Importación con IA; en la hoja de importación se ven el "Modelo principal" y el "Respaldo".
+- **Cómo se usa:** agrega un segundo modelo (p. ej. `glm-5.3-flash`) debajo del principal. Cuando la cuota del principal se agote, la app sigue funcionando con el siguiente.
+- **Listo cuando:**
+  - Se pueden agregar, editar, reordenar y borrar modelos desde la app.
+  - La configuración sobrevive a cerrar y volver a abrir la app.
+  - Un error de cuota del primer modelo pasa al segundo sin intervención.
+  - Un error de red no cambia de modelo.
+  - `flutter test` y `flutter analyze` pasan.
+- **No incluye:** varios proveedores con clave distinta por modelo (hoy hay un proveedor y varios modelos), medidores de cuota ni detección automática de modelos disponibles.
 
 ---
 
@@ -276,7 +297,7 @@ No entra en detalles técnicos: la IA decide cómo hacerlo.
 - “Salario ofrecido” agrupa por moneda (COP/USD), interpreta rangos y excluye los valores que dicen “Yo puse…”. Las abreviaturas usan coma decimal (`5,9M`).
 - Agenda usa **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**. Se descartó “Sin novedad +7 días” porque con volumen alto no es una agenda accionable.
 - La tarjeta **“Por gestionar”** se retiró de Inicio: su única ubicación ahora es Agenda.
-- **Importación con IA:** usa OpenCode Go (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`). Sin `AI_API_KEY` no se muestra. DeepSeek V4.1 Flash va con `reasoning_effort: none`; la IA solo llena campos vacíos y nunca guarda sola.
+- **Importación con IA:** el proveedor y la lista de modelos se configuran en **Ajustes → Importación con IA** (semilla desde `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`). Si el modelo principal falla por cuota o disponibilidad, se prueba el siguiente. DeepSeek V4.1 Flash va con `reasoning_effort: none`; la IA solo llena campos vacíos y nunca guarda sola.
 - La descripción es un **resumen Markdown por secciones** (no la transcripción completa). Google Sheets la muestra como texto; el render con iconos es en la app.
 
 ## Cómo marcar el avance

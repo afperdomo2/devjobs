@@ -82,4 +82,25 @@ void main() {
     expect(find.byIcon(Icons.check), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('abre la configuración de la importación con IA', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final state = AppState(apiService: _FakeApi());
+    await pumpApp(tester, state);
+    await openSheet(tester);
+
+    expect(find.byKey(const Key('ai-settings')), findsOneWidget);
+    expect(find.text('Sin configurar'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('ai-settings')));
+    await tester.tap(find.byKey(const Key('ai-settings')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('ai-save')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

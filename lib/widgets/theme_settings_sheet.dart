@@ -3,9 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../helpers/theme_mode.dart';
 import '../providers/app_state.dart';
+import '../screens/ai_settings_screen.dart';
 import '../theme.dart';
 
-/// Abre el menú de ajustes con las tres opciones de tema.
+/// Abre el menú de ajustes: tema e importación con IA.
 Future<void> showThemeSettingsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
@@ -14,10 +15,11 @@ Future<void> showThemeSettingsSheet(BuildContext context) {
   );
 }
 
-/// Hoja inferior con las opciones Sistema / Claro / Oscuro.
+/// Hoja inferior con las opciones de tema y acceso a la configuración de IA.
 ///
-/// El cambio se aplica al instante (el `MaterialApp` escucha a [AppState] y
-/// este widget refleja la selección) y se persiste en [AppState].
+/// El cambio de tema se aplica al instante (el `MaterialApp` escucha a
+/// [AppState] y este widget refleja la selección) y se persiste en [AppState].
+/// La importación con IA se configura en `AiSettingsScreen`.
 class ThemeSettingsSheet extends StatelessWidget {
   const ThemeSettingsSheet({super.key});
 
@@ -52,7 +54,7 @@ class ThemeSettingsSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpace.xs),
                   Text(
-                    'Elige cómo se ve la app.',
+                    'Tema y importación con IA',
                     style: AppType.label(context),
                   ),
                 ],
@@ -67,9 +69,43 @@ class ThemeSettingsSheet extends StatelessWidget {
                   if (context.mounted) Navigator.of(context).pop();
                 },
               ),
+            const SizedBox(height: AppSpace.sm),
+            const _AiSettingsTile(),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Acceso a la configuración de la importación con IA.
+class _AiSettingsTile extends StatelessWidget {
+  const _AiSettingsTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final config = state.aiConfig;
+    final scheme = Theme.of(context).colorScheme;
+
+    final subtitle = state.aiEnabled
+        ? '${config.models.length} ${config.models.length == 1 ? 'modelo' : 'modelos'} · ${config.providerHost}'
+        : 'Sin configurar';
+
+    return ListTile(
+      key: const Key('ai-settings'),
+      leading: Icon(
+        Icons.auto_awesome,
+        color: state.aiEnabled ? scheme.primary : null,
+      ),
+      title: const Text('Importación con IA'),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const AiSettingsScreen()),
+        );
+      },
     );
   }
 }

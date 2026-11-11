@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../config.dart';
 import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
 import '../helpers/offer_link.dart';
 import '../models/job_application.dart';
 import '../models/job_import.dart';
 import '../providers/app_state.dart';
+import '../screens/ai_settings_screen.dart';
 import '../services/job_import_service.dart';
 import '../theme.dart';
 
@@ -31,8 +31,6 @@ Future<JobImportResult?> showImportApplicationSheet(
   String? initialText,
   JobImporter? service,
 }) {
-  if (!kAiEnabled) return Future<JobImportResult?>.value();
-
   return showModalBottomSheet<JobImportResult>(
     context: context,
     isScrollControlled: true,
@@ -41,7 +39,7 @@ Future<JobImportResult?> showImportApplicationSheet(
     builder: (_) => ImportApplicationSheet(
       initialLink: initialLink,
       initialText: initialText,
-      service: service ?? JobImportService(),
+      service: service,
     ),
   );
 }
@@ -277,13 +275,13 @@ class ImportSummaryBanner extends StatelessWidget {
 class ImportApplicationSheet extends StatefulWidget {
   final String? initialLink;
   final String? initialText;
-  final JobImporter service;
+  final JobImporter? service;
 
   const ImportApplicationSheet({
     super.key,
     this.initialLink,
     this.initialText,
-    required this.service,
+    this.service,
   });
 
   @override
@@ -363,10 +361,17 @@ class _ImportApplicationSheetState extends State<ImportApplicationSheet> {
     }
 
     final state = context.read<AppState>();
+    if (!state.aiEnabled) {
+      setState(() => _error = 'Configura la importación con IA para analizar.');
+      return;
+    }
     if (state.offline) {
       setState(() => _error = 'Sin conexión. Conéctate para importar.');
       return;
     }
+
+    final importer =
+        widget.service ?? JobImportService(aiConfig: state.aiConfig);
 
     final id = ++_requestId;
     setState(() {
@@ -377,12 +382,12 @@ class _ImportApplicationSheetState extends State<ImportApplicationSheet> {
 
     try {
       final result = text.isNotEmpty
-          ? await widget.service.fromText(
+          ? await importer.fromText(
               text,
               existing: state.applications,
               link: link.isEmpty ? null : link,
             )
-          : await widget.service.fromLink(link, existing: state.applications);
+          : await importer.fromLink(link, existing: state.applications);
 
       if (!mounted || id != _requestId) return;
       setState(() {
@@ -420,6 +425,7 @@ class _ImportApplicationSheetState extends State<ImportApplicationSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final enabled = context.watch<AppState>().aiEnabled;
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottom),
@@ -438,7 +444,9 @@ class _ImportApplicationSheetState extends State<ImportApplicationSheet> {
             children: [
               _buildHeader(context),
               const SizedBox(height: AppSpace.lg),
-              if (_loading)
+              if (!enabled)
+                _buildDisabled(context)
+              else if (_loading)
                 _buildLoading(context)
               else if (_result != null)
                 _buildResult(context, _result!)
@@ -490,6 +498,8 @@ class _ImportApplicationSheetState extends State<ImportApplicationSheet> {
   }
 
   Widget _buildForm(BuildContext context) {
+    final config = context.watch<AppState>().aiConfig;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -546,16 +556,61 @@ class _ImportApplicationSheetState extends State<ImportApplicationSheet> {
         ),
         const SizedBox(height: AppSpace.sm),
         Text(
-          'Modelo: $kAiModel',
+          config.models.length > 1
+              ? 'Modelo principal: ${config.primaryModel}'
+              : 'Modelo: ${config.primaryModel}',
           textAlign: TextAlign.center,
           style: AppType.label(context),
         ),
+        if (config.models.length > 1)
+          Text(
+            'Respaldo: ${config.models.skip(1).join(', ')}',
+            textAlign: TextAlign.center,
+            style: AppType.label(context),
+          ),
         Text(
           'Solo se envía el texto de la vacante.',
           textAlign: TextAlign.center,
           style: AppType.label(context),
         ),
       ],
+    );
+  }
+
+  Widget _buildDisabled(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.auto_awesome, color: scheme.onSurfaceVariant),
+            const SizedBox(width: AppSpace.sm),
+            Expanded(
+              child: Text(
+                'No hay un proveedor ni modelos configurados. Agrega uno '
+                'para autocompletar el formulario.',
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpace.lg),
+        FilledButton.icon(
+          key: const Key('import-configure'),
+          onPressed: () => _openAiSettings(context),
+          icon: const Icon(Icons.settings),
+          label: const Text('Configurar IA'),
+        ),
+      ],
+    );
+  }
+
+  void _openAiSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AiSettingsScreen()),
     );
   }
 
@@ -628,6 +683,17 @@ class _ImportApplicationSheetState extends State<ImportApplicationSheet> {
           const SizedBox(height: AppSpace.md),
           for (final warning in result.warnings) _WarningRow(warning),
         ],
+        if (result.aiError != null) ...[
+          const SizedBox(height: AppSpace.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              key: const Key('import-configure-ai'),
+              onPressed: () => _openAiSettings(context),
+              child: const Text('Configurar IA'),
+            ),
+          ),
+        ],
         if (result.duplicate != null) ...[
           const SizedBox(height: AppSpace.sm),
           _DuplicateRow(duplicate: result.duplicate!),
@@ -689,6 +755,12 @@ class _ImportApplicationSheetState extends State<ImportApplicationSheet> {
             key: const Key('import-use-link'),
             onPressed: () => Navigator.of(context).pop(result),
             child: const Text('Usar solo el enlace'),
+          ),
+        if (result.aiError != null)
+          TextButton(
+            key: const Key('import-configure-ai'),
+            onPressed: () => _openAiSettings(context),
+            child: const Text('Configurar IA'),
           ),
         TextButton(
           key: const Key('import-retry'),

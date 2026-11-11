@@ -1,5 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'models/ai_config.dart';
+
 /// Lee una variable de entorno sin fallar si `dotenv` aún no se inicializó
 /// (por ejemplo en tests de widgets que no cargan el `.env`).
 String _env(String key) {
@@ -31,5 +33,13 @@ String get kAiModel {
   return value.isEmpty ? _defaultAiModel : value;
 }
 
-/// La importación con IA solo existe si el build trae una API key.
-bool get kAiEnabled => kAiApiKey.isNotEmpty;
+/// Configuración inicial de IA: los valores del `.env` sirven de semilla.
+///
+/// La configuración real se guarda en `LocalCache` y se edita desde la app.
+/// Si el usuario nunca guardó una, se usa esta, de modo que una instalación
+/// existente sigue funcionando igual.
+AiConfig get kAiConfig => AiConfig(
+  baseUrl: kAiBaseUrl,
+  apiKey: kAiApiKey,
+  models: [kAiModel],
+);

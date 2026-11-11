@@ -145,6 +145,12 @@ class OpenAiCompatibleExtractor implements JobExtractor {
         'La clave de IA no es válida, el modelo no está habilitado o falta la región.',
       );
     }
+    if (response.statusCode == 404) {
+      throw const JobImportException(
+        JobImportErrorKind.notFound,
+        'El modelo no está disponible en este proveedor.',
+      );
+    }
     if (response.statusCode == 429) {
       throw const JobImportException(
         JobImportErrorKind.quota,

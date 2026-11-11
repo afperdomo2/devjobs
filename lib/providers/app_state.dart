@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../config.dart';
 import '../helpers/application_sort.dart';
 import '../helpers/network_error.dart';
 import '../helpers/status.dart';
+import '../models/ai_config.dart';
 import '../models/job_application.dart';
 import '../services/local_cache.dart';
 import '../services/sheets_api_service.dart';
@@ -20,6 +22,7 @@ class AppState extends ChangeNotifier {
   String _applicationsFilter = filterAll;
   bool _cacheLoaded = false;
   ThemeMode _themeMode;
+  AiConfig _aiConfig;
 
   static const _cacheTtl = Duration(minutes: 3);
 
@@ -42,7 +45,8 @@ class AppState extends ChangeNotifier {
     this.localCache,
     ThemeMode? initialThemeMode,
   }) : _themeMode =
-           initialThemeMode ?? localCache?.themeMode ?? ThemeMode.system;
+           initialThemeMode ?? localCache?.themeMode ?? ThemeMode.system,
+       _aiConfig = localCache?.aiConfig ?? kAiConfig;
 
   int get currentTab => _currentTab;
   String get applicationsFilter => _applicationsFilter;
@@ -53,6 +57,12 @@ class AppState extends ChangeNotifier {
   bool get isReadOnly => _offline;
   bool get hasData => _cached != null && _cached!.isNotEmpty;
   DateTime? get cacheTimestamp => localCache?.lastSavedAt;
+
+  /// Configuración de IA actual: proveedor y lista ordenada de modelos.
+  AiConfig get aiConfig => _aiConfig;
+
+  /// La importación con IA está disponible si hay proveedor, clave y modelos.
+  bool get aiEnabled => _aiConfig.isEnabled;
 
   List<JobApplication> get applications => _cached ?? [];
 
@@ -67,6 +77,20 @@ class AppState extends ChangeNotifier {
     _themeMode = mode;
     notifyListeners();
     await localCache?.saveThemeMode(mode);
+  }
+
+  /// Guarda la nueva configuración de IA y la aplica de inmediato.
+  Future<void> updateAiConfig(AiConfig config) async {
+    _aiConfig = config;
+    notifyListeners();
+    await localCache?.saveAiConfig(config);
+  }
+
+  /// Borra la configuración guardada y vuelve a la semilla del `.env`.
+  Future<void> resetAiConfig() async {
+    _aiConfig = kAiConfig;
+    notifyListeners();
+    await localCache?.clearAiConfig();
   }
 
   /// Cambia el filtro de la pestaña Postulaciones sin mover de pestaña.

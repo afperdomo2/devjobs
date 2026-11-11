@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../config.dart';
 import '../helpers/date_formatter.dart';
 import '../helpers/job_duplicate.dart';
 import '../helpers/network_error.dart';
@@ -102,7 +101,8 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
 
   static const _notasKeys = {'descripcion', 'contacto', 'comentarios'};
 
-  bool get _aiAvailable => kAiEnabled && !widget.isEditing;
+  bool get _aiAvailable =>
+      context.watch<AppState>().aiEnabled && !widget.isEditing;
 
   bool _hasImported(Set<String> keys) => keys.any(_importedFields.contains);
 

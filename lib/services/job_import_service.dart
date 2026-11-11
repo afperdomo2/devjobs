@@ -9,8 +9,10 @@ import '../helpers/job_page_parser.dart';
 import '../helpers/job_url.dart';
 import '../helpers/offer_link.dart';
 import '../helpers/text_shortener.dart';
+import '../models/ai_config.dart';
 import '../models/job_application.dart';
 import '../models/job_import.dart';
+import 'fallback_extractor.dart';
 import 'openai_compatible_extractor.dart';
 
 /// Interfaz para poder inyectar un importador falso en tests.
@@ -43,16 +45,13 @@ class JobImportService implements JobImporter {
   JobImportService({
     http.Client? client,
     JobExtractor? extractor,
+    AiConfig? aiConfig,
     DateTime Function()? now,
     this.maxInputChars = 12000,
   }) : _client = client ?? http.Client(),
        _extractor =
            extractor ??
-           OpenAiCompatibleExtractor(
-             baseUrl: kAiBaseUrl,
-             apiKey: kAiApiKey,
-             model: kAiModel,
-           ),
+           FallbackExtractor.fromConfig(aiConfig ?? kAiConfig, client: client),
        _now = now ?? DateTime.now;
 
   @override
@@ -181,6 +180,7 @@ class JobImportService implements JobImporter {
         return _needsText(
           link,
           aiError ?? 'No se pudieron extraer datos. Pega la descripción.',
+          aiError: aiError,
         );
       }
       return JobImportResult(
@@ -194,6 +194,7 @@ class JobImportService implements JobImporter {
         duplicate: result.duplicate,
         source: 'JSON-LD',
         kind: result.kind,
+        aiError: aiError,
       );
     }
 
@@ -264,6 +265,7 @@ class JobImportService implements JobImporter {
     String link,
     String message, {
     JobPageKind kind = JobPageKind.unknown,
+    String? aiError,
   }) {
     final normalized = link.trim().isEmpty ? '' : normalizeJobUrl(link);
     return JobImportResult(
@@ -274,6 +276,7 @@ class JobImportService implements JobImporter {
       message: message,
       source: '',
       kind: kind,
+      aiError: aiError,
     );
   }
 }

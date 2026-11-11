@@ -11,6 +11,7 @@ enum JobImportErrorKind {
   network,
   timeout,
   unauthorized,
+  notFound,
   quota,
   server,
   invalidResponse,
@@ -152,6 +153,10 @@ class JobImportResult {
   final String source;
   final JobPageKind kind;
 
+  /// Error de la IA cuando no respondió (cuota, modelo no disponible, etc.).
+  /// `null` si la extracción con IA funcionó o si no se usó.
+  final String? aiError;
+
   const JobImportResult({
     required this.status,
     required this.fields,
@@ -161,6 +166,7 @@ class JobImportResult {
     this.duplicate,
     this.source = '',
     this.kind = JobPageKind.detail,
+    this.aiError,
   });
 
   int get filledCount => importedFields.length;

@@ -3,13 +3,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config.dart';
 import '../helpers/theme_mode.dart';
+import '../models/ai_config.dart';
 import '../models/job_application.dart';
 
 class LocalCache {
   static const _keyData = 'devjobs_cached_applications';
   static const _keyTimestamp = 'devjobs_cached_timestamp';
   static const _keyThemeMode = 'devjobs_theme_mode';
+  static const _keyAiConfig = 'devjobs_ai_config';
 
   final SharedPreferences _prefs;
 
@@ -45,6 +48,33 @@ class LocalCache {
 
   Future<void> saveThemeMode(ThemeMode mode) async {
     await _prefs.setString(_keyThemeMode, themeModeName(mode));
+  }
+
+  /// Configuración de IA guardada.
+  ///
+  /// Si el usuario nunca guardó una, se usa la semilla del `.env`
+  /// ([kAiConfig]), para que una instalación existente siga igual. Si el valor
+  /// guardado está corrupto, la IA queda desactivada en lugar de
+  /// reactivarse con valores que el usuario no eligió.
+  AiConfig get aiConfig {
+    final raw = _prefs.getString(_keyAiConfig);
+    if (raw == null) return kAiConfig;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return AiConfig.empty;
+      return AiConfig.fromJson(Map<String, dynamic>.from(decoded));
+    } catch (_) {
+      return AiConfig.empty;
+    }
+  }
+
+  Future<void> saveAiConfig(AiConfig config) async {
+    await _prefs.setString(_keyAiConfig, jsonEncode(config.toJson()));
+  }
+
+  /// Borra la configuración guardada para volver a la semilla del `.env`.
+  Future<void> clearAiConfig() async {
+    await _prefs.remove(_keyAiConfig);
   }
 
   Future<void> clear() async {

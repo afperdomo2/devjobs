@@ -174,6 +174,23 @@ void main() {
     );
   });
 
+  test('traduce 404 a notFound', () async {
+    final client = MockClient(
+      (_) async => http.Response('{"error":"model not found"}', 404),
+    );
+
+    await expectLater(
+      _extractor(client).extract('texto'),
+      throwsA(
+        isA<JobImportException>().having(
+          (error) => error.kind,
+          'kind',
+          JobImportErrorKind.notFound,
+        ),
+      ),
+    );
+  });
+
   test('no envía session ni reasoning fuera de OpenCode/DeepSeek', () async {
     final client = MockClient((request) async {
       expect(_header(request, 'x-opencode-session'), isNull);
