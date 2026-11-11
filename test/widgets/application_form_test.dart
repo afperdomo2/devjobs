@@ -13,8 +13,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 class _FormApi extends SheetsApiService {
-  _FormApi() : super(baseUrl: 'http://test');
+  _FormApi({this.data = const <JobApplication>[]}) : super(baseUrl: 'http://test');
 
+  final List<JobApplication> data;
   bool failFetch = false;
   int createCalls = 0;
   int updateCalls = 0;
@@ -25,7 +26,7 @@ class _FormApi extends SheetsApiService {
   @override
   Future<List<JobApplication>> fetchAll() async {
     if (failFetch) throw SocketException('offline');
-    return const <JobApplication>[];
+    return data;
   }
 
   @override
@@ -48,17 +49,28 @@ void main() {
     await initializeDateFormatting('es');
   });
 
+  const existingLinkApp = JobApplication(
+    rowIndex: 8,
+    empresa: 'Acme',
+    vacante: 'Flutter Dev',
+    estado: 'En revisión',
+    link: 'https://www.linkedin.com/jobs/view/123',
+    fechaPostulacion: '01/11/2026',
+  );
+
   Future<(AppState, _FormApi)> pumpForm(
     WidgetTester tester, {
     JobApplication? initial,
+    List<JobApplication> data = const <JobApplication>[],
   }) async {
     tester.view.physicalSize = const Size(360, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final api = _FormApi();
+    final api = _FormApi(data: data);
     final state = AppState(apiService: api);
+    await state.fetchApplications(forceRefresh: true);
 
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
@@ -146,6 +158,115 @@ void main() {
       formatApiDate(DateTime(today.year, today.month, today.day)),
     );
     expect(find.text('abrir'), findsOneWidget);
+  });
+
+  testWidgets('crear: avisa si el link ya está registrado al salir del campo', (
+    tester,
+  ) async {
+    await pumpForm(tester, data: const [existingLinkApp]);
+
+    await tester.enterText(
+      find.byKey(const Key('form-link')),
+      'https://linkedin.com/jobs/view/123',
+    );
+    await tester.pump();
+    expect(find.byKey(const Key('form-link-duplicate')), findsNothing);
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    expect(find.byKey(const Key('form-link-duplicate')), findsOneWidget);
+    expect(find.textContaining('Ya existe'), findsOneWidget);
+    expect(find.textContaining('Flutter Dev'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('crear: el aviso desaparece al cambiar el link', (tester) async {
+    await pumpForm(tester, data: const [existingLinkApp]);
+
+    await tester.enterText(
+      find.byKey(const Key('form-link')),
+      existingLinkApp.link,
+    );
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    expect(find.byKey(const Key('form-link-duplicate')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('form-link')),
+      'https://linkedin.com/jobs/view/999',
+    );
+    await tester.pump();
+    expect(find.byKey(const Key('form-link-duplicate')), findsNothing);
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    expect(find.byKey(const Key('form-link-duplicate')), findsNothing);
+  });
+
+  testWidgets('editar: no marca como duplicado el link propio', (tester) async {
+    await pumpForm(
+      tester,
+      initial: existingLinkApp,
+      data: const [existingLinkApp],
+    );
+
+    await tester.tap(find.byKey(const Key('form-link')));
+    await tester.pump();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    expect(find.byKey(const Key('form-link-duplicate')), findsNothing);
+  });
+
+  testWidgets('editar: avisa si el link pertenece a otra postulación', (
+    tester,
+  ) async {
+    const other = JobApplication(
+      rowIndex: 9,
+      empresa: 'Globant',
+      vacante: 'Backend',
+      estado: 'Enviada',
+      link: 'https://linkedin.com/jobs/view/999',
+      fechaPostulacion: '02/11/2026',
+    );
+    await pumpForm(
+      tester,
+      initial: existingLinkApp,
+      data: const [existingLinkApp, other],
+    );
+
+    await tester.enterText(find.byKey(const Key('form-link')), other.link);
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    expect(find.byKey(const Key('form-link-duplicate')), findsOneWidget);
+    expect(find.textContaining('Globant'), findsOneWidget);
+  });
+
+  testWidgets('crear: confirma duplicado al guardar y permite crear otra', (
+    tester,
+  ) async {
+    final (_, api) = await pumpForm(tester, data: const [existingLinkApp]);
+
+    await tester.enterText(find.byKey(const Key('form-empresa')), 'Acme');
+    await tester.enterText(find.byKey(const Key('form-vacante')), 'Flutter Dev');
+    await tester.enterText(
+      find.byKey(const Key('form-link')),
+      existingLinkApp.link,
+    );
+
+    await tester.tap(find.byKey(const Key('form-save')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ya existe una postulación'), findsOneWidget);
+    expect(api.createCalls, 0);
+
+    await tester.tap(find.text('Crear otra'));
+    await tester.pumpAndSettle();
+
+    expect(api.createCalls, 1);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('editar: precarga los valores y actualiza las fechas', (

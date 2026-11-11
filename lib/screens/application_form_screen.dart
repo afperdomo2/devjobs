@@ -68,6 +68,9 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   late final TextEditingController _comentariosCtrl;
   late final TextEditingController _fechaPostulacionCtrl;
   late final TextEditingController _fechaSeguimientoCtrl;
+  final _linkFocusNode = FocusNode();
+
+  JobApplication? _linkDuplicate;
 
   late String _tipoContrato;
   late String _modalidad;
@@ -120,6 +123,8 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
     _contactoCtrl = TextEditingController(text: app?.contacto ?? '');
     _comentariosCtrl = TextEditingController(text: app?.comentarios ?? '');
 
+    _linkFocusNode.addListener(_onLinkFocusChanged);
+
     _tipoContrato = app?.tipoContrato ?? '';
     _modalidad = app?.modalidad ?? '';
     _estado = app?.estado ?? 'Enviada';
@@ -156,6 +161,8 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
 
   @override
   void dispose() {
+    _linkFocusNode.removeListener(_onLinkFocusChanged);
+    _linkFocusNode.dispose();
     _empresaCtrl.dispose();
     _vacanteCtrl.dispose();
     _ciudadCtrl.dispose();
@@ -219,6 +226,37 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   void _markUserEdited(String key) {
     if (!_importedFields.contains(key)) return;
     setState(() => _importedFields.remove(key));
+  }
+
+  /// Al salir del campo Link se comprueba si el enlace ya está registrado.
+  void _onLinkFocusChanged() {
+    if (!mounted || _linkFocusNode.hasFocus) return;
+    _checkDuplicateLink();
+  }
+
+  void _checkDuplicateLink() {
+    if (!mounted) return;
+    final text = _linkCtrl.text.trim();
+    final state = context.read<AppState>();
+    final editingRow = widget.initial?.rowIndex;
+
+    JobApplication? duplicate;
+    if (text.isNotEmpty) {
+      final candidates = editingRow == null
+          ? state.applications
+          : state.applications
+                .where((application) => application.rowIndex != editingRow)
+                .toList();
+      duplicate = findDuplicateByLink(candidates, text);
+    }
+
+    if (duplicate?.rowIndex == _linkDuplicate?.rowIndex) return;
+    setState(() => _linkDuplicate = duplicate);
+  }
+
+  String _duplicateDateLabel(JobApplication duplicate) {
+    final date = parseDate(duplicate.fechaPostulacion);
+    return date != null ? formatDateValue(date) : 'sin fecha';
   }
 
   Future<void> _openImport() async {
@@ -350,8 +388,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   }
 
   Future<bool> _confirmDuplicate(JobApplication duplicate) async {
-    final date = parseDate(duplicate.fechaPostulacion);
-    final dateLabel = date != null ? formatDateValue(date) : 'sin fecha';
+    final dateLabel = _duplicateDateLabel(duplicate);
 
     final result = await showDialog<bool>(
       context: context,
@@ -519,6 +556,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isOffline = context.watch<AppState>().offline;
+    final linkDuplicate = _linkDuplicate;
     final scheme = Theme.of(context).colorScheme;
     final showImportEntry =
         _aiAvailable && (_importedFields.isEmpty || _bannerDismissed);
@@ -625,7 +663,13 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                           TextFormField(
                             key: const Key('form-link'),
                             controller: _linkCtrl,
-                            onChanged: (_) => _markUserEdited('link'),
+                            focusNode: _linkFocusNode,
+                            onChanged: (_) {
+                              _markUserEdited('link');
+                              if (_linkDuplicate != null) {
+                                setState(() => _linkDuplicate = null);
+                              }
+                            },
                             keyboardType: TextInputType.url,
                             textInputAction: TextInputAction.next,
                             decoration: const InputDecoration(
@@ -634,6 +678,40 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                             ),
                             validator: _validateLink,
                           ),
+                          if (linkDuplicate != null) ...[
+                            const SizedBox(height: AppSpace.xs),
+                            Row(
+                              key: const Key('form-link-duplicate'),
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_outlined,
+                                  size: AppIconSize.row,
+                                  color: warningTextColor(
+                                    Theme.of(context).brightness,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Ya existe: "${linkDuplicate.vacante}" en '
+                                    '${linkDuplicate.empresa} · '
+                                    '${_duplicateDateLabel(linkDuplicate)} '
+                                    '(${linkDuplicate.estado}).',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: warningTextColor(
+                                            Theme.of(context).brightness,
+                                          ),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: AppSpace.md),
                           KeyedSubtree(
                             key: const Key('form-tipo-contrato'),
