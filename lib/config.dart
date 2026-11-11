@@ -28,10 +28,24 @@ String get kAiBaseUrl {
 
 String get kAiApiKey => _env('AI_API_KEY').trim();
 
-String get kAiModel {
-  final value = _env('AI_MODEL').trim();
-  return value.isEmpty ? _defaultAiModel : value;
+/// Modelos semilla desde `AI_MODEL`: admite uno o varios separados por comas.
+///
+/// Ejemplo: `AI_MODEL=deepseek-v4.1-flash,glm-5.3-flash`. Se ignoran los
+/// espacios, las entradas vacías y los duplicados; si no queda ninguno, se
+/// usa el modelo por defecto. Es solo la semilla: la lista real se guarda en
+/// `LocalCache` y se edita desde la app.
+List<String> get kAiModels {
+  final parts = _env('AI_MODEL')
+      .split(',')
+      .map((part) => part.trim())
+      .where((part) => part.isNotEmpty)
+      .toSet()
+      .toList();
+  return parts.isEmpty ? [_defaultAiModel] : parts;
 }
+
+/// Modelo principal: el primero de [kAiModels].
+String get kAiModel => kAiModels.first;
 
 /// Configuración inicial de IA: los valores del `.env` sirven de semilla.
 ///
@@ -41,5 +55,5 @@ String get kAiModel {
 AiConfig get kAiConfig => AiConfig(
   baseUrl: kAiBaseUrl,
   apiKey: kAiApiKey,
-  models: [kAiModel],
+  models: kAiModels,
 );

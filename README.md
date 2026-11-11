@@ -272,7 +272,7 @@ La app puede prellenar el formulario a partir del **enlace** de una vacante o de
    AI_BASE_URL=https://opencode.ai/inference/go/openai/v1
    AI_MODEL=deepseek-v4.1-flash
    ```
-   `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, se usan OpenCode Go y DeepSeek V4.1 Flash. Los valores del `.env` solo dan el **inicio**: si ya guardaste una configuración en la app, esa es la que manda.
+   `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, se usan OpenCode Go y DeepSeek V4.1 Flash. `AI_MODEL` admite **uno o varios modelos separados por comas** (`AI_MODEL=deepseek-v4.1-flash,glm-5.3-flash`); el primero es el principal. Los valores del `.env` solo dan el **inicio**: si ya guardaste una configuración en la app, esa es la que manda.
 
 **Respaldo entre modelos**
 
@@ -305,7 +305,7 @@ En **Ajustes → Importación con IA** puedes agregar varios modelos y reordenar
 - Una importación tarda ~4–6 s y consume pocos miles de tokens del allowance de Go.
 - La key queda en el build si viene del `.env`, y en `SharedPreferences` si la configuras desde la app. Es aceptable para uso personal; si compartes el binario, crea otra key o revócala.
 - OpenCode Go está pensado para agentes de código. El uso personal de bajo volumen es razonable; si prefieres cero ambigüedad, cambia `AI_BASE_URL` a `https://opencode.ai/inference/openai/v1` (pay-as-you-go).
-- El modelo principal es el primero de la lista de **Ajustes → Importación con IA** (`AI_MODEL` solo aporta el valor inicial). Si DeepSeek no está disponible, `glm-5.3-flash` es una alternativa con buena calidad de JSON.
+- El modelo principal es el primero de la lista de **Ajustes → Importación con IA** (`AI_MODEL` solo aporta la semilla inicial y admite varios modelos separados por comas). Si DeepSeek no está disponible, `glm-5.3-flash` es una alternativa con buena calidad de JSON.
 
 ### Columnas de Postulaciones
 
@@ -393,7 +393,7 @@ El script está vinculado a la hoja, se despliega como **Web App** (Ejecutar com
    AI_BASE_URL=https://opencode.ai/inference/go/openai/v1
    AI_MODEL=deepseek-v4.1-flash
    ```
-   `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, la app usa OpenCode Go y DeepSeek V4.1 Flash. Son la **semilla** inicial: desde **Ajustes → Importación con IA** puedes cambiar el proveedor y la lista de modelos sin recompilar. Sin `AI_API_KEY` ni configuración en la app, la tarjeta **Autocompletar con IA** no aparece.
+   `AI_BASE_URL` y `AI_MODEL` son opcionales: si faltan, la app usa OpenCode Go y DeepSeek V4.1 Flash. Son la **semilla** inicial (`AI_MODEL` admite varios modelos separados por comas): desde **Ajustes → Importación con IA** puedes cambiar el proveedor y la lista de modelos sin recompilar. Sin `AI_API_KEY` ni configuración en la app, la tarjeta **Autocompletar con IA** no aparece.
 3. La app carga automáticamente las variables desde `.env` al iniciar.
 
 > ⚠️ El archivo `.env` está en `.gitignore`. **Nunca** hagas commit de la URL real. Usa `.env.example` como referencia para otros desarrolladores.
