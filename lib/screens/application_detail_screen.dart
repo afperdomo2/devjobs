@@ -3,22 +3,26 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../helpers/change_status.dart';
 import '../helpers/comments.dart';
 import '../helpers/date_formatter.dart';
-import '../helpers/finalization.dart';
 import '../helpers/network_error.dart';
 import '../helpers/offer_link.dart';
 import '../helpers/salary_formatter.dart';
+import '../helpers/status.dart';
 import '../models/job_application.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/add_note_dialog.dart';
-import '../widgets/finalize_application_dialog.dart';
+import '../widgets/change_status_dialog.dart';
 import '../widgets/gestion_tag.dart';
 import '../widgets/markdown_description.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/status_chip.dart';
 import 'application_form_screen.dart';
+
+/// Acciones secundarias del AppBar del detalle.
+enum _DetailAction { edit, note }
 
 class ApplicationDetailScreen extends StatefulWidget {
   final JobApplication application;
@@ -75,7 +79,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     }
   }
 
-  Future<void> _finalize(JobApplication app) async {
+  Future<void> _changeStatus(JobApplication app) async {
     final state = context.read<AppState>();
     if (state.offline) return;
 
@@ -84,27 +88,51 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       orElse: () => app,
     );
 
-    final result = await showFinalizeApplicationDialog(
+    final result = await showChangeStatusDialog(
       context,
       empresa: current.empresa,
       vacante: current.vacante,
+      estadoActual: current.estado,
+      fechaActual: parseDate(current.fechaSeguimiento),
+      entrevistaRealizada: current.entrevistaRealizada,
     );
     if (result == null || !mounted) return;
 
     try {
       await state.updateApplication(
         app.rowIndex,
-        finalizationUpdates(
+        changeStatusUpdates(
           estado: result.estado,
           fecha: result.fecha,
           comentariosActuales: current.comentarios,
           nota: result.nota,
+          // Solo escribe la columna N cuando el switch cambió.
+          entrevistaRealizada:
+              result.entrevistaRealizada == current.entrevistaRealizada
+              ? null
+              : result.entrevistaRealizada,
         ),
       );
-      if (mounted) _showSnack('Proceso finalizado como ${result.estado}');
+      if (mounted) {
+        _showSnack(
+          isTerminalStatus(result.estado)
+              ? 'Proceso finalizado como ${result.estado}'
+              : 'Estado actualizado a ${result.estado}',
+        );
+      }
     } catch (e) {
       if (mounted) _showSnack('Error: ${friendlyErrorMessage(e)}');
     }
+  }
+
+  Future<void> _edit(JobApplication app) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ApplicationFormScreen.edit(application: app),
+      ),
+    );
+    if (result == true && mounted) setState(() {});
   }
 
   Future<void> _openLink(Uri uri) async {
@@ -156,13 +184,6 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.note_add_outlined),
-            tooltip: isOffline
-                ? 'Sin conexión — edición deshabilitada'
-                : 'Agregar nota',
-            onPressed: isOffline ? null : () => _addNote(app),
-          ),
-          IconButton(
             icon: Icon(
               app.porGestionar
                   ? Icons.label_important
@@ -171,32 +192,43 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   ? gestionColor(Theme.of(context).brightness)
                   : null,
             ),
-            tooltip: isOffline
-                ? 'Sin conexión — edición deshabilitada'
-                : (app.porGestionar
-                      ? 'Quitar "Por gestionar"'
-                      : 'Marcar "Por gestionar"'),
+            tooltip: _offlineTooltip(
+              isOffline,
+              app.porGestionar
+                  ? 'Quitar "Por gestionar"'
+                  : 'Marcar "Por gestionar"',
+            ),
             onPressed: isOffline ? null : () => _toggleGestion(app),
           ),
-          IconButton(
-            icon: const Icon(Icons.edit),
-            tooltip: isOffline
-                ? 'Sin conexión — edición deshabilitada'
-                : 'Editar postulación',
-            onPressed: isOffline
-                ? null
-                : () async {
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ApplicationFormScreen.edit(application: app),
-                      ),
-                    );
-                    if (result == true && mounted) {
-                      setState(() {});
-                    }
-                  },
+          PopupMenuButton<_DetailAction>(
+            tooltip: 'Más acciones',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (action) {
+              switch (action) {
+                case _DetailAction.edit:
+                  _edit(app);
+                case _DetailAction.note:
+                  _addNote(app);
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: _DetailAction.edit,
+                enabled: !isOffline,
+                child: const _MenuItem(
+                  icon: Icons.edit,
+                  label: 'Editar postulación',
+                ),
+              ),
+              PopupMenuItem(
+                value: _DetailAction.note,
+                enabled: !isOffline,
+                child: const _MenuItem(
+                  icon: Icons.note_add_outlined,
+                  label: 'Agregar nota',
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -227,25 +259,24 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 ..._buildInfoSection(context, app),
-                if (!app.isFinalizado) ...[
-                  const SizedBox(height: AppSpace.md),
-                  SizedBox(
-                    width: double.infinity,
-                    child: Tooltip(
-                      message: isOffline
-                          ? 'Sin conexión — edición deshabilitada'
-                          : 'Cierra el proceso y elige el estado final',
-                      child: FilledButton.tonalIcon(
-                        onPressed: isOffline ? null : () => _finalize(app),
-                        icon: const Icon(
-                          Icons.task_alt,
-                          size: AppIconSize.row,
-                        ),
-                        label: const Text('Finalizar proceso'),
+                const SizedBox(height: AppSpace.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: Tooltip(
+                    message: _offlineTooltip(
+                      isOffline,
+                      'Actualiza el estado, la fecha de la novedad y la nota',
+                    ),
+                    child: FilledButton.tonalIcon(
+                      onPressed: isOffline ? null : () => _changeStatus(app),
+                      icon: const Icon(
+                        Icons.swap_horiz,
+                        size: AppIconSize.row,
                       ),
+                      label: const Text('Cambiar estado'),
                     ),
                   ),
-                ],
+                ),
                 if (app.link.isNotEmpty) ...[
                   const Divider(height: 32),
                   Row(
@@ -514,6 +545,32 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Tooltip de una acción de edición: explica el bloqueo cuando no hay red.
+String _offlineTooltip(bool isOffline, String action) =>
+    isOffline ? 'Sin conexión — edición deshabilitada' : action;
+
+/// Ítem del menú de acciones secundarias (icono + etiqueta).
+class _MenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _MenuItem({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: AppIconSize.row),
+        const SizedBox(width: AppSpace.sm),
+        // Flexible + ellipsis: con textScale grande el menú no debe desbordar.
+        Flexible(
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+      ],
     );
   }
 }

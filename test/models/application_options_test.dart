@@ -22,4 +22,22 @@ void main() {
       equals(applicationFinalStatuses.length),
     );
   });
+
+  test('los tipos de contrato son los 9 del Sheet, sin duplicados', () {
+    expect(applicationContractTypes, [
+      'Tiempo completo',
+      'Tiempo Parcial',
+      'Por proyecto',
+      'Temporal',
+      'Freelance',
+      'Otro',
+      'Prestación servicios',
+      'Termino fijo',
+      'Obra labor',
+    ]);
+    expect(
+      applicationContractTypes.toSet().length,
+      equals(applicationContractTypes.length),
+    );
+  });
 }

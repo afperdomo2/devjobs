@@ -31,7 +31,7 @@ Devuelve únicamente un objeto JSON válido, sin markdown ni texto adicional, co
 }
 Reglas:
 - Responde en español y usa null (o []) si el dato no aparece literalmente en el texto. No inventes.
-- tipoContrato debe ser uno de: "Tiempo completo", "Tiempo Parcial", "Por proyecto", "Temporal", "Freelance", "Otro" o null.
+- tipoContrato debe ser uno de: "Tiempo completo", "Tiempo Parcial", "Por proyecto", "Temporal", "Freelance", "Otro", "Prestación servicios", "Termino fijo", "Obra labor" o null. Si la vacante es "a término indefinido", usa "Tiempo completo".
 - modalidad debe ser uno de: "Remoto", "Híbrido", "Presencial", "Otro" o null.
 - salarioTexto: copia el texto tal como aparece, incluyendo la moneda si está. No calcules.
 - resumen: 1 a 3 frases sobre el rol, el equipo y el objetivo. No repitas salario, modalidad ni ciudad (ya tienen campo propio).

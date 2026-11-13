@@ -13,6 +13,8 @@ String shortContract(String raw) {
     'tiempo parcial': 'T. parcial',
     'prestación de servicios': 'Prestación',
     'prestacion de servicios': 'Prestación',
+    'prestación servicios': 'Prestación',
+    'prestacion servicios': 'Prestación',
     'contrato a término fijo': 'T. fijo',
     'contrato a termino fijo': 'T. fijo',
     'término fijo': 'T. fijo',
@@ -25,6 +27,7 @@ String shortContract(String raw) {
     'pasantía': 'Prácticas',
     'pasantia': 'Prácticas',
     'obra o labor': 'Obra/labor',
+    'obra labor': 'Obra/labor',
     'medio tiempo': 'T. parcial',
   };
   final mapped = exact[lower];

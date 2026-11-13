@@ -104,7 +104,9 @@ void main() {
   ) async {
     final (_, api) = await pumpDetail(tester);
 
-    await tester.tap(find.byIcon(Icons.note_add_outlined));
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Agregar nota'));
     await tester.pumpAndSettle();
     expect(find.text('Agregar nota'), findsOneWidget);
 
@@ -123,20 +125,23 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('finaliza el proceso con estado, fecha y nota', (tester) async {
+  testWidgets('cambia el estado a uno de cierre con fecha y nota', (
+    tester,
+  ) async {
     final (_, api) = await pumpDetail(tester);
 
-    await tester.tap(find.text('Finalizar proceso'));
+    await tester.tap(find.text('Cambiar estado'));
     await tester.pumpAndSettle();
-    expect(find.text('Estado final'), findsOneWidget);
+    expect(find.text('Estado'), findsOneWidget);
+    expect(find.text('Cerrar proceso'), findsOneWidget);
 
     await tester.tap(find.text('Rechazada'));
     await tester.pump();
     await tester.enterText(
-      find.byKey(const Key('finalize-nota')),
+      find.byKey(const Key('status-dialog-nota')),
       'Rechacé por el salario',
     );
-    await tester.tap(find.text('Finalizar'));
+    await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
 
     final today = DateTime.now();
@@ -146,17 +151,78 @@ void main() {
     expect(updates['estado'], equals('Rechazada'));
     expect(updates['fechaSeguimiento'], equals(formatApiDate(today)));
     expect(updates['porGestionar'], equals('false'));
+    expect(updates.containsKey('entrevistaRealizada'), isFalse);
     expect(
       updates['comentarios'],
       contains('${today.day}/${today.month}/${today.year}'),
     );
     expect(updates['comentarios'], contains('Rechacé por el salario'));
     expect(find.text('Proceso finalizado como Rechazada'), findsOneWidget);
-    expect(find.text('Finalizar proceso'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('no muestra Finalizar si el proceso ya terminó', (tester) async {
+  testWidgets('un estado intermedio mueve la novedad y conserva el flag', (
+    tester,
+  ) async {
+    final (_, api) = await pumpDetail(
+      tester,
+      app: const JobApplication(
+        rowIndex: 7,
+        empresa: 'Acme',
+        vacante: 'Dev',
+        estado: 'En revisión',
+        fechaPostulacion: '01/11/2026',
+        fechaSeguimiento: '05/11/2026',
+        porGestionar: true,
+      ),
+    );
+
+    await tester.tap(find.text('Cambiar estado'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Entrevista agendada'));
+    await tester.pump();
+    await tester.tap(find.text('Guardar'));
+    await tester.pumpAndSettle();
+
+    final updates = api.lastUpdates!;
+    expect(updates['estado'], equals('Entrevista agendada'));
+    expect(updates['fechaSeguimiento'], equals(formatApiDate(DateTime.now())));
+    expect(updates.containsKey('porGestionar'), isFalse);
+    expect(find.text('Estado actualizado a Entrevista agendada'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('el switch de entrevista se guarda desde el diálogo', (
+    tester,
+  ) async {
+    final (_, api) = await pumpDetail(
+      tester,
+      app: const JobApplication(
+        rowIndex: 7,
+        empresa: 'Acme',
+        vacante: 'Dev',
+        estado: 'En revisión',
+        fechaPostulacion: '01/11/2026',
+      ),
+    );
+
+    await tester.tap(find.text('Cambiar estado'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('status-dialog-entrevista')),
+    );
+    await tester.tap(find.byKey(const Key('status-dialog-entrevista')));
+    await tester.pump();
+    await tester.tap(find.text('Guardar'));
+    await tester.pumpAndSettle();
+
+    expect(api.lastUpdates?['entrevistaRealizada'], equals('true'));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Cambiar estado sigue disponible si el proceso ya terminó', (
+    tester,
+  ) async {
     await pumpDetail(
       tester,
       app: const JobApplication(
@@ -169,29 +235,53 @@ void main() {
       ),
     );
 
-    expect(find.text('Finalizar proceso'), findsNothing);
+    expect(find.text('Cambiar estado'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('sin conexión deshabilita Finalizar proceso', (tester) async {
+  testWidgets('sin conexión deshabilita Cambiar estado', (tester) async {
     await pumpDetail(tester, offline: true);
 
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Finalizar proceso'),
+      find.widgetWithText(FilledButton, 'Cambiar estado'),
     );
 
     expect(button.onPressed, isNull);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('sin conexión deshabilita el botón de nota', (tester) async {
+  testWidgets('sin conexión el menú de acciones queda deshabilitado', (
+    tester,
+  ) async {
     await pumpDetail(tester, offline: true);
 
-    final button = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.note_add_outlined),
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    final edit = tester.widget<PopupMenuItem<dynamic>>(
+      find
+          .ancestor(
+            of: find.text('Editar postulación'),
+            matching: find.byWidgetPredicate((w) => w is PopupMenuItem),
+          )
+          .first,
+    );
+    final note = tester.widget<PopupMenuItem<dynamic>>(
+      find
+          .ancestor(
+            of: find.text('Agregar nota'),
+            matching: find.byWidgetPredicate((w) => w is PopupMenuItem),
+          )
+          .first,
     );
 
-    expect(button.onPressed, isNull);
+    expect(edit.enabled, isFalse);
+    expect(note.enabled, isFalse);
+
+    // Un ítem deshabilitado no abre el diálogo de nota.
+    await tester.tap(find.text('Agregar nota'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

@@ -181,18 +181,33 @@ void main() {
     test('normaliza sinónimos', () {
       expect(mapContractType('Full time'), equals('Tiempo completo'));
       expect(mapContractType('Part-time'), equals('Tiempo Parcial'));
-      expect(mapContractType('Obra o labor'), equals('Por proyecto'));
-      expect(mapContractType('Término fijo'), equals('Temporal'));
-      expect(mapContractType('Prestación de servicios'), equals('Freelance'));
+      expect(mapContractType('Temporal'), equals('Temporal'));
+      expect(mapContractType('Freelance'), equals('Freelance'));
+      expect(mapContractType('Por proyecto'), equals('Por proyecto'));
       expect(mapContractType('Practicante'), equals('Otro'));
     });
 
-    test('indefinido usa el contexto', () {
+    test('usa las opciones del Sheet que antes se colapsaban', () {
+      expect(mapContractType('Obra o labor'), equals('Obra labor'));
+      expect(mapContractType('Obra labor'), equals('Obra labor'));
+      expect(mapContractType('Término fijo'), equals('Termino fijo'));
+      expect(mapContractType('Fixed term'), equals('Termino fijo'));
       expect(
-        mapContractType('Indefinido', 'jornada tiempo completo'),
+        mapContractType('Prestación de servicios'),
+        equals('Prestación servicios'),
+      );
+      expect(
+        mapContractType('Prestación servicios'),
+        equals('Prestación servicios'),
+      );
+    });
+
+    test('indefinido se guarda como tiempo completo', () {
+      expect(mapContractType('Indefinido'), equals('Tiempo completo'));
+      expect(
+        mapContractType('Contrato a término indefinido'),
         equals('Tiempo completo'),
       );
-      expect(mapContractType('Indefinido'), equals('Indefinido'));
     });
 
     test('vacío retorna null', () {

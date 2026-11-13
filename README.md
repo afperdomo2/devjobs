@@ -338,7 +338,7 @@ En **Ajustes → Importación con IA** puedes agregar varios modelos y reordenar
 | A | Fecha Postulación | Fecha en que se envió la postulación |
 | B | Empresa | Nombre de la empresa |
 | C | Vacante | Título del cargo |
-| D | Tipo de Contrato | Tiempo completo / Tiempo parcial / Por proyecto / Temporal / Freelance / Otro |
+| D | Tipo de Contrato | Tiempo completo / Tiempo Parcial / Por proyecto / Temporal / Freelance / Otro / Prestación servicios / Termino fijo / Obra labor |
 | E | Modalidad | Remoto / Híbrido / Presencial / Otro |
 | F | Ciudad | Ubicación de la vacante |
 | G | Salario Ofrecido | Salario o rango salarial |

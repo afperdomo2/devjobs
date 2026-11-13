@@ -320,7 +320,7 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Se actualiza después del rebuild para que los ítems del dropdown ya
-      // incluyan el valor importado (p. ej. "Indefinido").
+      // incluyan el valor importado (p. ej. una fila con "Medio tiempo").
       if (contractValue != null) {
         _tipoContratoFieldKey.currentState?.didChange(contractValue);
       }

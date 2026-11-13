@@ -66,10 +66,7 @@ JobImportResult buildJobImportResult({
       : (ai?.vacante ?? page.title);
   final title = cleanJobTitle(rawTitle);
 
-  final contract = mapContractType(
-    page.employmentType ?? ai?.tipoContrato,
-    page.text,
-  );
+  final contract = mapContractType(page.employmentType ?? ai?.tipoContrato);
 
   final employment = page.employmentType ?? '';
   final modalityRaw = employment.toUpperCase().contains('TELECOMMUTE')
@@ -177,12 +174,11 @@ String? cleanJobTitle(String? raw) {
   return text.isEmpty ? null : truncate(text, 140);
 }
 
-String? mapContractType(String? raw, [String? context]) {
+String? mapContractType(String? raw) {
   final text = raw?.trim() ?? '';
   if (text.isEmpty) return null;
 
   final normalized = normalizeText(text);
-  final ctx = normalizeText(context ?? '');
 
   if (normalized.contains('full time') ||
       normalized.contains('full-time') ||
@@ -213,18 +209,29 @@ String? mapContractType(String? raw, [String? context]) {
       normalized == 'other') {
     return 'Otro';
   }
+  if (normalized.contains('obra o labor') ||
+      normalized.contains('obra labor') ||
+      normalized.contains('labor contract')) {
+    return 'Obra labor';
+  }
   if (normalized.contains('por proyecto') ||
-      normalized.contains('obra o labor') ||
-      normalized.contains('obra labor')) {
+      normalized.contains('project based')) {
     return 'Por proyecto';
   }
-  if (normalized.contains('temporal') ||
-      normalized.contains('termino fijo') ||
-      normalized.contains('plazo fijo')) {
+  if (normalized.contains('termino fijo') ||
+      normalized.contains('plazo fijo') ||
+      normalized.contains('fixed term')) {
+    return 'Termino fijo';
+  }
+  if (normalized.contains('temporal')) {
     return 'Temporal';
   }
+  if (normalized.contains('prestacion de servicios') ||
+      normalized.contains('prestacion servicios') ||
+      normalized.contains('services agreement')) {
+    return 'Prestación servicios';
+  }
   if (normalized.contains('freelance') ||
-      normalized.contains('prestacion de servicios') ||
       normalized.contains('independiente')) {
     return 'Freelance';
   }
@@ -233,10 +240,10 @@ String? mapContractType(String? raw, [String? context]) {
       normalized.contains('intern')) {
     return 'Otro';
   }
+  // "Indefinido" no es una opción del Sheet: se guarda como tiempo completo,
+  // que es el equivalente habitual en las vacantes importadas.
   if (normalized.contains('indefinido')) {
-    return ctx.contains('tiempo completo') || ctx.contains('jornada completa')
-        ? 'Tiempo completo'
-        : 'Indefinido';
+    return 'Tiempo completo';
   }
 
   return text.length <= 40 ? text : 'Otro';

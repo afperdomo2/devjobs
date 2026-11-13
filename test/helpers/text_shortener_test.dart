@@ -25,13 +25,15 @@ void main() {
     test('mapea exactos frecuentes', () {
       expect(shortContract('Tiempo completo'), equals('T. completo'));
       expect(shortContract('Tiempo parcial'), equals('T. parcial'));
-      expect(shortContract('Prestación de servicios'),
-          equals('Prestación'));
+      expect(shortContract('Prestación de servicios'), equals('Prestación'));
       expect(shortContract('Contrato a término fijo'), equals('T. fijo'));
       expect(shortContract('Indefinido'), equals('Indefinido'));
       expect(shortContract('Freelance'), equals('Freelance'));
       expect(shortContract('Prácticas'), equals('Prácticas'));
       expect(shortContract('Obra o labor'), equals('Obra/labor'));
+      expect(shortContract('Prestación servicios'), equals('Prestación'));
+      expect(shortContract('Termino fijo'), equals('T. fijo'));
+      expect(shortContract('Obra labor'), equals('Obra/labor'));
       expect(shortContract('medio tiempo'), equals('T. parcial'));
     });
 
@@ -41,8 +43,7 @@ void main() {
     });
 
     test('desconocido largo → truncado a 14', () {
-      final raw =
-          'Una cosa muy larga de tipo de contrato extremadamente larga';
+      final raw = 'Una cosa muy larga de tipo de contrato extremadamente larga';
       final result = shortContract(raw);
       expect(result.endsWith('…'), isTrue);
       expect(result.length, lessThanOrEqualTo(15));

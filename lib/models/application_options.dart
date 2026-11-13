@@ -4,6 +4,7 @@
 /// mismas opciones.
 library;
 
+/// Tipos de contrato: misma lista y mismo orden que la validación del Sheet.
 const List<String> applicationContractTypes = [
   'Tiempo completo',
   'Tiempo Parcial',
@@ -11,6 +12,9 @@ const List<String> applicationContractTypes = [
   'Temporal',
   'Freelance',
   'Otro',
+  'Prestación servicios',
+  'Termino fijo',
+  'Obra labor',
 ];
 
 const List<String> applicationModalities = [
@@ -33,8 +37,8 @@ const List<String> applicationStatuses = [
   'Retirada',
 ];
 
-/// Estados que cierran el proceso. Son los que ofrece el diálogo de
-/// "Finalizar proceso" y los que cuentan como finalizadas en filtros y
+/// Estados que cierran el proceso. Son el grupo "Cerrar proceso" del diálogo
+/// "Cambiar estado" y los que cuentan como finalizadas en filtros y
 /// métricas.
 const List<String> applicationFinalStatuses = [
   'Aceptada',
