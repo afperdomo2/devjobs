@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../helpers/theme_mode.dart';
+import '../models/app_build_info.dart';
 import '../providers/app_state.dart';
+import '../screens/about_screen.dart';
 import '../screens/ai_settings_screen.dart';
+import '../services/build_info_service.dart';
 import '../theme.dart';
 
-/// Abre el menú de ajustes: tema e importación con IA.
+/// Abre el menú de ajustes: tema, importación con IA y datos de la compilación.
 Future<void> showThemeSettingsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
@@ -15,7 +18,8 @@ Future<void> showThemeSettingsSheet(BuildContext context) {
   );
 }
 
-/// Hoja inferior con las opciones de tema y acceso a la configuración de IA.
+/// Hoja inferior con las opciones de tema, el acceso a la configuración de IA
+/// y los datos de la compilación.
 ///
 /// El cambio de tema se aplica al instante (el `MaterialApp` escucha a
 /// [AppState] y este widget refleja la selección) y se persiste en [AppState].
@@ -53,10 +57,7 @@ class ThemeSettingsSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpace.xs),
-                  Text(
-                    'Tema y importación con IA',
-                    style: AppType.label(context),
-                  ),
+                  Text('Tema, IA y compilación', style: AppType.label(context)),
                 ],
               ),
             ),
@@ -71,6 +72,7 @@ class ThemeSettingsSheet extends StatelessWidget {
               ),
             const SizedBox(height: AppSpace.sm),
             const _AiSettingsTile(),
+            const _AboutTile(),
           ],
         ),
       ),
@@ -104,6 +106,56 @@ class _AiSettingsTile extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const AiSettingsScreen()),
+        );
+      },
+    );
+  }
+}
+
+/// Acceso a la versión y los datos de la compilación en ejecución.
+///
+/// El subtítulo ya muestra versión y commit, así que el dato queda a la vista
+/// sin abrir la pantalla.
+class _AboutTile extends StatefulWidget {
+  const _AboutTile();
+
+  @override
+  State<_AboutTile> createState() => _AboutTileState();
+}
+
+class _AboutTileState extends State<_AboutTile> {
+  late final Future<AppBuildInfo> _future;
+  AppBuildInfo? _info;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = BuildInfoService().load();
+    _future.then((info) {
+      if (mounted) setState(() => _info = info);
+    }, onError: (_) {});
+  }
+
+  String get _subtitle {
+    final info = _info;
+    if (info == null) return 'Versión y compilación';
+    if (!info.hasBuildMetadata) return info.versionLabel;
+    return '${info.versionLabel} · ${info.commitLabel}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      key: const Key('about-settings'),
+      leading: const Icon(Icons.info_outline),
+      title: const Text('Acerca de DevJobs'),
+      subtitle: Text(_subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => AboutScreen(buildInfo: _future),
+          ),
         );
       },
     );

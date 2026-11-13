@@ -70,12 +70,20 @@ class AppChip extends StatelessWidget {
         children: [
           Icon(icon, size: AppIconSize.chip, color: color),
           const SizedBox(width: AppSpace.xs),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-              fontWeight: weight,
+          // Flexible + ellipsis: el chip nunca excede el ancho disponible.
+          // Sin esto, un label largo (p. ej. una ciudad con varias sedes)
+          // desborda la card, porque el Row da ancho infinito a los hijos no
+          // flexibles.
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: weight,
+              ),
             ),
           ),
         ],

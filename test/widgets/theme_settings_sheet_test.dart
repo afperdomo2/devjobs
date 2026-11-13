@@ -4,6 +4,7 @@ import 'package:devjobs/theme.dart';
 import 'package:devjobs/widgets/theme_settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 class _FakeApi extends SheetsApiService {
@@ -11,6 +12,17 @@ class _FakeApi extends SheetsApiService {
 }
 
 void main() {
+  setUp(() {
+    // Evita la lectura real del paquete en el test del tile "Acerca de".
+    PackageInfo.setMockInitialValues(
+      appName: 'devjobs',
+      packageName: 'com.example.devjobs',
+      version: '0.2.0',
+      buildNumber: '2',
+      buildSignature: '',
+    );
+  });
+
   Future<void> pumpApp(WidgetTester tester, AppState state) async {
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
@@ -101,6 +113,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('ai-save')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('muestra la versión y abre Acerca de', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final state = AppState(apiService: _FakeApi());
+    await pumpApp(tester, state);
+    await openSheet(tester);
+
+    expect(find.byKey(const Key('about-settings')), findsOneWidget);
+    expect(find.text('Acerca de DevJobs'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('about-settings')));
+    await tester.tap(find.byKey(const Key('about-settings')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('COMPILACIÓN'), findsOneWidget);
+    expect(find.byKey(const Key('about-copy')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

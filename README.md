@@ -34,6 +34,7 @@ Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a 
 | `url_launcher` | `^6.3.3` | Abrir el enlace de la oferta en el navegador externo (Android/Linux/Windows) |
 | `flutter_markdown_plus` | `^1.0.12` | Render de la descripción Markdown en el detalle y la vista previa |
 | `markdown` | `^7.3.1` | AST para personalizar los encabezados Markdown con iconos |
+| `package_info_plus` | `^10.2.2` | Versión y build del paquete instalado (Ajustes → Acerca de) |
 | `flutter_lints` (dev) | `^6.0.0` | Reglas de lint por defecto de Flutter |
 
 > `url_launcher` requiere declarar los intents `VIEW` para `https` y `http` en el
@@ -61,6 +62,13 @@ La app requiere permiso de **Internet** para comunicarse con la API REST del App
 | Build Android (APK) | `flutter build apk --release --no-tree-shake-icons` |
 | Build Windows | `flutter build windows --release --no-tree-shake-icons` |
 | Build Linux | `flutter build linux --release --no-tree-shake-icons` |
+| Build con datos de compilación | `./scripts/build.sh linux` · `windows` · `apk` · `linux-install` |
+| Ejecutar con datos de compilación | `./scripts/build.sh run` |
+
+> Los builds que se distribuyen deben hacerse con `scripts/build.sh`: inyecta
+> commit, fecha y marca de cambios sin commitear. Sin él, **Ajustes → Acerca de
+> DevJobs** muestra "No disponible" en commit y fecha (la versión siempre sale
+> del `pubspec.yaml`).
 
 ## 📱 Seleccionar dispositivo
 
@@ -89,6 +97,22 @@ flutter run -d ios           # iOS simulator (requiere macOS)
 ## 📦 Despliegue
 
 Todos los artefactos quedan dentro de `build/` (carpeta ignorada por git — se regenera con cada build).
+
+### Versión y compilación
+
+La app muestra en **Ajustes → Acerca de DevJobs** la versión del `pubspec.yaml`
+(`version: 0.2.0+2`), el commit, la fecha de compilación, la plataforma y el
+canal (`release`/`debug`). Para saber si la instalación está al día:
+
+```bash
+git log -1 --oneline   # si el commit no coincide con el de la app, falta compilar
+```
+
+La versión la lee `package_info_plus` del paquete instalado (siempre coincide con
+el `pubspec.yaml`; subila al publicar). El commit y la fecha solo viajan si el
+build se hizo con `scripts/build.sh`, que los inyecta con `--dart-define`; sin
+él la pantalla muestra "No disponible" en esas dos filas. Un `*` junto al commit
+significa que se compiló con cambios sin commitear.
 
 ### Android — APK / App Bundle
 
