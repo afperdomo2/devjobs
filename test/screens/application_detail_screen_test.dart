@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:devjobs/helpers/date_formatter.dart';
+import 'package:devjobs/models/company_insight.dart';
 import 'package:devjobs/models/job_application.dart';
 import 'package:devjobs/providers/app_state.dart';
 import 'package:devjobs/screens/application_detail_screen.dart';
@@ -14,18 +15,23 @@ import 'package:provider/provider.dart';
 
 class _FakeApi extends SheetsApiService {
   final List<JobApplication> data;
+  final List<CompanyInsight> insights;
   bool failFetch = false;
   int updateCalls = 0;
   int? lastRow;
   Map<String, String>? lastUpdates;
 
-  _FakeApi(this.data) : super(baseUrl: 'http://test');
+  _FakeApi(this.data, {this.insights = const []})
+      : super(baseUrl: 'http://test');
 
   @override
   Future<List<JobApplication>> fetchAll() async {
     if (failFetch) throw SocketException('offline');
     return data;
   }
+
+  @override
+  Future<List<CompanyInsight>> fetchCompanyInsights() async => insights;
 
   @override
   Future<void> updateRow(int rowIndex, Map<String, String> updates) async {
@@ -54,6 +60,7 @@ void main() {
     bool offline = false,
     JobApplication? app,
     Size size = const Size(360, 900),
+    List<CompanyInsight> insights = const [],
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -61,9 +68,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final target = app ?? application;
-    final api = _FakeApi([target])..failFetch = offline;
+    final api = _FakeApi([target], insights: insights)..failFetch = offline;
     final state = AppState(apiService: api);
     await state.fetchApplications(forceRefresh: true);
+    await state.loadCompanyInsights();
 
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
@@ -384,5 +392,72 @@ void main() {
     );
     expect(copyButton.onPressed, isNotNull);
     expect(tester.takeException(), isNull);
+  });
+
+  group('Análisis de la empresa con IA', () {
+    const insight = CompanyInsight(
+      empresa: 'Acme',
+      recomendacion: CompanyRecommendation.seguimientoNormal,
+      etiquetas: ['no-respuesta'],
+      resumen: 'Resumen corto del análisis de la empresa.',
+      fortalezas: ['Siempre responde'],
+      riesgos: ['Nunca da feedback'],
+    );
+
+    testWidgets('muestra el bloque colapsado con Ver más y se expande inline',
+        (tester) async {
+      await pumpDetail(tester, insights: const [insight]);
+
+      // El ListView es perezoso: hay que acercarse al bloque.
+      await tester.scrollUntilVisible(
+        find.text('Análisis de la empresa con IA'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pump();
+
+      expect(find.text('Análisis de la empresa con IA'), findsOneWidget);
+      expect(find.text('Ver más'), findsOneWidget);
+      expect(find.text('Señales positivas'), findsNothing);
+
+      await tester.tap(find.text('Ver más'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Señales positivas'), findsOneWidget);
+      expect(find.text('Siempre responde'), findsOneWidget);
+      expect(find.text('Ver menos'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('sin análisis no se muestra el bloque', (tester) async {
+      await pumpDetail(tester);
+
+      // Se recorre toda la lista para que el bloque (de existir) se construya.
+      await tester.drag(find.byType(ListView), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Análisis de la empresa con IA'), findsNothing);
+      expect(find.text('Ver más'), findsNothing);
+    });
+
+    testWidgets('la empresa confidencial no muestra el bloque', (tester) async {
+      await pumpDetail(
+        tester,
+        app: const JobApplication(
+          rowIndex: 7,
+          empresa: 'Empresa confidencial',
+          vacante: 'Dev',
+          estado: 'En revisión',
+        ),
+        insights: const [
+          CompanyInsight(empresa: 'Empresa confidencial', resumen: 'x'),
+        ],
+      );
+
+      await tester.drag(find.byType(ListView), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Análisis de la empresa con IA'), findsNothing);
+    });
   });
 }

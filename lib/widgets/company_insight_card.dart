@@ -6,13 +6,19 @@ import '../theme.dart';
 import 'ai_badge.dart';
 import 'insight_tag_chip.dart';
 
-/// Tarjeta "Análisis IA" del detalle de empresa.
+/// Tarjeta del análisis IA de una empresa.
 ///
-/// Sin análisis y con IA configurada ofrece "Analizar con IA"; con análisis
-/// muestra etiquetas de comportamiento, resumen, señales, recomendación y
-/// secciones expandibles. Si hay novedades desde el análisis, avisa que está
-/// desactualizado y ofrece "Reanalizar".
-class CompanyInsightCard extends StatelessWidget {
+/// Modos:
+/// - **Completo** (por defecto): todo el análisis sin cortes — es lo que se
+///   ve en el detalle de la empresa, sin "ver más".
+/// - **Colapsable** ([collapsible]): vista previa con chips compactos y el
+///   resumen recortado a [resumenMaxLines]; **"Ver más"** expande el análisis
+///   completo inline (acordeón, sin modales ni navegación) y **"Ver menos"**
+///   vuelve a la vista previa.
+///
+/// [showCard] = false renderiza sin el contenedor `Card` (para bloques
+/// planos como el del detalle de la vacante). [title] personaliza el rótulo.
+class CompanyInsightCard extends StatefulWidget {
   final CompanyInsight? insight;
   final bool aiEnabled;
   final bool stale;
@@ -20,6 +26,10 @@ class CompanyInsightCard extends StatelessWidget {
   final bool offline;
   final String? error;
   final VoidCallback? onAnalyze;
+  final String title;
+  final bool collapsible;
+  final bool showCard;
+  final int resumenMaxLines;
 
   const CompanyInsightCard({
     super.key,
@@ -30,103 +40,130 @@ class CompanyInsightCard extends StatelessWidget {
     this.offline = false,
     this.error,
     this.onAnalyze,
+    this.title = 'Análisis IA',
+    this.collapsible = false,
+    this.showCard = true,
+    this.resumenMaxLines = 3,
   });
 
   @override
+  State<CompanyInsightCard> createState() => _CompanyInsightCardState();
+}
+
+class _CompanyInsightCardState extends State<CompanyInsightCard> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    if (insight == null && !aiEnabled) return const SizedBox.shrink();
+    final insight = widget.insight;
+    if (insight == null && !widget.aiEnabled) return const SizedBox.shrink();
 
     final brightness = Theme.of(context).brightness;
-    final current = insight;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('Análisis IA', style: AppType.section(context)),
-                const SizedBox(width: AppSpace.sm),
-                const AiBadge(),
-              ],
-            ),
-            const SizedBox(height: AppSpace.md),
-            if (current == null)
-              _EmptyState(
-                loading: loading,
-                offline: offline,
-                error: error,
-                onAnalyze: onAnalyze,
-              )
-            else ...[
-              if (stale)
-                _StaleBanner(brightness: brightness, loading: loading),
-              if (stale) const SizedBox(height: AppSpace.md),
-              if (loading) ...[
-                const _ProgressRow(label: 'Reanalizando vacantes y notas…'),
+    final content = Padding(
+      padding: widget.showCard ? const EdgeInsets.all(16) : EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(
+                child: Text(widget.title, style: AppType.section(context)),
+              ),
+              const SizedBox(width: AppSpace.sm),
+              const AiBadge(),
+            ],
+          ),
+          const SizedBox(height: AppSpace.md),
+          if (insight == null)
+            _EmptyState(
+              loading: widget.loading,
+              offline: widget.offline,
+              error: widget.error,
+              onAnalyze: widget.onAnalyze,
+            )
+          else ...[
+            if (widget.stale)
+              _StaleBanner(brightness: brightness, loading: widget.loading),
+            if (widget.stale) const SizedBox(height: AppSpace.md),
+            if (widget.loading) ...[
+              const _ProgressRow(label: 'Reanalizando vacantes y notas…'),
+              const SizedBox(height: AppSpace.md),
+            ],
+            if (widget.error != null) ...[
+              _ErrorText(widget.error!),
+              const SizedBox(height: AppSpace.md),
+            ],
+            if (widget.collapsible && !_expanded) ...[
+              _PreviewContent(
+                insight: insight,
+                maxResumenLines: widget.resumenMaxLines,
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _expanded = true),
+                  icon: const Icon(Icons.expand_more, size: AppIconSize.row),
+                  label: const Text('Ver más'),
+                ),
+              ),
+            ] else ...[
+              if (insight.etiquetas.isNotEmpty) ...[
+                _TagRow(ids: insight.etiquetas),
                 const SizedBox(height: AppSpace.md),
               ],
-              if (error != null) ...[
-                _ErrorText(error!),
-                const SizedBox(height: AppSpace.md),
-              ],
-              if (current.etiquetas.isNotEmpty) ...[
-                _TagRow(ids: current.etiquetas),
-                const SizedBox(height: AppSpace.md),
-              ],
-              if (current.resumen.isNotEmpty) ...[
+              if (insight.resumen.isNotEmpty) ...[
                 Text(
-                  current.resumen,
+                  insight.resumen,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         height: 1.45,
                       ),
                 ),
                 const SizedBox(height: AppSpace.md),
               ],
-              if (current.fortalezas.isNotEmpty) ...[
+              if (insight.fortalezas.isNotEmpty) ...[
                 _BulletList(
                   icon: Icons.check_circle_outline,
                   color: successColor(brightness),
                   title: 'Señales positivas',
-                  items: current.fortalezas,
+                  items: insight.fortalezas,
                 ),
                 const SizedBox(height: AppSpace.md),
               ],
-              if (current.riesgos.isNotEmpty) ...[
+              if (insight.riesgos.isNotEmpty) ...[
                 _BulletList(
                   icon: Icons.warning_amber_outlined,
                   color: warningTextColor(brightness),
                   title: 'A tener en cuenta',
-                  items: current.riesgos,
+                  items: insight.riesgos,
                 ),
                 const SizedBox(height: AppSpace.md),
               ],
               _RecommendationBlock(
-                recomendacion: current.recomendacion,
+                recomendacion: insight.recomendacion,
                 brightness: brightness,
               ),
-              if (current.perfilVacantes.isNotEmpty) ...[
+              if (insight.perfilVacantes.isNotEmpty) ...[
                 const SizedBox(height: AppSpace.sm),
                 _ExpandableSection(
                   title: 'Perfil de vacantes',
-                  child: Text(current.perfilVacantes),
+                  child: Text(insight.perfilVacantes),
                 ),
               ],
-              if (current.procesoSeleccion.isNotEmpty) ...[
+              if (insight.procesoSeleccion.isNotEmpty) ...[
                 _ExpandableSection(
                   title: 'Proceso de selección',
-                  child: Text(current.procesoSeleccion),
+                  child: Text(insight.procesoSeleccion),
                 ),
               ],
-              if (current.contactos.isNotEmpty) ...[
+              if (insight.contactos.isNotEmpty) ...[
                 _ExpandableSection(
                   title: 'Contactos',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final contacto in current.contactos)
+                      for (final contacto in insight.contactos)
                         Padding(
                           padding: const EdgeInsets.only(bottom: AppSpace.xs),
                           child: Text('• $contacto'),
@@ -140,24 +177,80 @@ class CompanyInsightCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      current.fechaAnalisis == null
+                      insight.fechaAnalisis == null
                           ? 'Análisis guardado'
                           : 'Analizado el '
-                              '${formatDateValueShort(current.fechaAnalisis!)}',
+                              '${formatDateValueShort(insight.fechaAnalisis!)}',
                       style: AppType.label(context),
                     ),
                   ),
                   OutlinedButton.icon(
-                    onPressed: (loading || offline) ? null : onAnalyze,
+                    onPressed: (widget.loading || widget.offline)
+                        ? null
+                        : widget.onAnalyze,
                     icon: const Icon(Icons.refresh, size: AppIconSize.row),
                     label: const Text('Reanalizar'),
                   ),
                 ],
               ),
+              if (widget.collapsible)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => setState(() => _expanded = false),
+                    icon: const Icon(Icons.expand_less, size: AppIconSize.row),
+                    label: const Text('Ver menos'),
+                  ),
+                ),
             ],
           ],
-        ),
+        ],
       ),
+    );
+
+    return widget.showCard ? Card(child: content) : content;
+  }
+}
+
+/// Vista previa del análisis: chips compactos + resumen recortado.
+class _PreviewContent extends StatelessWidget {
+  final CompanyInsight insight;
+  final int maxResumenLines;
+
+  const _PreviewContent({
+    required this.insight,
+    required this.maxResumenLines,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: AppSpace.xs + 2,
+          runSpacing: AppSpace.xs + 2,
+          children: [
+            InsightRecommendationChip(
+              recomendacion: insight.recomendacion,
+              compact: true,
+            ),
+            for (final id in insight.highlightEtiquetas())
+              InsightTagChip(tagId: id, compact: true),
+          ],
+        ),
+        if (insight.resumen.isNotEmpty) ...[
+          const SizedBox(height: AppSpace.sm),
+          Text(
+            insight.resumen,
+            maxLines: maxResumenLines,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  height: 1.45,
+                ),
+          ),
+        ],
+      ],
     );
   }
 }

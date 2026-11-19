@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../helpers/change_status.dart';
 import '../helpers/comments.dart';
+import '../helpers/company_analysis.dart';
+import '../helpers/company_similarity.dart';
 import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
 import '../helpers/offer_link.dart';
@@ -15,6 +17,7 @@ import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/add_note_dialog.dart';
 import '../widgets/change_status_dialog.dart';
+import '../widgets/company_insight_card.dart';
 import '../widgets/gestion_tag.dart';
 import '../widgets/markdown_description.dart';
 import '../widgets/offline_banner.dart';
@@ -35,6 +38,17 @@ class ApplicationDetailScreen extends StatefulWidget {
 }
 
 class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Carga opcional: trae el análisis IA de la empresa para el bloque
+      // "Análisis de la empresa con IA" (ya está cargado si se navegó desde
+      // Empresas; el guardado interno evita duplicar trabajo).
+      context.read<AppState>().loadCompanyInsights();
+    });
+  }
+
   Future<void> _toggleGestion(JobApplication app) async {
     try {
       await context.read<AppState>().updateApplication(app.rowIndex, {
@@ -171,6 +185,12 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
     final isOffline = state.offline;
     final cacheTs = state.cacheTimestamp;
 
+    // El análisis IA pertenece a la empresa: se oculta si no existe o si la
+    // empresa es el bucket confidencial (mezcla compañías distintas).
+    final insight = isConfidentialCompany(app.empresa)
+        ? null
+        : state.insightFor(app.empresa);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(app.empresa),
@@ -277,6 +297,23 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                     ),
                   ),
                 ),
+                if (insight != null) ...[
+                  const Divider(height: 32),
+                  CompanyInsightCard(
+                    insight: insight,
+                    title: 'Análisis de la empresa con IA',
+                    collapsible: true,
+                    showCard: false,
+                    stale: isInsightStale(
+                      insight,
+                      state.getByField('empresa', app.empresa),
+                    ),
+                    loading: state.analyzingInsight,
+                    offline: isOffline,
+                    error: state.insightError,
+                    onAnalyze: () => state.analyzeCompany(app.empresa),
+                  ),
+                ],
                 if (app.link.isNotEmpty) ...[
                   const Divider(height: 32),
                   Row(

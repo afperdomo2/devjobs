@@ -40,6 +40,9 @@ Future<void> pumpCard(
   bool offline = false,
   String? error,
   VoidCallback? onAnalyze,
+  String title = 'Análisis IA',
+  bool collapsible = false,
+  bool showCard = true,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -53,6 +56,9 @@ Future<void> pumpCard(
             offline: offline,
             error: error,
             onAnalyze: onAnalyze,
+            title: title,
+            collapsible: collapsible,
+            showCard: showCard,
           ),
         ),
       ),
@@ -203,5 +209,66 @@ void main() {
     expect(find.text('Procesos largos y sin feedback.'), findsOneWidget);
     expect(find.text('Perfil de vacantes'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  group('modo colapsable (detalle de la vacante)', () {
+    testWidgets('colapsado muestra el preview y Ver más; expande y colapsa', (
+      tester,
+    ) async {
+      await pumpCard(
+        tester,
+        insight: insight(),
+        collapsible: true,
+        showCard: false,
+        title: 'Análisis de la empresa con IA',
+        onAnalyze: () {},
+      );
+
+      // Preview: chips compactos + resumen truncado, sin señales.
+      expect(find.text('Ver más'), findsOneWidget);
+      expect(find.text('Señales positivas'), findsNothing);
+      expect(find.text('Recomendación'), findsNothing);
+      final preview = tester.widget<Text>(
+        find.text('Procesos largos y sin feedback.'),
+      );
+      expect(preview.maxLines, 3);
+
+      await tester.tap(find.text('Ver más'));
+      await tester.pump();
+
+      // Expandido: el análisis completo (igual que en el detalle de empresa).
+      expect(find.text('Ver menos'), findsOneWidget);
+      expect(find.text('Ver más'), findsNothing);
+      expect(find.text('Señales positivas'), findsOneWidget);
+      expect(find.text('Siempre responde'), findsOneWidget);
+      expect(find.text('Recomendación'), findsOneWidget);
+      final full = tester.widget<Text>(
+        find.text('Procesos largos y sin feedback.'),
+      );
+      expect(full.maxLines, isNull);
+
+      await tester.tap(find.text('Ver menos'));
+      await tester.pump();
+      expect(find.text('Señales positivas'), findsNothing);
+      expect(find.text('Ver más'), findsOneWidget);
+    });
+
+    testWidgets('el modo completo no muestra Ver más', (tester) async {
+      await pumpCard(tester, insight: insight(), onAnalyze: () {});
+
+      expect(find.text('Ver más'), findsNothing);
+      expect(find.text('Ver menos'), findsNothing);
+      expect(find.text('Señales positivas'), findsOneWidget);
+    });
+
+    testWidgets('el título es personalizable', (tester) async {
+      await pumpCard(
+        tester,
+        insight: insight(),
+        title: 'Análisis de la empresa con IA',
+      );
+
+      expect(find.text('Análisis de la empresa con IA'), findsOneWidget);
+    });
   });
 }
