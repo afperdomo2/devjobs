@@ -6,8 +6,13 @@ Aplicación Flutter para el seguimiento de postulaciones laborales. Conectada a 
 
 | | | |
 |---|---|---|
-| ![Inicio](screenshots/home.jpg) | ![Postulaciones · Activas](screenshots/activas.jpg) | ![Postulaciones · Enviadas](screenshots/enviadas.jpg) |
-| ![Postulaciones · Finalizadas](screenshots/rechazadas.jpg) | ![Detalles](screenshots/detalles.jpg) | |
+| ![Inicio](screenshots/home.webp) | ![Postulaciones](screenshots/postulaciones.webp) | ![Detalle de postulación](screenshots/detalle.webp) |
+| ![Empresas](screenshots/empresas.webp) | ![Detalle de empresa · Análisis IA](screenshots/empresa-detalle.webp) | ![Agenda](screenshots/agenda.webp) |
+| ![Plataformas](screenshots/plataformas.webp) | | |
+
+> Las capturas se **generan automáticamente** (WebP) con
+> `./scripts/capture-screenshots.sh`; no se editan a mano. Ver
+> [AGENTS.md](AGENTS.md) → *Capturas del README* para cómo funciona.
 
 ## 🛠️ Requisitos
 
@@ -65,6 +70,7 @@ La app requiere permiso de **Internet** para comunicarse con la API REST del App
 | Build con datos de compilación | `./scripts/build.sh linux` · `windows` · `apk` · `linux-install` |
 | Ejecutar con datos de compilación | `./scripts/build.sh run` |
 | Subir versión | `./scripts/bump-version.sh [build\|patch\|minor\|major]` |
+| Capturas del README | `./scripts/capture-screenshots.sh` |
 
 > Los builds que se distribuyen deben hacerse con `scripts/build.sh`: inyecta
 > commit, fecha y marca de cambios sin commitear. Sin él, **Ajustes → Acerca de

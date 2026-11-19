@@ -19,6 +19,7 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 | Build con datos de compilación | `./scripts/build.sh linux` · `linux-install` · `windows` · `apk` |
 | Run con datos de compilación | `./scripts/build.sh run` |
 | Subir versión | `./scripts/bump-version.sh [build\|patch\|minor\|major]` |
+| Capturas del README | `./scripts/capture-screenshots.sh` |
 
 > **`--no-tree-shake-icons` es obligatorio en release.** El tree-shaker de íconos
 > de Flutter tiene un bug que descarta glyphs usados (p.ej. `Icons.business_outlined`,
@@ -47,6 +48,56 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 - `.env` — **local, gitignored**. Obligatoria `API_URL`; opcionales `AI_API_KEY`, `AI_BASE_URL` y `AI_MODEL`. Son la **semilla** de `kAiConfig`: si el usuario nunca guardó una configuración, la app arranca con esos valores; si la guardó (Ajustes → Importación con IA), la guardada manda. `AI_MODEL` admite uno o varios modelos separados por comas (`kAiModels`; el primero es el principal). Sin clave no se renderiza `ImportEntryCard`. `.env.example` (versionado) documenta las tres variables.
 - `opencode.json` — **local, gitignored** (no se versiona: contiene rutas absolutas por SO). Habilita el MCP server `dart-mcp-server` (análisis/LSP, hot reload, pub). En Linux/Ubuntu usa ruta absoluta al SDK (`/home/felipe/Documentos/flutter/bin/dart`) porque `dart` no está en `PATH`; en Windows basta `dart`. Plantillas listas para copiar/pegar en README → «MCP de Dart en OpenCode».
 - `skills-lock.json` — **versionado**; declara las **9 skills** del proyecto (los archivos viven en `.agents/`, que está gitignoreado). Set: `find-skills`, `grill-me`, `dart-add-unit-test`, `dart-run-static-analysis`, `flutter-add-widget-test`, `flutter-use-http-package`, `flutter-fix-layout-issues`, `flutter-build-responsive-layout`, `mobile-app-ui-design` (guías de diseño UI/UX móvil — jerarquía visual, color 60/30/10, retícula 8pt; aplicarlas en rediseños de pantallas y componentes). Restaurar tras clonar: `npx skills experimental_install`. Ver README → «Skills».
+
+## Capturas del README (`screenshots/`)
+
+Las 7 capturas del inicio del README se generan automáticamente (WebP) con:
+
+```sh
+./scripts/capture-screenshots.sh
+```
+
+**Requisitos**: `flutter` con escritorio Linux y Python 3 con Pillow
+(`sudo apt install python3-pil`). En esta máquina `flutter` no está en el
+`PATH`; el script usa la ruta absoluta del SDK y se puede sobreescribir con la
+variable `FLUTTER`.
+
+### Cómo funciona
+
+1. `flutter drive` ejecuta `integration_test/screenshots_test.dart` sobre la app
+   real en una ventana de escritorio.
+2. El test siembra datos **deterministas** con un `_FakeApi extends
+   SheetsApiService` (fixtures de postulaciones y un análisis IA), así las
+   capturas no dependen del contenido de la Google Sheet ni tocan la real.
+3. Navega la UI con toques (inicio → plataformas → postulaciones → detalle →
+   empresas → detalle de empresa → agenda) y captura el **árbol de render**
+   (no de la ventana) en tamaño de teléfono (420×880 lógicos @2x → 840×1760 px)
+   y **tema claro forzado** (`ThemeMode.light`), independientemente de la
+   ventana y del tema del sistema. En el detalle de empresa hace scroll hasta la
+   tarjeta **Análisis IA** para que salga en la captura.
+4. El script convierte los PNG a WebP (calidad 82) en `screenshots/` y borra los
+   PNG.
+
+### Archivos generados (el README los referencia por nombre exacto)
+
+`home.webp`, `postulaciones.webp`, `detalle.webp`, `empresas.webp`,
+`empresa-detalle.webp`, `agenda.webp`, `plataformas.webp` — **no renombrar**
+sin actualizar la tabla del README. Los `.jpg` viejos se eliminaron; el flujo
+WebP reemplaza a las capturas hechas a mano.
+
+### Gotchas
+
+- Los datos viven en `integration_test/screenshots_test.dart` (`_fixtureApplications`).
+  Los estados usan el vocabulario real (`applicationStatuses`); las fechas se
+  generan con `_daysAgo(n)` para que "Actividad reciente" siempre tenga datos.
+- El texto del detalle varía según el estado ("En proceso"/"Sin novedad" para
+  activos, "Duración proceso" para finalizados); el test espera por el tipo de
+  pantalla (`ApplicationDetailScreen`, `CompanyDetailScreen`) en vez de por un
+  texto concreto.
+- **El warning `integration_test plugin was not detected` es benigno** en
+  escritorio: las capturas se generan igual.
+- Los archivos se commitean pero **no se editan a mano**: para actualizarlos,
+  volver a correr el script.
 
 ## Architecture
 
