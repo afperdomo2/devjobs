@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../models/job_application.dart';
 import 'date_formatter.dart';
+import 'status.dart';
 
 /// Métricas agregadas de postulaciones por plataforma (dominio del enlace).
 class PlatformStats {
@@ -75,6 +76,101 @@ List<PlatformStats> platformsStats(List<JobApplication> apps) {
   ];
 
   return sortPlatforms(stats, PlatformSortMode.total);
+}
+
+/// Métricas detalladas de una sola plataforma (para la pantalla de detalle).
+///
+/// Se calcula sobre las postulaciones de esa plataforma (las que devuelve
+/// `AppState.getByField('plataforma', ...)`), con las mismas reglas que
+/// [companiesStats]: activas/finalizadas según estado, respuesta con
+/// [hasResponse] y promedio de cierre solo sobre finalizadas con seguimiento.
+class PlatformDetailStats {
+  /// Total de postulaciones hechas desde esta plataforma.
+  final int total;
+
+  /// Postulaciones cuyo proceso sigue en curso.
+  final int activas;
+
+  /// Postulaciones finalizadas (aceptada, rechazada o retirada).
+  final int finalizadas;
+
+  /// Postulaciones con respuesta: estado distinto de Enviada, Sin respuesta
+  /// y Retirada.
+  final int conNovedad;
+
+  /// Postulaciones con entrevista realizada.
+  final int entrevistas;
+
+  /// Postulaciones marcadas con el flag "Por gestionar".
+  final int porGestionar;
+
+  /// Promedio de días de cierre (media de [JobApplication.diasProceso] solo
+  /// sobre finalizadas con seguimiento). null si no hay datos suficientes.
+  final int? promedioDias;
+
+  /// Fecha de postulación más reciente de la plataforma.
+  final DateTime? ultimaPostulacion;
+
+  const PlatformDetailStats({
+    required this.total,
+    required this.activas,
+    required this.finalizadas,
+    required this.conNovedad,
+    required this.entrevistas,
+    required this.porGestionar,
+    this.promedioDias,
+    this.ultimaPostulacion,
+  });
+}
+
+/// Calcula las métricas detalladas de una plataforma a partir de sus
+/// postulaciones. Devuelve null si [apps] está vacía.
+PlatformDetailStats? platformDetailStats(List<JobApplication> apps) {
+  if (apps.isEmpty) return null;
+
+  var activas = 0;
+  var finalizadas = 0;
+  var conNovedad = 0;
+  var entrevistas = 0;
+  var porGestionar = 0;
+  var sumaCierre = 0;
+  var cuentaCierre = 0;
+  DateTime? ultima;
+
+  for (final a in apps) {
+    if (a.isFinalizado) {
+      finalizadas++;
+    } else {
+      activas++;
+    }
+
+    if (hasResponse(a.estado)) conNovedad++;
+    if (a.entrevistaRealizada) entrevistas++;
+    if (a.porGestionar) porGestionar++;
+
+    // Solo finalizadas con seguimiento aportan al promedio de cierre.
+    final dias = a.isFinalizado ? a.diasProceso : null;
+    if (dias != null) {
+      sumaCierre += dias;
+      cuentaCierre++;
+    }
+
+    final post = parseDate(a.fechaPostulacion);
+    if (post != null && (ultima == null || post.isAfter(ultima))) {
+      ultima = post;
+    }
+  }
+
+  return PlatformDetailStats(
+    total: apps.length,
+    activas: activas,
+    finalizadas: finalizadas,
+    conNovedad: conNovedad,
+    entrevistas: entrevistas,
+    porGestionar: porGestionar,
+    promedioDias: cuentaCierre == 0 ? null : (sumaCierre / cuentaCierre).round(),
+    ultimaPostulacion: ultima,
+  );
 }
 
 /// Devuelve una copia ordenada de [platforms] según [mode].

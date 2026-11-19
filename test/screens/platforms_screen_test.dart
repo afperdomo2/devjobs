@@ -1,5 +1,6 @@
 import 'package:devjobs/models/job_application.dart';
 import 'package:devjobs/providers/app_state.dart';
+import 'package:devjobs/screens/platform_detail_screen.dart';
 import 'package:devjobs/screens/platforms_screen.dart';
 import 'package:devjobs/services/sheets_api_service.dart';
 import 'package:devjobs/theme.dart';
@@ -99,15 +100,71 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('tocar una plataforma abre sus postulaciones', (tester) async {
+  testWidgets('tocar una plataforma abre su detalle', (tester) async {
     await pumpScreen(tester, apps);
 
     await tester.tap(find.text('Linkedin'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Plataforma · Linkedin'), findsOneWidget);
-    expect(find.text('Vieja'), findsOneWidget);
-    expect(find.text('Nueva'), findsNothing);
+    expect(find.byType(PlatformDetailScreen), findsOneWidget);
+    expect(find.text('Métricas'), findsOneWidget);
+    expect(find.text('Vacantes (1)'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('la búsqueda filtra las plataformas por nombre', (tester) async {
+    await pumpScreen(tester, apps);
+
+    await tester.enterText(find.byType(TextField), 'linked');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Linkedin'), findsOneWidget);
+    expect(find.text('Computrabajo'), findsNothing);
+    expect(find.text('1 de 2 plataformas'), findsOneWidget);
+    // El resumen del listado completo se oculta mientras se busca.
+    expect(find.text('2 plataformas'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('la búsqueda no distingue mayúsculas ni tildes', (tester) async {
+    await pumpScreen(tester, apps);
+
+    await tester.enterText(find.byType(TextField), 'CómputraBajo');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Computrabajo'), findsOneWidget);
+    expect(find.text('Linkedin'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('sin resultados ofrece limpiar la búsqueda', (tester) async {
+    await pumpScreen(tester, apps);
+
+    await tester.enterText(find.byType(TextField), 'indeed');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sin resultados para "indeed"'), findsOneWidget);
+
+    await tester.tap(find.text('Limpiar búsqueda'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Linkedin'), findsOneWidget);
+    expect(find.text('Computrabajo'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('el botón de limpiar del campo restaura el listado', (
+    tester,
+  ) async {
+    await pumpScreen(tester, apps);
+
+    await tester.enterText(find.byType(TextField), 'linked');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.clear));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Linkedin'), findsOneWidget);
+    expect(find.text('Computrabajo'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

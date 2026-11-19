@@ -4,19 +4,22 @@ import 'package:provider/provider.dart';
 import '../helpers/date_formatter.dart';
 import '../helpers/network_error.dart';
 import '../helpers/platform_stats.dart';
+import '../helpers/text_normalizer.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/platform_sort_bar.dart';
 import '../widgets/scroll_to_top_button.dart';
 import '../widgets/wheel_refresh.dart';
-import 'filtered_applications_screen.dart';
+import 'platform_detail_screen.dart';
 
 /// Listado de todas las plataformas (dominios del enlace) con el total de
-/// postulaciones y la fecha de la última aplicación en cada una.
+/// postulaciones y la fecha de la última aplicación en cada una, y filtro
+/// propio por nombre (insensible a mayúsculas y tildes).
 ///
 /// El orden por defecto es por volumen; también se puede ordenar por la
-/// aplicación más reciente o por la más antigua.
+/// aplicación más reciente o por la más antigua. Al tocar una plataforma se
+/// abre [PlatformDetailScreen] con sus métricas y vacantes.
 class PlatformsScreen extends StatefulWidget {
   const PlatformsScreen({super.key});
 
@@ -25,7 +28,9 @@ class PlatformsScreen extends StatefulWidget {
 }
 
 class _PlatformsScreenState extends State<PlatformsScreen> {
+  final _searchCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
+  String _query = '';
   PlatformSortMode _sortMode = PlatformSortMode.total;
 
   @override
@@ -38,6 +43,7 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
 
   @override
   void dispose() {
+    _searchCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -46,15 +52,22 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
     return context.read<AppState>().fetchApplications(forceRefresh: true);
   }
 
+  void _clearQuery() {
+    _searchCtrl.clear();
+    setState(() => _query = '');
+  }
+
+  List<PlatformStats> _filter(List<PlatformStats> all) {
+    final q = normalizeText(_query);
+    if (q.isEmpty) return all;
+    return all.where((p) => normalizeText(p.nombre).contains(q)).toList();
+  }
+
   void _openPlatform(PlatformStats platform) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => FilteredApplicationsScreen(
-          title: 'Plataforma',
-          field: 'plataforma',
-          value: platform.nombre,
-        ),
+        builder: (_) => PlatformDetailScreen(nombre: platform.nombre),
       ),
     );
   }
@@ -64,7 +77,7 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
     final state = context.watch<AppState>();
     final apps = state.applications;
     final platforms = platformsStats(apps);
-    final sorted = sortPlatforms(platforms, _sortMode);
+    final sorted = sortPlatforms(_filter(platforms), _sortMode);
     final sinEnlace = apps.where((a) => a.plataforma.trim().isEmpty).length;
 
     Widget content;
@@ -79,6 +92,8 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
       );
     } else if (platforms.isEmpty) {
       content = const _PlatformsEmptyContent();
+    } else if (sorted.isEmpty) {
+      content = _SearchEmptyContent(query: _query, onClear: _clearQuery);
     } else {
       content = ListView(
         controller: _scrollCtrl,
@@ -90,14 +105,19 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
           AppSpace.lg,
         ),
         children: [
-          _SummaryCard(
-            platforms: platforms,
-            totalPostulaciones: platforms.fold<int>(
-              0,
-              (sum, p) => sum + p.total,
+          // El resumen y el aviso de "sin enlace" son del listado completo:
+          // se ocultan mientras se busca para no mezclarlos con los
+          // resultados filtrados.
+          if (_query.isEmpty) ...[
+            _SummaryCard(
+              platforms: platforms,
+              totalPostulaciones: platforms.fold<int>(
+                0,
+                (sum, p) => sum + p.total,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpace.sm),
+            const SizedBox(height: AppSpace.sm),
+          ],
           Card(
             child: Column(
               children: [
@@ -112,7 +132,7 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
               ],
             ),
           ),
-          if (sinEnlace > 0) ...[
+          if (_query.isEmpty && sinEnlace > 0) ...[
             const SizedBox(height: AppSpace.sm),
             Text(
               '$sinEnlace '
@@ -138,10 +158,35 @@ class _PlatformsScreenState extends State<PlatformsScreen> {
                 forceRefresh: true,
               ),
             ),
+          _SearchField(
+            controller: _searchCtrl,
+            query: _query,
+            onChanged: (v) => setState(() => _query = v),
+            onClear: _clearQuery,
+          ),
           if (platforms.isNotEmpty)
             PlatformSortBar(
               selected: _sortMode,
               onSelected: (mode) => setState(() => _sortMode = mode),
+            ),
+          if (_query.isNotEmpty && sorted.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpace.lg,
+                0,
+                AppSpace.lg,
+                AppSpace.xs,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${sorted.length} de ${platforms.length} '
+                  '${platforms.length == 1 ? 'plataforma' : 'plataformas'}',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             ),
           Expanded(
             child: Stack(
@@ -320,6 +365,89 @@ class _PlatformsEmptyContent extends StatelessWidget {
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Campo de búsqueda del listado de plataformas (mismo patrón visual que el
+/// filtro por nombre de la pestaña Empresas).
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final String query;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  const _SearchField({
+    required this.controller,
+    required this.query,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpace.md, AppSpace.sm, AppSpace.md, AppSpace.sm),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: 'Filtrar plataformas...',
+          prefixIcon: const Icon(Icons.search, size: 20),
+          suffixIcon: query.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  onPressed: onClear,
+                )
+              : null,
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: const BorderRadius.all(
+                Radius.circular(AppRadius.control)),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
+      ),
+    );
+  }
+}
+
+/// Estado vacío cuando la búsqueda no encuentra plataformas.
+class _SearchEmptyContent extends StatelessWidget {
+  final String query;
+  final VoidCallback onClear;
+
+  const _SearchEmptyContent({required this.query, required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpace.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off, size: 48, color: muted),
+            const SizedBox(height: AppSpace.md),
+            Text(
+              'Sin resultados para "$query"',
+              textAlign: TextAlign.center,
+              style: AppType.section(context),
+            ),
+            const SizedBox(height: AppSpace.xs),
+            TextButton(
+              onPressed: onClear,
+              child: const Text('Limpiar búsqueda'),
             ),
           ],
         ),

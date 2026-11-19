@@ -7,11 +7,19 @@ void main() {
     required int row,
     String link = '',
     String fechaPostulacion = '',
+    String estado = '',
+    String fechaSeguimiento = '',
+    bool entrevistaRealizada = false,
+    bool porGestionar = false,
   }) {
     return JobApplication(
       rowIndex: row,
       link: link,
       fechaPostulacion: fechaPostulacion,
+      estado: estado,
+      fechaSeguimiento: fechaSeguimiento,
+      entrevistaRealizada: entrevistaRealizada,
+      porGestionar: porGestionar,
     );
   }
 
@@ -79,6 +87,72 @@ void main() {
 
     test('lista vacía devuelve lista vacía', () {
       expect(platformsStats([]), isEmpty);
+    });
+  });
+
+  group('platformDetailStats', () {
+    test('calcula las métricas de la plataforma', () {
+      final stats = platformDetailStats([
+        app(row: 1, estado: 'Enviada', fechaPostulacion: '01/10/2026'),
+        app(
+          row: 2,
+          estado: 'Entrevista realizada',
+          entrevistaRealizada: true,
+          porGestionar: true,
+          fechaPostulacion: '02/10/2026',
+          fechaSeguimiento: '12/10/2026',
+        ),
+        app(
+          row: 3,
+          estado: 'Rechazada',
+          fechaPostulacion: '03/10/2026',
+          fechaSeguimiento: '13/10/2026',
+        ),
+        app(row: 4, estado: 'Retirada', fechaPostulacion: '04/10/2026'),
+      ]);
+
+      expect(stats, isNotNull);
+      expect(stats!.total, 4);
+      expect(stats.activas, 2);
+      expect(stats.finalizadas, 2);
+      // "Entrevista realizada" y "Rechazada" tienen respuesta; "Enviada" y
+      // "Retirada" no.
+      expect(stats.conNovedad, 2);
+      expect(stats.entrevistas, 1);
+      expect(stats.porGestionar, 1);
+      // Solo la finalizada con seguimiento aporta al promedio (10 días).
+      expect(stats.promedioDias, 10);
+      expect(stats.ultimaPostulacion, DateTime(2026, 10, 4));
+    });
+
+    test('lista vacía devuelve null', () {
+      expect(platformDetailStats([]), isNull);
+    });
+
+    test('finalizadas sin seguimiento no aportan al promedio de cierre', () {
+      final stats = platformDetailStats([
+        app(row: 1, estado: 'Aceptada', fechaPostulacion: '01/10/2026'),
+        app(
+          row: 2,
+          estado: 'Rechazada',
+          fechaPostulacion: '02/10/2026',
+          fechaSeguimiento: '06/10/2026',
+        ),
+      ]);
+
+      expect(stats!.finalizadas, 2);
+      expect(stats.promedioDias, 4);
+    });
+
+    test('sin finalizadas con seguimiento el promedio es null', () {
+      final stats = platformDetailStats([
+        app(row: 1, estado: 'Aceptada', fechaPostulacion: '01/10/2026'),
+        app(row: 2, estado: 'Enviada', fechaPostulacion: '02/10/2026'),
+      ]);
+
+      expect(stats, isNotNull);
+      expect(stats!.promedioDias, isNull);
+      expect(stats.ultimaPostulacion, DateTime(2026, 10, 2));
     });
   });
 

@@ -11,11 +11,15 @@ class MetaChip extends StatelessWidget {
   /// Tinte del icono y texto. Default: gris secundario del tema.
   final Color? color;
 
+  /// Al presionar el chip (opcional). Si es null el chip es solo informativo.
+  final VoidCallback? onTap;
+
   const MetaChip({
     super.key,
     required this.icon,
     required this.label,
     this.color,
+    this.onTap,
   });
 
   @override
@@ -26,6 +30,7 @@ class MetaChip extends StatelessWidget {
       label: label,
       variant: AppChipVariant.meta,
       color: tint,
+      onTap: onTap,
     );
   }
 }
