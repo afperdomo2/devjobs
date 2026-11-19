@@ -18,6 +18,7 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 | Install Linux (local) | `./scripts/install-linux.sh` |
 | Build con datos de compilación | `./scripts/build.sh linux` · `linux-install` · `windows` · `apk` |
 | Run con datos de compilación | `./scripts/build.sh run` |
+| Subir versión | `./scripts/bump-version.sh [build\|patch\|minor\|major]` |
 
 > **`--no-tree-shake-icons` es obligatorio en release.** El tree-shaker de íconos
 > de Flutter tiene un bug que descarta glyphs usados (p.ej. `Icons.business_outlined`,
@@ -29,6 +30,8 @@ Standard Flutter scaffold (SDK `^3.12.1`, Material Design). Single entrypoint at
 > Sin el script, Ajustes → Acerca de muestra "No disponible" en commit y fecha.
 
 ## Build / Deploy
+
+- **Versionado (obligatorio al terminar cambios):** la versión visible sale SIEMPRE del `pubspec.yaml` (`version: X.Y.Z+N`; `package_info_plus` la lee tal cual) y **nunca se auto-incrementa al compilar**. Al terminar cualquier cambio de código que se vaya a compilar o distribuir, ejecutar `./scripts/bump-version.sh` antes de `scripts/build.sh`: por defecto suma 1 al build number (`N+1`); `patch`/`minor`/`major` suben el nombre y dejan el build en +1 (usar `minor` cuando la tanda agrega funcionalidades, `patch` para arreglos, `major` para cambios grandes). El script imprime `X.Y.Z+N → …`; no editar la versión a mano salvo salto puntual. Un agente de IA que entregue cambios compilables debe dejar la versión subida como parte del cambio.
 
 - **Android APK** → `build/app/outputs/flutter-apk/app-release.apk`; instalar en dispositivo conectado con `flutter install --release`.
 - **Windows** → `build/windows/x64/runner/Release/devjobs.exe`; para distribuir copiar **toda la carpeta `Release\`** (exe + DLLs + `data\`). La plataforma se habilitó con `flutter create --platforms=windows .` (carpeta `windows/` ya existe). Ventana 420×880 centrada (`windows/runner/main.cpp`); ícono generado desde `assets/icon/icon.png` vía `flutter_launcher_icons` (config `windows.generate`).

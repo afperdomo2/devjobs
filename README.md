@@ -64,11 +64,16 @@ La app requiere permiso de **Internet** para comunicarse con la API REST del App
 | Build Linux | `flutter build linux --release --no-tree-shake-icons` |
 | Build con datos de compilación | `./scripts/build.sh linux` · `windows` · `apk` · `linux-install` |
 | Ejecutar con datos de compilación | `./scripts/build.sh run` |
+| Subir versión | `./scripts/bump-version.sh [build\|patch\|minor\|major]` |
 
 > Los builds que se distribuyen deben hacerse con `scripts/build.sh`: inyecta
 > commit, fecha y marca de cambios sin commitear. Sin él, **Ajustes → Acerca de
 > DevJobs** muestra "No disponible" en commit y fecha (la versión siempre sale
 > del `pubspec.yaml`).
+>
+> **Versionado:** la versión nunca se auto-incrementa al compilar. Antes de
+> compilar un cambio, súbela con `./scripts/bump-version.sh` (por defecto suma
+> 1 al build number; `patch`/`minor`/`major` según el alcance del cambio).
 
 ## 📱 Seleccionar dispositivo
 
@@ -101,7 +106,7 @@ Todos los artefactos quedan dentro de `build/` (carpeta ignorada por git — se 
 ### Versión y compilación
 
 La app muestra en **Ajustes → Acerca de DevJobs** la versión del `pubspec.yaml`
-(`version: 0.2.0+2`), el commit, la fecha de compilación, la plataforma y el
+(`version: X.Y.Z+N`), el commit, la fecha de compilación, la plataforma y el
 canal (`release`/`debug`). Para saber si la instalación está al día:
 
 ```bash
@@ -109,10 +114,13 @@ git log -1 --oneline   # si el commit no coincide con el de la app, falta compil
 ```
 
 La versión la lee `package_info_plus` del paquete instalado (siempre coincide con
-el `pubspec.yaml`; subila al publicar). El commit y la fecha solo viajan si el
-build se hizo con `scripts/build.sh`, que los inyecta con `--dart-define`; sin
-él la pantalla muestra "No disponible" en esas dos filas. Un `*` junto al commit
-significa que se compiló con cambios sin commitear.
+el `pubspec.yaml`). **No se auto-incrementa al compilar**: para subirla usa
+`./scripts/bump-version.sh` (por defecto suma 1 al build number; `patch`,
+`minor` o `major` según el alcance del cambio) y compila después. El commit y
+la fecha solo viajan si el build se hizo con `scripts/build.sh`, que los inyecta
+con `--dart-define`; sin él la pantalla muestra "No disponible" en esas dos
+filas. Un `*` junto al commit significa que se compiló con cambios sin
+commitear.
 
 ### Android — APK / App Bundle
 
