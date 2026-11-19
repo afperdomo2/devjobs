@@ -115,6 +115,68 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
     );
   }
 
+  /// Confirma antes de gastar tokens y arranca el lote de análisis.
+  ///
+  /// El diálogo explica el costo (una llamada a la IA por empresa) y lista
+  /// las empresas; solo "Analizar" dispara [AppState.analyzePendingCompanies].
+  Future<void> _confirmAnalyzePending(AppState state) async {
+    final pending = state.pendingAnalysisCompanies;
+    if (pending.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          '¿Analizar ${pending.length} '
+          '${pending.length == 1 ? 'empresa' : 'empresas'} con IA?',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Se hará un análisis por cada empresa (${pending.length} '
+              '${pending.length == 1 ? 'llamada' : 'llamadas'} a la IA). '
+              'Puedes detenerlo cuando quieras; lo completado se guarda.',
+            ),
+            const SizedBox(height: AppSpace.md),
+            Text('Se analizarán:', style: AppType.label(context)),
+            const SizedBox(height: AppSpace.xs),
+            for (final name in pending.take(3)) Text('· $name'),
+            if (pending.length > 3) Text('… y ${pending.length - 3} más'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Analizar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    await state.analyzePendingCompanies();
+    if (!mounted) return;
+
+    final done = state.batchDone;
+    final total = state.batchTotal;
+    final error = state.batchError;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error != null
+              ? 'Se detuvo el análisis: $error ($done de $total completados)'
+              : 'Análisis completados: $done de $total',
+        ),
+      ),
+    );
+  }
+
   List<CompanyStats> _filter(List<CompanyStats> all, AppState state) {
     final q = _query.trim().toLowerCase();
     return all.where((c) {
@@ -265,13 +327,47 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                         ),
                   ),
                 ),
-                if (all.length >= 2 && !state.offline)
-                  TextButton.icon(
-                    key: const Key('merge-companies'),
-                    onPressed: () => _openMerge(all),
-                    icon: const Icon(Icons.merge_type, size: AppIconSize.row),
-                    label: const Text('Combinar'),
+                if (state.batchRunning) ...[
+                  const SizedBox(width: 6),
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Analizando ${state.batchCurrent ?? ''} '
+                      '(${state.batchDone + 1} de ${state.batchTotal})…',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                  TextButton(
+                    key: const Key('analyze-stop'),
+                    onPressed: state.stopBatchAnalysis,
+                    child: const Text('Detener'),
+                  ),
+                ] else ...[
+                  if (state.aiEnabled &&
+                      !state.offline &&
+                      state.pendingAnalysisCount > 0)
+                    TextButton.icon(
+                      key: const Key('analyze-pending'),
+                      onPressed: () => _confirmAnalyzePending(state),
+                      icon:
+                          const Icon(Icons.auto_awesome, size: AppIconSize.row),
+                      label: Text('Analizar (${state.pendingAnalysisCount})'),
+                    ),
+                  if (all.length >= 2 && !state.offline)
+                    TextButton.icon(
+                      key: const Key('merge-companies'),
+                      onPressed: () => _openMerge(all),
+                      icon: const Icon(Icons.merge_type, size: AppIconSize.row),
+                      label: const Text('Combinar'),
+                    ),
+                ],
               ],
             ),
           ),

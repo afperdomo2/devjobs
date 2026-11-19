@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:devjobs/models/ai_config.dart';
@@ -441,7 +442,8 @@ void main() {
       expect(insight.totalPostulaciones,
           apps.where((a) => a.empresa == 'A').length);
       expect(state.insightFor('a'), isNotNull);
-      expect(state.insightError, isNull);
+      expect(state.insightErrorFor('A'), isNull);
+      expect(state.isAnalyzing('A'), isFalse);
       expect(api.upsertCalls, 1);
       expect(api.lastUpsert?.empresa, 'A');
     });
@@ -468,7 +470,7 @@ void main() {
       final insight = await state.analyzeCompany('A');
 
       expect(insight, isNull);
-      expect(state.insightError, contains('Sin conexión'));
+      expect(state.insightErrorFor('A'), contains('Sin conexión'));
     });
 
     test('error de la IA queda en insightError', () async {
@@ -489,8 +491,8 @@ void main() {
       final insight = await state.analyzeCompany('A');
 
       expect(insight, isNull);
-      expect(state.insightError, contains('límite de uso'));
-      expect(state.analyzingInsight, isFalse);
+      expect(state.insightErrorFor('A'), contains('límite de uso'));
+      expect(state.isAnalyzing('A'), isFalse);
     });
 
     test('si falla el guardado en la Sheet se conserva el análisis', () async {
@@ -550,6 +552,183 @@ void main() {
         ),
         throwsA(isA<Exception>()),
       );
+    });
+  });
+
+  group('análisis por empresa y lote', () {
+    Map<String, dynamic> okJson(String empresa) => {
+          'etiquetas': ['no-respuesta'],
+          'recomendacion': 'Baja prioridad',
+          'resumen': 'Analizado $empresa.',
+        };
+
+    String empresaOf(String user) =>
+        RegExp(r'Empresa: (.+)').firstMatch(user)?.group(1)?.trim() ?? '';
+
+    AiConfig aiConfig() => const AiConfig(
+          baseUrl: 'https://ejemplo.test/v1',
+          apiKey: 'key',
+          models: ['m1'],
+        );
+
+    CompanyAnalyzerService Function(AiConfig) analyzerWhere(
+      Future<Map<String, dynamic>> Function(
+        String model,
+        String system,
+        String user,
+      ) complete,
+    ) {
+      return (config) => CompanyAnalyzerService(
+            config: config,
+            delayBetweenAttempts: Duration.zero,
+            completeForModel: complete,
+          );
+    }
+
+    List<JobApplication> batchApps() => [
+          JobApplication(rowIndex: 1, empresa: 'Pequena', vacante: 'x'),
+          JobApplication(rowIndex: 2, empresa: 'Grande', vacante: 'x'),
+          JobApplication(rowIndex: 3, empresa: 'Grande', vacante: 'y'),
+          JobApplication(
+            rowIndex: 4,
+            empresa: 'Empresa confidencial',
+            vacante: 'z',
+          ),
+        ];
+
+    test('isAnalyzing es por empresa, no global', () async {
+      final completer = Completer<Map<String, dynamic>>();
+      final state = AppState(
+        apiService: _FakeInsightApi(batchApps()),
+        analyzerBuilder: analyzerWhere((m, s, u) => completer.future),
+      );
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      final future = state.analyzeCompany('Grande');
+      expect(state.isAnalyzing('Grande'), isTrue);
+      expect(state.isAnalyzing('Pequena'), isFalse);
+
+      completer.complete(okJson('Grande'));
+      await future;
+      expect(state.isAnalyzing('Grande'), isFalse);
+    });
+
+    test('insightErrorFor es por empresa', () async {
+      final state = AppState(
+        apiService: _FakeInsightApi(batchApps()),
+        analyzerBuilder: analyzerWhere((m, s, u) async {
+          if (empresaOf(u) == 'Grande') {
+            throw const JobImportException(JobImportErrorKind.quota, 'cuota');
+          }
+          return okJson(empresaOf(u));
+        }),
+      );
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      await state.analyzeCompany('Grande');
+
+      expect(state.insightErrorFor('Grande'), contains('cuota'));
+      expect(state.insightErrorFor('Pequena'), isNull);
+    });
+
+    test('pendingAnalysisCompanies excluye analizadas y confidencial, y '
+        'ordena por tamaño', () async {
+      final api = _FakeInsightApi(
+        [
+          ...batchApps(),
+          JobApplication(rowIndex: 5, empresa: 'YaAnalizada', vacante: 'w'),
+        ],
+        insights: [
+          const CompanyInsight(empresa: 'YaAnalizada', resumen: 'x'),
+        ],
+      );
+      final state = AppState(apiService: api);
+      await state.fetchApplications(forceRefresh: true);
+      await state.loadCompanyInsights();
+
+      expect(state.pendingAnalysisCompanies, ['Grande', 'Pequena']);
+      expect(state.pendingAnalysisCount, 2);
+    });
+
+    test('analyzePendingCompanies analiza todas en orden y termina limpio',
+        () async {
+      final order = <String>[];
+      final state = AppState(
+        apiService: _FakeInsightApi(batchApps()),
+        analyzerBuilder: analyzerWhere((m, s, u) async {
+          order.add(empresaOf(u));
+          return okJson(empresaOf(u));
+        }),
+      );
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      await state.analyzePendingCompanies();
+
+      expect(order, ['Grande', 'Pequena']);
+      expect(state.batchDone, 2);
+      expect(state.batchTotal, 2);
+      expect(state.batchError, isNull);
+      expect(state.batchRunning, isFalse);
+      expect(state.pendingAnalysisCount, 0);
+    });
+
+    test('un error detiene el lote y retocar reanuda con las restantes',
+        () async {
+      var calls = 0;
+      var failSecond = true;
+      final state = AppState(
+        apiService: _FakeInsightApi(batchApps()),
+        analyzerBuilder: analyzerWhere((m, s, u) async {
+          calls++;
+          if (failSecond && calls == 2) {
+            throw const JobImportException(JobImportErrorKind.quota, 'cuota');
+          }
+          return okJson(empresaOf(u));
+        }),
+      );
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      await state.analyzePendingCompanies();
+      expect(state.batchDone, 1);
+      expect(state.batchError, contains('cuota'));
+      expect(state.pendingAnalysisCount, 1);
+
+      failSecond = false;
+      await state.analyzePendingCompanies();
+      expect(state.batchDone, 1);
+      expect(state.batchTotal, 1);
+      expect(state.batchError, isNull);
+      expect(state.pendingAnalysisCount, 0);
+    });
+
+    test('stopBatchAnalysis detiene después de la empresa actual', () async {
+      final completer = Completer<Map<String, dynamic>>();
+      var calls = 0;
+      final state = AppState(
+        apiService: _FakeInsightApi(batchApps()),
+        analyzerBuilder: analyzerWhere((m, s, u) {
+          calls++;
+          if (calls == 1) return completer.future;
+          return Future.value(okJson(empresaOf(u)));
+        }),
+      );
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      final future = state.analyzePendingCompanies();
+      await Future<void>.delayed(Duration.zero);
+      state.stopBatchAnalysis();
+      completer.complete(okJson('Grande'));
+      await future;
+
+      // Terminó la empresa en curso y se detuvo con la cola a medio llenar.
+      expect(state.batchDone, 1);
+      expect(state.pendingAnalysisCount, 1);
+      expect(state.batchRunning, isFalse);
     });
   });
 }

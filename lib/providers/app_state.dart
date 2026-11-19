@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../config.dart';
 import '../helpers/application_sort.dart';
 import '../helpers/company_merge.dart';
+import '../helpers/company_similarity.dart';
+import '../helpers/company_stats.dart';
 import '../helpers/network_error.dart';
 import '../helpers/status.dart';
 import '../helpers/text_normalizer.dart';
@@ -36,8 +38,22 @@ class AppState extends ChangeNotifier {
   /// nunca bloquea el resto de la app.
   final Map<String, CompanyInsight> _insights = {};
   bool _insightsLoaded = false;
-  bool _analyzingInsight = false;
-  String? _insightError;
+
+  /// Empresas con un análisis EN VUELO (claves normalizadas). Es por empresa
+  /// para que el loading solo se muestre en la empresa que se está
+  /// procesando, no en cualquiera que el usuario abra mientras tanto.
+  final Set<String> _analyzing = {};
+
+  /// Errores del último intento de análisis, POR empresa (clave normalizada).
+  final Map<String, String> _insightErrors = {};
+
+  /// Lote "analizar pendientes": worker secuencial con cola en [AppState].
+  bool _batchRunning = false;
+  bool _batchStopRequested = false;
+  int _batchDone = 0;
+  int _batchTotal = 0;
+  String? _batchCurrent;
+  String? _batchError;
 
   static const _cacheTtl = Duration(minutes: 3);
 
@@ -83,21 +99,51 @@ class AppState extends ChangeNotifier {
   /// Análisis IA cargados, por clave de empresa (ver [insightFor]).
   Map<String, CompanyInsight> get insights => _insights;
 
-  /// true mientras se genera un análisis con IA.
-  bool get analyzingInsight => _analyzingInsight;
-
-  /// Error del último intento de análisis; `null` si no hubo.
-  String? get insightError => _insightError;
-
   /// Análisis IA de una empresa (compara sin mayúsculas ni tildes).
-  CompanyInsight? insightFor(String empresa) => _insights[normalizeText(empresa)];
+  CompanyInsight? insightFor(String empresa) =>
+      _insights[normalizeText(empresa)];
 
-  /// Limpia el error de análisis (p.ej. al reintentar).
-  void clearInsightError() {
-    if (_insightError == null) return;
-    _insightError = null;
-    notifyListeners();
+  /// true mientras se genera el análisis de [empresa] (y solo de esa empresa:
+  /// un análisis en vuelo de otra no ilumina el loading de esta).
+  bool isAnalyzing(String empresa) =>
+      _analyzing.contains(normalizeText(empresa));
+
+  /// Error del último intento de análisis de [empresa]; `null` si no hubo.
+  String? insightErrorFor(String empresa) =>
+      _insightErrors[normalizeText(empresa)];
+
+  /// Limpia el error de análisis de [empresa] (p.ej. al reintentar).
+  void clearInsightError(String empresa) {
+    if (_insightErrors.remove(normalizeText(empresa)) != null) {
+      notifyListeners();
+    }
   }
+
+  /// Empresas sin análisis IA (excluye el bucket confidencial), ordenadas por
+  /// nº de postulaciones desc: primero las que aportan más datos al análisis.
+  List<String> get pendingAnalysisCompanies {
+    return [
+      for (final company in companiesStats(_cached ?? []))
+        if (_insights[normalizeText(company.nombre)] == null &&
+            !isConfidentialCompany(company.nombre))
+          company.nombre,
+    ];
+  }
+
+  int get pendingAnalysisCount => pendingAnalysisCompanies.length;
+
+  /// true mientras corre el lote "analizar pendientes".
+  bool get batchRunning => _batchRunning;
+
+  /// Progreso del lote: empresas completadas y total del lote actual.
+  int get batchDone => _batchDone;
+  int get batchTotal => _batchTotal;
+
+  /// Empresa que el lote está procesando ahora (para el indicador).
+  String? get batchCurrent => _batchCurrent;
+
+  /// Error que detuvo el lote; `null` si terminó o sigue en curso.
+  String? get batchError => _batchError;
 
   List<JobApplication> get applications => _cached ?? [];
 
@@ -438,25 +484,30 @@ class AppState extends ChangeNotifier {
   /// Genera (o regenera) el análisis IA de [empresa] y lo guarda.
   ///
   /// Devuelve el análisis o `null` si falló (el motivo queda en
-  /// [insightError]). Si el guardado en la Sheet falla, el análisis se
-  /// conserva en el dispositivo: reanalizar reintenta el guardado.
+  /// [insightErrorFor]). El loading es por empresa ([isAnalyzing]): un
+  /// análisis en vuelo de otra empresa no se refleja aquí. Si el guardado en
+  /// la Sheet falla, el análisis se conserva en el dispositivo: reanalizar
+  /// reintenta el guardado.
   Future<CompanyInsight?> analyzeCompany(String empresa) async {
+    if (isAnalyzing(empresa)) return null;
+
     if (_offline) {
-      _insightError =
-          'Sin conexión a internet. No se puede analizar en modo solo lectura.';
-      notifyListeners();
+      _setError(
+        empresa,
+        'Sin conexión a internet. No se puede analizar en modo solo lectura.',
+      );
       return null;
     }
 
     final apps = getByField('empresa', empresa);
     if (apps.isEmpty) {
-      _insightError = 'No hay postulaciones de esta empresa para analizar.';
-      notifyListeners();
+      _setError(empresa, 'No hay postulaciones de esta empresa para analizar.');
       return null;
     }
 
-    _analyzingInsight = true;
-    _insightError = null;
+    final key = normalizeText(empresa);
+    _analyzing.add(key);
+    _insightErrors.remove(key);
     notifyListeners();
 
     try {
@@ -482,16 +533,69 @@ class AppState extends ChangeNotifier {
 
       return insight;
     } on JobImportException catch (e) {
-      _insightError = e.message;
+      _setError(empresa, e.message);
       return null;
     } catch (e) {
       if (isNetworkError(e)) _offline = true;
-      _insightError = friendlyErrorMessage(e);
+      _setError(empresa, friendlyErrorMessage(e));
       return null;
     } finally {
-      _analyzingInsight = false;
+      _analyzing.remove(key);
       notifyListeners();
     }
+  }
+
+  void _setError(String empresa, String message) {
+    _insightErrors[normalizeText(empresa)] = message;
+    notifyListeners();
+  }
+
+  /// Lote "analizar pendientes": analiza secuencialmente las empresas de
+  /// [pendingAnalysisCompanies] (una a la vez, sin saturar la API).
+  ///
+  /// Política de errores: se **detiene al primer error** ([batchError] con el
+  /// motivo, que también queda en [insightErrorFor] de esa empresa) y volver
+  /// a llamarlo **reanuda** con las restantes — las completadas ya no son
+  /// pendientes. [stopBatchAnalysis] pide parar: se termina la empresa actual
+  /// (no se corta una llamada a media) y se detiene lo completado se guarda.
+  Future<void> analyzePendingCompanies() async {
+    if (_batchRunning) return;
+    final pending = pendingAnalysisCompanies;
+    if (pending.isEmpty) return;
+
+    _batchRunning = true;
+    _batchStopRequested = false;
+    _batchError = null;
+    _batchDone = 0;
+    _batchTotal = pending.length;
+    notifyListeners();
+
+    try {
+      for (final empresa in pending) {
+        if (_batchStopRequested) break;
+        _batchCurrent = empresa;
+        notifyListeners();
+
+        final result = await analyzeCompany(empresa);
+        if (result == null) {
+          _batchError = _insightErrors[normalizeText(empresa)] ??
+              'No se pudo analizar $empresa.';
+          break;
+        }
+        _batchDone++;
+        notifyListeners();
+      }
+    } finally {
+      _batchRunning = false;
+      _batchCurrent = null;
+      notifyListeners();
+    }
+  }
+
+  /// Pide detener el lote después de la empresa actual.
+  void stopBatchAnalysis() {
+    _batchStopRequested = true;
+    notifyListeners();
   }
 
   /// Combina empresas: renombra la columna Empresa de las postulaciones

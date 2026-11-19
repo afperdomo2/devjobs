@@ -1,13 +1,18 @@
+import 'dart:async';
+
+import 'package:devjobs/models/ai_config.dart';
 import 'package:devjobs/models/company_insight.dart';
 import 'package:devjobs/models/job_application.dart';
 import 'package:devjobs/providers/app_state.dart';
 import 'package:devjobs/screens/empresas_screen.dart';
+import 'package:devjobs/services/company_analyzer_service.dart';
 import 'package:devjobs/services/sheets_api_service.dart';
 import 'package:devjobs/theme.dart';
 import 'package:devjobs/widgets/company_card.dart';
 import 'package:devjobs/widgets/filter_pill.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 class _FakeApi extends SheetsApiService {
@@ -25,6 +30,9 @@ class _FakeApi extends SheetsApiService {
   Future<List<CompanyInsight>> fetchCompanyInsights() async => insights;
 
   @override
+  Future<void> upsertCompanyInsight(CompanyInsight insight) async {}
+
+  @override
   Future<void> updateRow(int rowIndex, Map<String, String> updates) async {
     updateCalls++;
     this.updates.add({'_row': '$rowIndex', ...updates});
@@ -32,6 +40,11 @@ class _FakeApi extends SheetsApiService {
 }
 
 void main() {
+  setUpAll(() async {
+    // El prompt de análisis de empresa formatea fechas en español.
+    await initializeDateFormatting('es');
+  });
+
   String daysAgo(int days) {
     final date = DateTime.now().subtract(Duration(days: days));
     return '${date.day}/${date.month}/${date.year}';
@@ -92,6 +105,7 @@ void main() {
   Future<_FakeApi> pumpScreen(
     WidgetTester tester, {
     List<CompanyInsight> insights = const [],
+    CompanyAnalyzerService Function(AiConfig config)? analyzerBuilder,
   }) async {
     tester.view.physicalSize = const Size(600, 900);
     tester.view.devicePixelRatio = 1;
@@ -99,8 +113,13 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final api = _FakeApi(apps, insights: insights);
-    final state = AppState(apiService: api);
+    final state = AppState(apiService: api, analyzerBuilder: analyzerBuilder);
     await state.fetchApplications(forceRefresh: true);
+    await state.updateAiConfig(const AiConfig(
+      baseUrl: 'https://ejemplo.test/v1',
+      apiKey: 'key',
+      models: ['m1'],
+    ));
 
     await tester.pumpWidget(
       ChangeNotifierProvider.value(
@@ -215,6 +234,105 @@ void main() {
       await tester.tap(find.text('Limpiar filtros'));
       await tester.pump();
       expect(order(tester), hasLength(3));
+    });
+  });
+
+  group('Analizar pendientes', () {
+    Map<String, dynamic> okJson() => {
+          'etiquetas': ['no-respuesta'],
+          'recomendacion': 'Baja prioridad',
+          'resumen': 'Ok.',
+        };
+
+    CompanyAnalyzerService Function(AiConfig) countingAnalyzer(
+      void Function() onCall,
+    ) {
+      return (config) => CompanyAnalyzerService(
+            config: config,
+            completeForModel: (m, s, u) async {
+              onCall();
+              return okJson();
+            },
+          );
+    }
+
+    testWidgets('pide confirmación y Cancelar no dispara nada', (tester) async {
+      var calls = 0;
+      await pumpScreen(
+        tester,
+        analyzerBuilder: countingAnalyzer(() => calls++),
+      );
+
+      expect(find.text('Analizar (3)'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('analyze-pending')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('¿Analizar 3 empresas con IA?'), findsOneWidget);
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
+
+      expect(calls, 0);
+      expect(find.text('Analizar (3)'), findsOneWidget);
+    });
+
+    testWidgets('confirmado ejecuta el lote completo y el botón desaparece',
+        (tester) async {
+      var calls = 0;
+      await pumpScreen(
+        tester,
+        analyzerBuilder: countingAnalyzer(() => calls++),
+      );
+
+      await tester.tap(find.byKey(const Key('analyze-pending')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Analizar'));
+      await tester.pumpAndSettle();
+
+      expect(calls, 3);
+      expect(find.text('Analizar (3)'), findsNothing);
+      expect(find.text('Análisis completados: 3 de 3'), findsOneWidget);
+    });
+
+    testWidgets('muestra el progreso con Detener mientras corre', (tester) async {
+      final completer = Completer<Map<String, dynamic>>();
+      var calls = 0;
+      await pumpScreen(
+        tester,
+        analyzerBuilder: (config) => CompanyAnalyzerService(
+          config: config,
+          completeForModel: (m, s, u) {
+            calls++;
+            return calls == 1 ? completer.future : Future.value(okJson());
+          },
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('analyze-pending')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Analizar'));
+      await tester.pump();
+
+      expect(find.textContaining('Analizando'), findsOneWidget);
+      expect(find.text('Detener'), findsOneWidget);
+
+      completer.complete(okJson());
+      await tester.pumpAndSettle();
+      expect(find.text('Detener'), findsNothing);
+      expect(find.text('Análisis completados: 3 de 3'), findsOneWidget);
+    });
+
+    testWidgets('se oculta cuando no quedan empresas por analizar',
+        (tester) async {
+      await pumpScreen(
+        tester,
+        insights: const [
+          CompanyInsight(empresa: 'Acme', resumen: 'x'),
+          CompanyInsight(empresa: 'Beta', resumen: 'x'),
+          CompanyInsight(empresa: 'Gamma', resumen: 'x'),
+        ],
+      );
+
+      expect(find.byKey(const Key('analyze-pending')), findsNothing);
     });
   });
 
