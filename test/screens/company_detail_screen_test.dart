@@ -116,6 +116,47 @@ void main() {
 
     expect(find.text('Análisis IA'), findsOneWidget);
     expect(find.text('Analizar con IA'), findsOneWidget);
+    // Acme tiene 3 postulaciones (>= 2): sin advertencia de pocos datos.
+    expect(find.textContaining('puede ser limitado'), findsNothing);
+  });
+
+  testWidgets('con menos de 2 postulaciones avisa pero permite analizar',
+      (tester) async {
+    final una = [
+      JobApplication(
+        rowIndex: 1,
+        empresa: 'SoloUna',
+        estado: 'Enviada',
+        fechaPostulacion: '01/01/2026',
+      ),
+    ];
+    final state = AppState(apiService: _FakeApi(una));
+    await state.fetchApplications(forceRefresh: true);
+    await state.updateAiConfig(const AiConfig(
+      baseUrl: 'https://ejemplo.test/v1',
+      apiKey: 'key',
+      models: ['m1'],
+    ));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: state,
+        child: const MaterialApp(home: CompanyDetailScreen(nombre: 'SoloUna')),
+      ),
+    );
+    await tester.pump();
+
+    await tester.scrollUntilVisible(
+      find.text('Análisis IA'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+
+    expect(find.textContaining('el análisis puede ser limitado'), findsOneWidget);
+    // La advertencia no bloquea: el botón sigue disponible.
+    expect(find.text('Analizar con IA'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('muestra el análisis guardado con sus etiquetas', (tester) async {

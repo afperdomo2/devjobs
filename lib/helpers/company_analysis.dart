@@ -5,6 +5,19 @@ import 'date_formatter.dart';
 import 'salary_insights.dart';
 import 'status.dart';
 
+/// Mínimo de postulaciones para que una empresa cuente como analizable.
+///
+/// Un patrón de comportamiento ("nunca responden", "dan feedback") necesita
+/// al menos 2 observaciones; con 1 el análisis sale débil y gasta tokens sin
+/// aportar. En el botón "Analizar (N)" estas empresas quedan fuera; en el
+/// detalle de la empresa se muestra una advertencia pero el usuario puede
+/// analizar igualmente.
+const int kMinApplicationsForAnalysis = 2;
+
+/// true si la empresa tiene datos suficientes para un análisis con IA.
+bool canAnalyzeCompany(List<JobApplication> apps) =>
+    apps.length >= kMinApplicationsForAnalysis;
+
 /// Hechos calculados en Dart sobre las postulaciones de una empresa.
 ///
 /// Se envían al prompt como datos verificables para que la IA se dedique a la

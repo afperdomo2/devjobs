@@ -43,6 +43,7 @@ Future<void> pumpCard(
   String title = 'Análisis IA',
   bool collapsible = false,
   bool showCard = true,
+  bool lowData = false,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -59,6 +60,7 @@ Future<void> pumpCard(
             title: title,
             collapsible: collapsible,
             showCard: showCard,
+            lowData: lowData,
           ),
         ),
       ),
@@ -209,6 +211,29 @@ void main() {
     expect(find.text('Procesos largos y sin feedback.'), findsOneWidget);
     expect(find.text('Perfil de vacantes'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('con pocos datos avisa pero permite analizar igual', (
+    tester,
+  ) async {
+    await pumpCard(tester, aiEnabled: true, lowData: true, onAnalyze: () {});
+
+    expect(
+      find.text(
+        'Con menos de 2 postulaciones el análisis puede ser limitado. '
+        'Puedes generarlo igualmente.',
+      ),
+      findsOneWidget,
+    );
+    // El botón sigue activo: es solo una advertencia.
+    expect(find.text('Analizar con IA'), findsOneWidget);
+    final button = tester.widget<FilledButton>(
+      find.ancestor(
+        of: find.text('Analizar con IA'),
+        matching: find.byType(FilledButton),
+      ),
+    );
+    expect(button.onPressed, isNotNull);
   });
 
   group('modo colapsable (detalle de la vacante)', () {

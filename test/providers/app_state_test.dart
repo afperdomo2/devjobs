@@ -589,10 +589,12 @@ void main() {
           JobApplication(rowIndex: 1, empresa: 'Pequena', vacante: 'x'),
           JobApplication(rowIndex: 2, empresa: 'Grande', vacante: 'x'),
           JobApplication(rowIndex: 3, empresa: 'Grande', vacante: 'y'),
+          JobApplication(rowIndex: 5, empresa: 'Pequena', vacante: 'z'),
+          JobApplication(rowIndex: 6, empresa: 'Una', vacante: 'w'),
           JobApplication(
             rowIndex: 4,
             empresa: 'Empresa confidencial',
-            vacante: 'z',
+            vacante: 'c',
           ),
         ];
 
@@ -633,12 +635,12 @@ void main() {
       expect(state.insightErrorFor('Pequena'), isNull);
     });
 
-    test('pendingAnalysisCompanies excluye analizadas y confidencial, y '
-        'ordena por tamaño', () async {
+    test('pendingAnalysisCompanies excluye analizadas, confidencial y las de '
+        'una sola postulación, y ordena por tamaño', () async {
       final api = _FakeInsightApi(
         [
           ...batchApps(),
-          JobApplication(rowIndex: 5, empresa: 'YaAnalizada', vacante: 'w'),
+          JobApplication(rowIndex: 7, empresa: 'YaAnalizada', vacante: 'w'),
         ],
         insights: [
           const CompanyInsight(empresa: 'YaAnalizada', resumen: 'x'),
@@ -648,6 +650,7 @@ void main() {
       await state.fetchApplications(forceRefresh: true);
       await state.loadCompanyInsights();
 
+      // 'Una' tiene 1 sola postulación → no es analizable (mínimo 2).
       expect(state.pendingAnalysisCompanies, ['Grande', 'Pequena']);
       expect(state.pendingAnalysisCount, 2);
     });

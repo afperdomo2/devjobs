@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../helpers/company_analysis.dart';
 import '../helpers/date_formatter.dart';
 import '../models/company_insight.dart';
 import '../theme.dart';
@@ -31,6 +32,10 @@ class CompanyInsightCard extends StatefulWidget {
   final bool showCard;
   final int resumenMaxLines;
 
+  /// La empresa tiene menos de [kMinApplicationsForAnalysis] postulaciones:
+  /// se muestra una advertencia pero el análisis se puede generar igual.
+  final bool lowData;
+
   const CompanyInsightCard({
     super.key,
     this.insight,
@@ -44,6 +49,7 @@ class CompanyInsightCard extends StatefulWidget {
     this.collapsible = false,
     this.showCard = true,
     this.resumenMaxLines = 3,
+    this.lowData = false,
   });
 
   @override
@@ -82,6 +88,7 @@ class _CompanyInsightCardState extends State<CompanyInsightCard> {
               offline: widget.offline,
               error: widget.error,
               onAnalyze: widget.onAnalyze,
+              lowData: widget.lowData,
             )
           else ...[
             if (widget.stale)
@@ -260,12 +267,14 @@ class _EmptyState extends StatelessWidget {
   final bool offline;
   final String? error;
   final VoidCallback? onAnalyze;
+  final bool lowData;
 
   const _EmptyState({
     required this.loading,
     required this.offline,
     required this.error,
     required this.onAnalyze,
+    required this.lowData,
   });
 
   @override
@@ -280,6 +289,29 @@ class _EmptyState extends StatelessWidget {
           'retroalimentación y qué esperar de su proceso.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
         ),
+        if (lowData) ...[
+          const SizedBox(height: AppSpace.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: AppIconSize.row,
+                color: warningTextColor(brightness),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Con menos de $kMinApplicationsForAnalysis postulaciones el '
+                  'análisis puede ser limitado. Puedes generarlo igualmente.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: warningTextColor(brightness),
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: AppSpace.md),
         if (loading) ...[
           const _ProgressRow(label: 'Analizando vacantes y notas…'),

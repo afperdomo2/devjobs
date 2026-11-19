@@ -181,6 +181,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
               offline: state.offline,
               error: state.insightErrorFor(stats.nombre),
               onAnalyze: () => state.analyzeCompany(stats.nombre),
+              lowData: !canAnalyzeCompany(apps),
             ),
           ],
           const SizedBox(height: AppSpace.xl),

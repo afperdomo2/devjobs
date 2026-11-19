@@ -32,6 +32,14 @@ JobApplication app({
 void main() {
   final now = DateTime(2026, 11, 19);
 
+  group('canAnalyzeCompany', () {
+    test('requiere al menos 2 postulaciones', () {
+      expect(canAnalyzeCompany(const []), isFalse);
+      expect(canAnalyzeCompany([app()]), isFalse);
+      expect(canAnalyzeCompany([app(rowIndex: 1), app(rowIndex: 2)]), isTrue);
+    });
+  });
+
   group('companyAnalysisFacts', () {
     test('lista vacía devuelve todo en cero', () {
       final facts = companyAnalysisFacts(const [], now: now);

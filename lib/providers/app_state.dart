@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config.dart';
 import '../helpers/application_sort.dart';
+import '../helpers/company_analysis.dart';
 import '../helpers/company_merge.dart';
 import '../helpers/company_similarity.dart';
 import '../helpers/company_stats.dart';
@@ -119,12 +120,15 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Empresas sin análisis IA (excluye el bucket confidencial), ordenadas por
-  /// nº de postulaciones desc: primero las que aportan más datos al análisis.
+  /// Empresas analizables y sin análisis IA, ordenadas por nº de
+  /// postulaciones desc. Excluye el bucket confidencial y las que no llegan
+  /// a [kMinApplicationsForAnalysis] (con 1 postulación el análisis sale
+  /// débil y no merece tokens).
   List<String> get pendingAnalysisCompanies {
     return [
       for (final company in companiesStats(_cached ?? []))
-        if (_insights[normalizeText(company.nombre)] == null &&
+        if (company.total >= kMinApplicationsForAnalysis &&
+            _insights[normalizeText(company.nombre)] == null &&
             !isConfidentialCompany(company.nombre))
           company.nombre,
     ];
