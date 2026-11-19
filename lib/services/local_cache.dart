@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 import '../helpers/theme_mode.dart';
 import '../models/ai_config.dart';
+import '../models/company_insight.dart';
 import '../models/job_application.dart';
 
 class LocalCache {
@@ -13,6 +14,7 @@ class LocalCache {
   static const _keyTimestamp = 'devjobs_cached_timestamp';
   static const _keyThemeMode = 'devjobs_theme_mode';
   static const _keyAiConfig = 'devjobs_ai_config';
+  static const _keyInsights = 'devjobs_company_insights';
 
   final SharedPreferences _prefs;
 
@@ -77,8 +79,29 @@ class LocalCache {
     await _prefs.remove(_keyAiConfig);
   }
 
+  /// Análisis IA de empresas guardados en el dispositivo.
+  Future<List<CompanyInsight>?> loadCompanyInsights() async {
+    final raw = _prefs.getString(_keyInsights);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final List<dynamic> jsonList = jsonDecode(raw) as List<dynamic>;
+      return jsonList
+          .whereType<Map>()
+          .map((e) => CompanyInsight.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveCompanyInsights(List<CompanyInsight> insights) async {
+    final jsonList = insights.map((i) => i.toJson()).toList();
+    await _prefs.setString(_keyInsights, jsonEncode(jsonList));
+  }
+
   Future<void> clear() async {
     await _prefs.remove(_keyData);
     await _prefs.remove(_keyTimestamp);
+    await _prefs.remove(_keyInsights);
   }
 }

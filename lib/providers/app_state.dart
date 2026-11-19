@@ -4,14 +4,21 @@ import '../config.dart';
 import '../helpers/application_sort.dart';
 import '../helpers/network_error.dart';
 import '../helpers/status.dart';
+import '../helpers/text_normalizer.dart';
 import '../models/ai_config.dart';
+import '../models/company_insight.dart';
 import '../models/job_application.dart';
+import '../models/job_import.dart';
+import '../services/company_analyzer_service.dart';
 import '../services/local_cache.dart';
 import '../services/sheets_api_service.dart';
 
 class AppState extends ChangeNotifier {
   final SheetsApiService apiService;
   final LocalCache? localCache;
+
+  /// Constructor de analizadores de empresa; sustituible en tests.
+  final CompanyAnalyzerService Function(AiConfig config)? analyzerBuilder;
 
   List<JobApplication>? _cached;
   DateTime? _lastFetched;
@@ -23,6 +30,13 @@ class AppState extends ChangeNotifier {
   bool _cacheLoaded = false;
   ThemeMode _themeMode;
   AiConfig _aiConfig;
+
+  /// Análisis IA por empresa (clave normalizada). Carga opcional: su ausencia
+  /// nunca bloquea el resto de la app.
+  final Map<String, CompanyInsight> _insights = {};
+  bool _insightsLoaded = false;
+  bool _analyzingInsight = false;
+  String? _insightError;
 
   static const _cacheTtl = Duration(minutes: 3);
 
@@ -43,6 +57,7 @@ class AppState extends ChangeNotifier {
   AppState({
     required this.apiService,
     this.localCache,
+    this.analyzerBuilder,
     ThemeMode? initialThemeMode,
   }) : _themeMode =
            initialThemeMode ?? localCache?.themeMode ?? ThemeMode.system,
@@ -63,6 +78,25 @@ class AppState extends ChangeNotifier {
 
   /// La importación con IA está disponible si hay proveedor, clave y modelos.
   bool get aiEnabled => _aiConfig.isEnabled;
+
+  /// Análisis IA cargados, por clave de empresa (ver [insightFor]).
+  Map<String, CompanyInsight> get insights => _insights;
+
+  /// true mientras se genera un análisis con IA.
+  bool get analyzingInsight => _analyzingInsight;
+
+  /// Error del último intento de análisis; `null` si no hubo.
+  String? get insightError => _insightError;
+
+  /// Análisis IA de una empresa (compara sin mayúsculas ni tildes).
+  CompanyInsight? insightFor(String empresa) => _insights[normalizeText(empresa)];
+
+  /// Limpia el error de análisis (p.ej. al reintentar).
+  void clearInsightError() {
+    if (_insightError == null) return;
+    _insightError = null;
+    notifyListeners();
+  }
 
   List<JobApplication> get applications => _cached ?? [];
 
@@ -364,5 +398,98 @@ class AppState extends ChangeNotifier {
 
     _loading = false;
     notifyListeners();
+  }
+
+  /// Carga los análisis IA de empresas (caché local + Sheet).
+  ///
+  /// Los análisis son opcionales: si la red falla se conserva la caché local
+  /// y no se marca la app como offline.
+  Future<void> loadCompanyInsights({bool forceRefresh = false}) async {
+    if (_insightsLoaded && !forceRefresh) return;
+    _insightsLoaded = true;
+
+    if (localCache != null) {
+      final persisted = await localCache!.loadCompanyInsights();
+      if (persisted != null) {
+        for (final insight in persisted) {
+          _insights.putIfAbsent(insight.key, () => insight);
+        }
+      }
+      notifyListeners();
+    }
+
+    try {
+      final fetched = await apiService.fetchCompanyInsights();
+      // Lo fetchado manda por clave; los análisis locales aún no guardados
+      // en la Sheet se conservan porque no llegan en la respuesta.
+      for (final insight in fetched) {
+        _insights[insight.key] = insight;
+      }
+      if (localCache != null) {
+        await localCache!.saveCompanyInsights(_insights.values.toList());
+      }
+      notifyListeners();
+    } catch (_) {
+      // Opcional: un fallo aquí no debe tumbar la app.
+    }
+  }
+
+  /// Genera (o regenera) el análisis IA de [empresa] y lo guarda.
+  ///
+  /// Devuelve el análisis o `null` si falló (el motivo queda en
+  /// [insightError]). Si el guardado en la Sheet falla, el análisis se
+  /// conserva en el dispositivo: reanalizar reintenta el guardado.
+  Future<CompanyInsight?> analyzeCompany(String empresa) async {
+    if (_offline) {
+      _insightError =
+          'Sin conexión a internet. No se puede analizar en modo solo lectura.';
+      notifyListeners();
+      return null;
+    }
+
+    final apps = getByField('empresa', empresa);
+    if (apps.isEmpty) {
+      _insightError = 'No hay postulaciones de esta empresa para analizar.';
+      notifyListeners();
+      return null;
+    }
+
+    _analyzingInsight = true;
+    _insightError = null;
+    notifyListeners();
+
+    try {
+      final builder = analyzerBuilder ??
+          ((config) => CompanyAnalyzerService(config: config));
+      final insight = await builder(_aiConfig).analyze(
+        empresa: empresa.trim(),
+        apps: apps,
+      );
+
+      _insights[insight.key] = insight;
+      _insightsLoaded = true;
+      if (localCache != null) {
+        await localCache!.saveCompanyInsights(_insights.values.toList());
+      }
+
+      try {
+        await apiService.upsertCompanyInsight(insight);
+      } catch (_) {
+        // La Sheet no aceptó el guardado: se conserva el resultado local y el
+        // aviso de "desactualizado" eventualmente llevará a reanalizar.
+      }
+
+      return insight;
+    } on JobImportException catch (e) {
+      _insightError = e.message;
+      return null;
+    } catch (e) {
+      if (isNetworkError(e)) _offline = true;
+      _insightError = friendlyErrorMessage(e);
+      return null;
+    } finally {
+      _analyzingInsight = false;
+      notifyListeners();
+    }
   }
 }

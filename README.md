@@ -268,7 +268,7 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses. **Salario ofrecido** muestra promedio y rango por moneda (COP/USD), con abreviaturas (`5,9M`, `100K`) e interpreta rangos y dólares |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global con contador y acceso al detalle |
 | **Agenda** | Cuarto tab con badge. Secciones **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**; hasta 5 filas por sección y “Ver todas” al listado completo |
-| **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes |
+| **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes. El detalle de cada empresa incluye métricas, distribución, el **Análisis IA** de su comportamiento y sus vacantes |
 | **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción; aviso si el enlace no es válido), comentarios, descripción, entrevista, botón **Agregar nota** con fecha y botón **Finalizar proceso** (estado final, fecha editable y nota opcional) |
 | **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, avisa si el link ya está registrado (al salir del campo y al guardar) y vuelve a la lista al guardar |
 | **Importar con IA** | Tarjeta **Autocompletar con IA** dentro de Nueva postulación (solo si hay proveedor y al menos un modelo configurados). Pega un link o la descripción y la IA prellena los campos; la descripción se guarda como resumen Markdown por secciones y se renderiza en el detalle |
@@ -331,6 +331,30 @@ En **Ajustes → Importación con IA** puedes agregar varios modelos y reordenar
 - OpenCode Go está pensado para agentes de código. El uso personal de bajo volumen es razonable; si prefieres cero ambigüedad, cambia `AI_BASE_URL` a `https://opencode.ai/inference/openai/v1` (pay-as-you-go).
 - El modelo principal es el primero de la lista de **Ajustes → Importación con IA** (`AI_MODEL` solo aporta la semilla inicial y admite varios modelos separados por comas). Si DeepSeek no está disponible, `glm-5.3-flash` es una alternativa con buena calidad de JSON.
 
+### Analizar empresa con IA
+
+Desde el **detalle de una empresa** (tab Empresas) la app puede generar un análisis del comportamiento de esa empresa en sus procesos de selección, con la misma configuración de proveedor y modelos de la importación.
+
+**Qué analiza**
+
+- Todas las postulaciones de la empresa: vacantes, estados, fechas, tipo de contrato, modalidad, ciudad, salario y canal de postulación (plataforma o correo).
+- Las **notas** (`Comentarios`), donde se registran las novedades: respuestas, feedback, pruebas, etc.
+- Métricas calculadas en la app (no por la IA): tasa de respuesta, días promedio hasta la primera respuesta, días promedio de cierre, activas estancadas, entrevistas y resumen salarial.
+
+**Qué genera**
+
+- **Etiquetas de comportamiento** de un vocabulario cerrado (`No responde`, `Respuesta lenta`, `Da feedback`, `Proceso ágil`, `Vacantes estancadas`…), pintadas como chips de colores.
+- **Resumen** (2–4 frases), **Señales positivas**, **A tener en cuenta** y una **Recomendación** (Priorizar / Seguimiento normal / Baja prioridad / Precaución).
+- Secciones expandibles: **Perfil de vacantes**, **Proceso de selección** y **Contactos** mencionados en las notas.
+
+**Cómo se usa**
+
+1. Abre el detalle de una empresa y toca **Analizar con IA** (aparece solo si hay IA configurada).
+2. Al terminar, el análisis se guarda en la pestaña `EmpresaAnalisis` de la Sheet y queda visible en la tarjeta **Análisis IA**.
+3. Si después hay postulaciones nuevas o novedades, la tarjeta avisa **"Datos desactualizados"** y ofrece **Reanalizar**. El disparador es manual: la app no gasta tokens sin que lo pidas.
+
+> 📄 La pestaña `EmpresaAnalisis` se crea sola en el primer guardado. Si el análisis no se puede guardar en la Sheet (p. ej. un problema transitorio), se conserva en el dispositivo y se reintenta al reanalizar.
+
 ### Columnas de Postulaciones
 
 | # | Columna | Descripción |
@@ -350,6 +374,25 @@ En **Ajustes → Importación con IA** puedes agregar varios modelos y reordenar
 | M | Comentarios | Notas internas separadas por `- ` (guion + espacio) |
 | N | ¿Entrevista? | Checkbox: indica si se realizó entrevista (✓ = sí) |
 | O | Por gestionar | Checkbox: marca manual de vacantes con algo pendiente (prueba, ejercicio, documento). La razón se anota en `Comentarios`. No se auto-limpia; se ve en la sección "Por gestionar" de Agenda y no altera el orden de los listados |
+
+### Columnas de EmpresaAnalisis
+
+Pestaña con el análisis IA por empresa (una fila por empresa). Se crea sola al guardar el primer análisis.
+
+| # | Columna | Descripción |
+|---|---------|-------------|
+| A | empresa | Nombre de la empresa (clave: se compara sin mayúsculas ni espacios sobrantes) |
+| B | fechaAnalisis | Fecha en que se generó el análisis |
+| C | datosAl | Última novedad incluida (seguimiento, postulación o nota): sirve para detectar el desfase |
+| D | totalPostulaciones | Nº de postulaciones consideradas en el análisis |
+| E | etiquetas | Etiquetas de comportamiento separadas por coma (`No responde, Da feedback`) |
+| F | recomendacion | `Priorizar` / `Seguimiento normal` / `Baja prioridad` / `Precaución` |
+| G | resumen | Síntesis en 2–4 frases |
+| H | fortalezas | Señales positivas, una por línea con `- ` |
+| I | riesgos | Señales negativas, una por línea con `- ` |
+| J | perfilVacantes | Qué tipo de vacantes publica (roles, contratos, modalidades, salarios) |
+| K | procesoSeleccion | Cómo es su proceso según las notas (etapas, pruebas, tiempos) |
+| L | contactos | Personas mencionadas, una por línea con `- ` |
 
 ### Contrato de fechas
 
@@ -377,8 +420,10 @@ La Google Sheet no expone datos directamente. Para conectarla a la app se usa un
 | `GET` | `?action=all` | Devuelve todas las postulaciones como JSON |
 | `GET` | `?action=dashboard` | Devuelve totales computados |
 | `GET` | `?action=meta` | Diagnóstico: zona horaria, locale, formato de fechas, primera fila de datos y rango del filtro |
+| `GET` | `?action=companyInsights` | Devuelve los análisis IA por empresa (pestaña `EmpresaAnalisis`) |
 | `POST` | `action: update` | Actualiza una fila existente (`rowIndex` + `updates`) |
 | `POST` | `action: create` | Crea una postulación y devuelve `rowIndex` + `shifted` |
+| `POST` | `action: upsertCompanyInsight` | Guarda (o actualiza) el análisis IA de una empresa en `EmpresaAnalisis` |
 
 Las nuevas postulaciones quedan **encima** de la primera existente. Si la fila inmediatamente superior está vacía (sin valores, fórmulas ni notas), el script la rellena sin mover filas y responde `shifted: false`; en caso contrario inserta una fila, desplaza las existentes y responde `shifted: true` (la app refresca la lista).
 

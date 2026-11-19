@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../helpers/api_response.dart';
+import '../models/company_insight.dart';
 import '../models/job_application.dart';
 
 class SheetsApiService {
@@ -42,6 +43,53 @@ class SheetsApiService {
       return DashboardStats.fromJson(json);
     }
     throw Exception('Failed to load dashboard: ${response.statusCode}');
+  }
+
+  /// Lee la pestaña `EmpresaAnalisis` (análisis IA por empresa).
+  ///
+  /// Tolera scripts viejos: si la respuesta no trae filas con forma de
+  /// análisis, devuelve lista vacía en lugar de romper.
+  Future<List<CompanyInsight>> fetchCompanyInsights() async {
+    final uri = Uri.parse('$_baseUrl?action=companyInsights');
+    final response = await _client.get(uri, headers: _jsonHeaders);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load company insights: ${response.statusCode}',
+      );
+    }
+
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return const [];
+      final insights = <CompanyInsight>[];
+      for (final item in decoded) {
+        if (item is! Map) continue;
+        final insight =
+            CompanyInsight.tryFromJson(Map<String, dynamic>.from(item));
+        if (insight != null) insights.add(insight);
+      }
+      return insights;
+    } on FormatException {
+      throw Exception('Failed to load company insights: invalid payload');
+    }
+  }
+
+  /// Guarda (o actualiza) el análisis de una empresa en `EmpresaAnalisis`.
+  Future<void> upsertCompanyInsight(CompanyInsight insight) async {
+    final response = await _postAction({
+      'action': 'upsertCompanyInsight',
+      'data': insight.toJson(),
+    });
+
+    final error = postActionError(
+      'upsertCompanyInsight',
+      response.statusCode,
+      response.body,
+    );
+    if (error != null) {
+      throw Exception(error);
+    }
   }
 
   /// Envía un POST a la API de Apps Script. Apps Script ejecuta el script y

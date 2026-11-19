@@ -1,9 +1,14 @@
 import 'dart:io';
 
+import 'package:devjobs/models/ai_config.dart';
+import 'package:devjobs/models/company_insight.dart';
 import 'package:devjobs/models/job_application.dart';
+import 'package:devjobs/models/job_import.dart';
 import 'package:devjobs/providers/app_state.dart';
+import 'package:devjobs/services/company_analyzer_service.dart';
 import 'package:devjobs/services/sheets_api_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 /// Servicio falso: evita red y devuelve una lista fija.
 class _FakeApi extends SheetsApiService {
@@ -85,7 +90,31 @@ class _CreateNetworkErrorApi extends _FakeApi {
       throw SocketException('offline');
 }
 
+/// API falsa con análisis de empresa (lectura y guardado).
+class _FakeInsightApi extends _FakeApi {
+  final List<CompanyInsight> insights;
+  int upsertCalls = 0;
+  CompanyInsight? lastUpsert;
+  bool failUpsert = false;
+
+  _FakeInsightApi(super.data, {this.insights = const []});
+
+  @override
+  Future<List<CompanyInsight>> fetchCompanyInsights() async => insights;
+
+  @override
+  Future<void> upsertCompanyInsight(CompanyInsight insight) async {
+    if (failUpsert) throw SocketException('offline');
+    upsertCalls++;
+    lastUpsert = insight;
+  }
+}
+
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('es');
+  });
+
   final apps = [
     JobApplication(
       rowIndex: 1,
@@ -376,5 +405,115 @@ void main() {
     await state.updateApplication(1, {'fechaSeguimiento': ''});
     final cleared = state.applications.firstWhere((a) => a.rowIndex == 1);
     expect(cleared.fechaSeguimiento, '');
+  });
+
+  group('análisis IA de empresas', () {
+    const aiData = <String, dynamic>{
+      'etiquetas': ['no-respuesta'],
+      'recomendacion': 'Baja prioridad',
+      'resumen': 'No responde.',
+    };
+
+    AiConfig aiConfig() => const AiConfig(
+          baseUrl: 'https://ejemplo.test/v1',
+          apiKey: 'key',
+          models: ['m1'],
+        );
+
+    CompanyAnalyzerService Function(AiConfig) fakeAnalyzer() {
+      return (config) => CompanyAnalyzerService(
+            config: config,
+            delayBetweenAttempts: Duration.zero,
+            completeForModel: (model, system, user) async => aiData,
+          );
+    }
+
+    test('analyzeCompany genera el análisis, lo expone y lo guarda', () async {
+      final api = _FakeInsightApi(apps);
+      final state = AppState(apiService: api, analyzerBuilder: fakeAnalyzer());
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      final insight = await state.analyzeCompany('A');
+
+      expect(insight, isNotNull);
+      expect(insight!.etiquetas, ['no-respuesta']);
+      expect(insight.totalPostulaciones,
+          apps.where((a) => a.empresa == 'A').length);
+      expect(state.insightFor('a'), isNotNull);
+      expect(state.insightError, isNull);
+      expect(api.upsertCalls, 1);
+      expect(api.lastUpsert?.empresa, 'A');
+    });
+
+    test('insightFor compara sin mayúsculas ni tildes', () async {
+      final api = _FakeInsightApi(apps);
+      final state = AppState(apiService: api, analyzerBuilder: fakeAnalyzer());
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      await state.analyzeCompany('A');
+      expect(state.insightFor('A'), isNotNull);
+      expect(state.insightFor('a'), isNotNull);
+    });
+
+    test('analyzeCompany sin conexión no llama a la IA', () async {
+      final state = AppState(
+        apiService: _OfflineApi(),
+        analyzerBuilder: (config) => throw StateError('no debería llamarla'),
+      );
+      await state.fetchApplications(forceRefresh: true);
+      expect(state.offline, isTrue);
+
+      final insight = await state.analyzeCompany('A');
+
+      expect(insight, isNull);
+      expect(state.insightError, contains('Sin conexión'));
+    });
+
+    test('error de la IA queda en insightError', () async {
+      final state = AppState(
+        apiService: _FakeInsightApi(apps),
+        analyzerBuilder: (config) => CompanyAnalyzerService(
+          config: config,
+          completeForModel: (model, system, user) async =>
+              throw const JobImportException(
+            JobImportErrorKind.quota,
+            'Se alcanzó el límite de uso de la IA.',
+          ),
+        ),
+      );
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      final insight = await state.analyzeCompany('A');
+
+      expect(insight, isNull);
+      expect(state.insightError, contains('límite de uso'));
+      expect(state.analyzingInsight, isFalse);
+    });
+
+    test('si falla el guardado en la Sheet se conserva el análisis', () async {
+      final api = _FakeInsightApi(apps)..failUpsert = true;
+      final state = AppState(apiService: api, analyzerBuilder: fakeAnalyzer());
+      await state.fetchApplications(forceRefresh: true);
+      await state.updateAiConfig(aiConfig());
+
+      final insight = await state.analyzeCompany('A');
+
+      expect(insight, isNotNull);
+      expect(state.insightFor('A'), isNotNull);
+    });
+
+    test('loadCompanyInsights trae los análisis de la API', () async {
+      final api = _FakeInsightApi(apps, insights: [
+        const CompanyInsight(empresa: 'A', resumen: 'Guardado.'),
+      ]);
+      final state = AppState(apiService: api);
+
+      await state.loadCompanyInsights();
+
+      expect(state.insightFor('A')?.resumen, 'Guardado.');
+    });
   });
 }

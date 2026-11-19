@@ -1,32 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../helpers/company_analysis.dart';
 import '../helpers/company_stats.dart';
 import '../helpers/date_formatter.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/application_card.dart';
+import '../widgets/company_insight_card.dart';
 import '../widgets/meta_chip.dart';
 import 'application_detail_screen.dart';
 
 /// Detalle de una empresa: métricas agregadas, distribución de sus
-/// postulaciones y acceso al listado de vacantes filtrado por empresa.
-class CompanyDetailScreen extends StatelessWidget {
+/// postulaciones, análisis IA y acceso al listado de vacantes filtrado
+/// por empresa.
+class CompanyDetailScreen extends StatefulWidget {
   final String nombre;
 
   const CompanyDetailScreen({super.key, required this.nombre});
 
   @override
+  State<CompanyDetailScreen> createState() => _CompanyDetailScreenState();
+}
+
+class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = context.read<AppState>();
+      state.fetchApplications();
+      state.loadCompanyInsights();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final brightness = Theme.of(context).brightness;
-    final apps = state.getByField('empresa', nombre);
+    final apps = state.getByField('empresa', widget.nombre);
     final statsList = companiesStats(apps);
     final stats = statsList.isEmpty ? null : statsList.first;
 
     if (stats == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(nombre)),
+        appBar: AppBar(title: Text(widget.nombre)),
         body: const Center(child: Text('Sin datos para mostrar')),
       );
     }
@@ -34,6 +52,7 @@ class CompanyDetailScreen extends StatelessWidget {
     final ciudades = _unique(apps.map((a) => a.ciudad));
     final modalidades = _unique(apps.map((a) => a.modalidad));
     final plataformas = _unique(apps.map((a) => a.plataforma));
+    final insight = state.insightFor(stats.nombre);
 
     return Scaffold(
       appBar: AppBar(title: Text(stats.nombre)),
@@ -146,6 +165,18 @@ class CompanyDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          ],
+          if (insight != null || state.aiEnabled) ...[
+            const SizedBox(height: 12),
+            CompanyInsightCard(
+              insight: insight,
+              aiEnabled: state.aiEnabled,
+              stale: insight != null && isInsightStale(insight, apps),
+              loading: state.analyzingInsight,
+              offline: state.offline,
+              error: state.insightError,
+              onAnalyze: () => state.analyzeCompany(stats.nombre),
             ),
           ],
           const SizedBox(height: AppSpace.xl),

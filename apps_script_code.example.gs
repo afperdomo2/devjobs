@@ -27,9 +27,18 @@ var COLUMNS = [
   'entrevistaRealizada', 'porGestionar'
 ];
 
+// Pestaña con el análisis IA por empresa (una fila por empresa).
+var SHEET_NAME_INSIGHTS = 'EmpresaAnalisis';
+var COMPANY_INSIGHT_COLUMNS = [
+  'empresa', 'fechaAnalisis', 'datosAl', 'totalPostulaciones', 'etiquetas',
+  'recomendacion', 'resumen', 'fortalezas', 'riesgos', 'perfilVacantes',
+  'procesoSeleccion', 'contactos'
+];
+
 // Columnas que son fechas reales en la hoja. Al escribirlas se convierten
 // a Date explícitamente para que Sheets no las interprete con el locale.
 var DATE_COLUMNS = ['fechaPostulacion', 'fechaSeguimiento'];
+var COMPANY_INSIGHT_DATE_COLUMNS = ['fechaAnalisis', 'datosAl'];
 
 // -------------------------------------------------
 // GET: fetchAll / fetchDashboard
@@ -48,6 +57,8 @@ function doGet(e) {
       result = getDashboard(sheet, tz);
     } else if (action === 'meta') {
       result = getMeta(ss, sheet);
+    } else if (action === 'companyInsights') {
+      result = getCompanyInsights(ss);
     } else {
       result = getAllRows(sheet, tz);
     }
@@ -130,6 +141,8 @@ function doPost(e) {
         return updateRow(sheet, body.rowIndex, body.updates, tz);
       case 'create':
         return createRow(sheet, body.data, tz);
+      case 'upsertCompanyInsight':
+        return upsertCompanyInsight(ss, body.data, tz);
       default:
         return jsonResponse({ _error: 'acción no válida: ' + body.action }, 400);
     }
@@ -215,6 +228,126 @@ function createRow(sheet, data, tz) {
     rowIndex: newRow,
     shifted: shifted
   });
+}
+
+// -------------------------------------------------
+// GET companyInsights / POST upsertCompanyInsight
+// -------------------------------------------------
+
+/** Filas de la pestaña EmpresaAnalisis (análisis IA por empresa). */
+function getCompanyInsights(ss) {
+  var sheet = ss.getSheetByName(SHEET_NAME_INSIGHTS);
+  if (sheet == null) return [];
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+
+  var headers = data[0];
+  var colMap = buildInsightColMap(headers);
+  var tz = ss.getSpreadsheetTimeZone();
+
+  return data.slice(1)
+    .map(function (row) {
+      return buildInsightRecord(colMap, row, tz);
+    })
+    .filter(function (r) {
+      return hasText(r.empresa);
+    });
+}
+
+/**
+ * Guarda (o actualiza) el análisis de una empresa.
+ * La clave es el nombre de la empresa normalizado (minúsculas + trim):
+ * "Acme", "ACME" y " Acme " son la misma fila.
+ */
+function upsertCompanyInsight(ss, data, tz) {
+  if (data == null || !hasText(data.empresa)) {
+    return jsonResponse({ _error: 'falta la empresa en los datos' }, 400);
+  }
+
+  var sheet = ss.getSheetByName(SHEET_NAME_INSIGHTS);
+  if (sheet == null) {
+    sheet = ss.insertSheet(SHEET_NAME_INSIGHTS);
+    sheet.getRange(1, 1, 1, COMPANY_INSIGHT_COLUMNS.length)
+      .setValues([COMPANY_INSIGHT_COLUMNS]);
+    sheet.getRange(1, 1, 1, COMPANY_INSIGHT_COLUMNS.length)
+      .setFontWeight('bold');
+  }
+
+  var headers = sheet.getDataRange().getValues()[0];
+  var colMap = buildInsightColMap(headers);
+  var key = normalizeInsightKey(data.empresa);
+  var row = findInsightRow(sheet, colMap, key);
+
+  if (row == null) {
+    row = sheet.getLastRow() + 1;
+  }
+
+  COMPANY_INSIGHT_COLUMNS.forEach(function (name) {
+    var col = colMap[name];
+    if (col == null) return;
+
+    var cell = sheet.getRange(row, col + 1);
+    var value = data[name] != null ? data[name] : '';
+
+    if (COMPANY_INSIGHT_DATE_COLUMNS.indexOf(name) !== -1) {
+      value = parseDateForSheet(value, tz);
+      if (value === '') {
+        cell.clearContent();
+        return;
+      }
+    }
+
+    cell.setValue(value);
+  });
+
+  return jsonResponse({ _ok: true, rowIndex: row });
+}
+
+function normalizeInsightKey(value) {
+  return String(value == null ? '' : value).trim().toLowerCase();
+}
+
+function buildInsightColMap(headers) {
+  var map = {};
+  for (var i = 0; i < headers.length; i++) {
+    var key = String(headers[i]).trim().toLowerCase();
+    for (var j = 0; j < COMPANY_INSIGHT_COLUMNS.length; j++) {
+      if (key === COMPANY_INSIGHT_COLUMNS[j].toLowerCase()) {
+        map[COMPANY_INSIGHT_COLUMNS[j]] = i;
+      }
+    }
+  }
+  COMPANY_INSIGHT_COLUMNS.forEach(function (col) {
+    if (map[col] == null) {
+      map[col] = COMPANY_INSIGHT_COLUMNS.indexOf(col);
+    }
+  });
+  return map;
+}
+
+/** Fila existente del análisis de la empresa (clave normalizada), o null. */
+function findInsightRow(sheet, colMap, key) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  var empresaCol = colMap['empresa'];
+  if (empresaCol == null) return null;
+
+  var values = sheet.getRange(2, empresaCol + 1, lastRow - 1, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    if (normalizeInsightKey(values[i][0]) === key) return i + 2;
+  }
+  return null;
+}
+
+function buildInsightRecord(colMap, row, tz) {
+  var record = {};
+  COMPANY_INSIGHT_COLUMNS.forEach(function (name) {
+    var col = colMap[name];
+    record[name] = col == null ? '' : formatDateForWire(row[col], tz);
+  });
+  return record;
 }
 
 // -------------------------------------------------

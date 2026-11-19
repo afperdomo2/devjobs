@@ -6,6 +6,20 @@ import '../models/ai_config.dart';
 import '../models/job_import.dart';
 import 'openai_compatible_extractor.dart';
 
+/// true si un error de un modelo justifica probar con el siguiente:
+/// cuota, clave no habilitada, modelo no encontrado o servidor caído.
+///
+/// Los errores de red o de respuesta inválida no activan el respaldo: son
+/// problemas de conexión o de calidad, no de disponibilidad. La comparten
+/// [FallbackExtractor] y el análisis de empresas.
+bool aiShouldFallback(JobImportErrorKind kind) => switch (kind) {
+  JobImportErrorKind.quota ||
+  JobImportErrorKind.unauthorized ||
+  JobImportErrorKind.notFound ||
+  JobImportErrorKind.server => true,
+  _ => false,
+};
+
 /// Un extractor con el nombre del modelo que representa; el nombre se usa en
 /// los mensajes de error cuando ningún modelo responde.
 class ModelExtractor {
@@ -67,7 +81,7 @@ class FallbackExtractor implements JobExtractor {
       } on JobImportException catch (error) {
         lastError = error;
         tried.add(candidate.model);
-        if (!_shouldFallback(error.kind)) break;
+        if (!aiShouldFallback(error.kind)) break;
         if (delayBetweenAttempts > Duration.zero) {
           await Future<void>.delayed(delayBetweenAttempts);
         }
@@ -76,14 +90,6 @@ class FallbackExtractor implements JobExtractor {
 
     throw _allFailed(lastError, tried);
   }
-
-  static bool _shouldFallback(JobImportErrorKind kind) => switch (kind) {
-    JobImportErrorKind.quota ||
-    JobImportErrorKind.unauthorized ||
-    JobImportErrorKind.notFound ||
-    JobImportErrorKind.server => true,
-    _ => false,
-  };
 
   JobImportException _allFailed(Object? lastError, List<String> tried) {
     final models = tried.join(', ');

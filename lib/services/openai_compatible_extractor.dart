@@ -89,6 +89,26 @@ class OpenAiCompatibleExtractor implements JobExtractor {
 
   @override
   Future<AiJobData> extract(String text) async {
+    final data = await completeJson(
+      system: _systemPrompt,
+      user: '<vacante>\n$text\n</vacante>',
+      retryHint: ' o pega la descripción',
+    );
+    return AiJobData.fromJson(data);
+  }
+
+  /// Llamada genérica al chat completions del proveedor: devuelve el JSON
+  /// parseado del contenido de la respuesta. La reutilizan el extractor de
+  /// vacantes y el análisis de empresas.
+  ///
+  /// [retryHint] complementa los mensajes de reintento (la importación de
+  /// vacantes agrega "o pega la descripción").
+  Future<Map<String, dynamic>> completeJson({
+    required String system,
+    required String user,
+    String retryHint = '',
+    int maxTokens = 4000,
+  }) async {
     if (apiKey.trim().isEmpty) {
       throw const JobImportException(
         JobImportErrorKind.unauthorized,
@@ -99,11 +119,11 @@ class OpenAiCompatibleExtractor implements JobExtractor {
     final payload = <String, dynamic>{
       'model': model,
       'messages': [
-        {'role': 'system', 'content': _systemPrompt},
-        {'role': 'user', 'content': '<vacante>\n$text\n</vacante>'},
+        {'role': 'system', 'content': system},
+        {'role': 'user', 'content': user},
       ],
       'temperature': 0,
-      'max_tokens': 4000,
+      'max_tokens': maxTokens,
       'stream': false,
       'response_format': {'type': 'json_object'},
       if (model.toLowerCase().contains('deepseek')) 'reasoning_effort': 'none',
@@ -113,9 +133,9 @@ class OpenAiCompatibleExtractor implements JobExtractor {
     try {
       response = await _post(payload);
     } on TimeoutException {
-      throw const JobImportException(
+      throw JobImportException(
         JobImportErrorKind.timeout,
-        'La IA tardó demasiado en responder. Intenta de nuevo o pega la descripción.',
+        'La IA tardó demasiado en responder. Intenta de nuevo$retryHint.',
       );
     } catch (_) {
       throw const JobImportException(
@@ -215,9 +235,9 @@ class OpenAiCompatibleExtractor implements JobExtractor {
     final finishReason = choice is Map ? choice['finish_reason'] : null;
 
     if (content.trim().isEmpty) {
-      throw const JobImportException(
+      throw JobImportException(
         JobImportErrorKind.invalidResponse,
-        'La IA no devolvió datos. Intenta de nuevo o pega la descripción.',
+        'La IA no devolvió datos. Intenta de nuevo$retryHint.',
       );
     }
 
@@ -237,7 +257,7 @@ class OpenAiCompatibleExtractor implements JobExtractor {
       );
     }
 
-    return AiJobData.fromJson(data);
+    return data;
   }
 
   Future<http.Response> _post(Map<String, dynamic> payload) {
