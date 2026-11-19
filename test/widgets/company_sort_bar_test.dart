@@ -28,13 +28,14 @@ void main() {
     );
   }
 
-  testWidgets('muestra las cinco opciones', (tester) async {
+  testWidgets('muestra las seis opciones', (tester) async {
     await pumpBar(tester);
 
     expect(find.text('Más postulaciones'), findsOneWidget);
     expect(find.text('Más activas'), findsOneWidget);
     expect(find.text('Más entrevistas'), findsOneWidget);
     expect(find.text('Mejor respuesta'), findsOneWidget);
+    expect(find.text('Recomendación'), findsOneWidget);
     expect(find.text('Recientes'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

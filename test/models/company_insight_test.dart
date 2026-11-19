@@ -120,6 +120,39 @@ void main() {
     });
   });
 
+  group('CompanyInsight.highlightEtiquetas', () {
+    test('prioriza negativas, luego positivas y neutras', () {
+      const insight = CompanyInsight(
+        empresa: 'Acme',
+        etiquetas: [
+          'con-feedback', // positiva
+          'pide-prueba', // neutral
+          'no-respuesta', // negativa
+          'sin-feedback', // negativa
+        ],
+      );
+
+      expect(
+        insight.highlightEtiquetas(),
+        ['no-respuesta', 'sin-feedback'],
+      );
+    });
+
+    test('respeta el máximo y devuelve todas si hay pocas', () {
+      const insight = CompanyInsight(
+        empresa: 'Acme',
+        etiquetas: ['proceso-agil', 'publica-frecuente'],
+      );
+
+      expect(insight.highlightEtiquetas(), ['proceso-agil', 'publica-frecuente']);
+      expect(insight.highlightEtiquetas(max: 1), ['proceso-agil']);
+      expect(
+        const CompanyInsight(empresa: 'Acme').highlightEtiquetas(),
+        isEmpty,
+      );
+    });
+  });
+
   group('CompanyInsight.toJson', () {
     test('round-trip conserva etiquetas, listas y fechas', () {
       final original = CompanyInsight(

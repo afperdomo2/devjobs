@@ -1,3 +1,4 @@
+import '../models/company_insight.dart';
 import '../models/job_application.dart';
 import 'date_formatter.dart';
 import 'status.dart';
@@ -55,13 +56,19 @@ enum CompanySortMode {
   entrevistas,
   responseRate,
   recent,
+  recomendacion,
 }
 
 /// Devuelve una copia ordenada de [companies] según [mode].
+///
+/// [insightFor] resuelve el análisis IA de una empresa por nombre; solo lo
+/// usa [CompanySortMode.recomendacion] (sin análisis, la empresa queda al
+/// final de ese orden).
 List<CompanyStats> sortCompanies(
   List<CompanyStats> companies,
-  CompanySortMode mode,
-) {
+  CompanySortMode mode, {
+  CompanyInsight? Function(String nombre)? insightFor,
+}) {
   final sorted = List<CompanyStats>.of(companies);
   sorted.sort((a, b) {
     final primary = switch (mode) {
@@ -71,6 +78,8 @@ List<CompanyStats> sortCompanies(
       CompanySortMode.responseRate =>
         _responseRate(b).compareTo(_responseRate(a)),
       CompanySortMode.recent => _compareRecent(a, b),
+      CompanySortMode.recomendacion =>
+        _compareRecommendation(a, b, insightFor),
     };
     if (primary != 0) return primary;
 
@@ -79,6 +88,28 @@ List<CompanyStats> sortCompanies(
     return a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase());
   });
   return sorted;
+}
+
+/// Prioridad de la recomendación: Priorizar → Seguimiento normal →
+/// Precaución → Baja prioridad. Sin análisis va al final.
+int _recommendationRank(CompanyInsight? insight) {
+  if (insight == null) return 4;
+  return switch (insight.recomendacion) {
+    CompanyRecommendation.priorizar => 0,
+    CompanyRecommendation.seguimientoNormal => 1,
+    CompanyRecommendation.precaucion => 2,
+    CompanyRecommendation.bajaPrioridad => 3,
+  };
+}
+
+int _compareRecommendation(
+  CompanyStats a,
+  CompanyStats b,
+  CompanyInsight? Function(String nombre)? insightFor,
+) {
+  final rankA = _recommendationRank(insightFor?.call(a.nombre));
+  final rankB = _recommendationRank(insightFor?.call(b.nombre));
+  return rankA.compareTo(rankB);
 }
 
 double _responseRate(CompanyStats company) {

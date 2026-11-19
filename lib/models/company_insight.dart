@@ -181,6 +181,23 @@ class CompanyInsight {
   /// Clave de comparación: minúsculas, sin acentos ni espacios sobrantes.
   String get key => normalizeText(empresa);
 
+  /// Etiquetas a destacar en listas compactas (máx. [max]): primero las
+  /// negativas (la señal más accionable), luego las positivas y al final
+  /// las neutras, conservando el orden del vocabulario dentro de cada tono.
+  List<String> highlightEtiquetas({int max = 2}) {
+    final sorted = <String>[];
+    for (final tone in const [
+      CompanyInsightTone.negative,
+      CompanyInsightTone.positive,
+      CompanyInsightTone.neutral,
+    ]) {
+      for (final id in etiquetas) {
+        if (insightTagByValue(id)?.tone == tone) sorted.add(id);
+      }
+    }
+    return sorted.length > max ? sorted.sublist(0, max) : sorted;
+  }
+
   factory CompanyInsight.fromJson(Map<String, dynamic> json) {
     return CompanyInsight(
       empresa: (json['empresa'] as String? ?? '').trim(),

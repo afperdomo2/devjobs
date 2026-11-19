@@ -4,6 +4,7 @@ import '../helpers/date_formatter.dart';
 import '../models/company_insight.dart';
 import '../theme.dart';
 import 'ai_badge.dart';
+import 'insight_tag_chip.dart';
 
 /// Tarjeta "Análisis IA" del detalle de empresa.
 ///
@@ -302,57 +303,10 @@ class _TagRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
     return Wrap(
       spacing: AppSpace.xs + 2,
       runSpacing: AppSpace.xs + 2,
-      children: [
-        for (final id in ids)
-          _TagChip(
-            tag: insightTagByValue(id) ??
-                CompanyInsightTag(
-                  id: id,
-                  label: id,
-                  tone: CompanyInsightTone.neutral,
-                ),
-            brightness: brightness,
-          ),
-      ],
-    );
-  }
-}
-
-class _TagChip extends StatelessWidget {
-  final CompanyInsightTag tag;
-  final Brightness brightness;
-
-  const _TagChip({required this.tag, required this.brightness});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _toneColor(tag.tone, brightness);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.chip)),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_tagIcon(tag.id), size: AppIconSize.chip, color: color),
-          const SizedBox(width: 4),
-          Text(
-            tag.label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
+      children: [for (final id in ids) InsightTagChip(tagId: id)],
     );
   }
 }
@@ -425,7 +379,7 @@ class _RecommendationBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _recommendationColor(recomendacion, brightness);
+    final color = insightRecommendationColor(recomendacion, brightness);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -439,7 +393,7 @@ class _RecommendationBlock extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            _recommendationIcon(recomendacion),
+            insightRecommendationIcon(recomendacion),
             size: AppIconSize.metric,
             color: color,
           ),
@@ -498,76 +452,5 @@ class _ExpandableSection extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-Color _toneColor(CompanyInsightTone tone, Brightness brightness) {
-  switch (tone) {
-    case CompanyInsightTone.positive:
-      return successColor(brightness);
-    case CompanyInsightTone.negative:
-      return warningTextColor(brightness);
-    case CompanyInsightTone.neutral:
-      return neutralColor(brightness);
-  }
-}
-
-IconData _tagIcon(String id) {
-  switch (id) {
-    case 'no-respuesta':
-      return Icons.notifications_off_outlined;
-    case 'respuesta-lenta':
-      return Icons.hourglass_bottom;
-    case 'respuesta-rapida':
-      return Icons.bolt_outlined;
-    case 'con-feedback':
-      return Icons.forum_outlined;
-    case 'sin-feedback':
-      return Icons.sms_failed_outlined;
-    case 'proceso-agil':
-      return Icons.speed_outlined;
-    case 'proceso-largo':
-      return Icons.timeline_outlined;
-    case 'vacantes-estancadas':
-      return Icons.pause_circle_outline;
-    case 'reclutamiento-serio':
-      return Icons.verified_user_outlined;
-    case 'salario-transparente':
-      return Icons.payments_outlined;
-    case 'pide-prueba':
-      return Icons.assignment_outlined;
-    case 'publica-frecuente':
-      return Icons.campaign_outlined;
-    default:
-      return Icons.label_outlined;
-  }
-}
-
-IconData _recommendationIcon(CompanyRecommendation recomendacion) {
-  switch (recomendacion) {
-    case CompanyRecommendation.priorizar:
-      return Icons.star_outline;
-    case CompanyRecommendation.seguimientoNormal:
-      return Icons.schedule_send_outlined;
-    case CompanyRecommendation.bajaPrioridad:
-      return Icons.low_priority;
-    case CompanyRecommendation.precaucion:
-      return Icons.warning_amber_outlined;
-  }
-}
-
-Color _recommendationColor(
-  CompanyRecommendation recomendacion,
-  Brightness brightness,
-) {
-  switch (recomendacion) {
-    case CompanyRecommendation.priorizar:
-      return successColor(brightness);
-    case CompanyRecommendation.seguimientoNormal:
-      return infoColor(brightness);
-    case CompanyRecommendation.bajaPrioridad:
-      return neutralColor(brightness);
-    case CompanyRecommendation.precaucion:
-      return warningTextColor(brightness);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:devjobs/helpers/company_stats.dart';
+import 'package:devjobs/models/company_insight.dart';
 import 'package:devjobs/models/job_application.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -314,6 +315,74 @@ void main() {
 
       expect(stats.firstWhere((s) => s.nombre == 'Otra').ultimaPostulacion,
           isNull);
+    });
+  });
+
+  group('sortCompanies por recomendación', () {
+    CompanyStats company(String nombre, {int total = 1}) => CompanyStats(
+          nombre: nombre,
+          total: total,
+          activas: 0,
+          finalizadas: 0,
+          conNovedad: 0,
+          entrevistas: 0,
+          porGestionar: 0,
+        );
+
+    CompanyInsight insight(String empresa, CompanyRecommendation r) =>
+        CompanyInsight(empresa: empresa, recomendacion: r);
+
+    test('Priorizar → Seguimiento normal → Precaución → Baja prioridad → '
+        'sin análisis al final', () {
+      final insights = <String, CompanyInsight>{
+        'baja': insight('baja', CompanyRecommendation.bajaPrioridad),
+        'seguimiento': insight('seguimiento', CompanyRecommendation.seguimientoNormal),
+        'prio': insight('prio', CompanyRecommendation.priorizar),
+        'prec': insight('prec', CompanyRecommendation.precaucion),
+      };
+      final companies = [
+        company('baja'),
+        company('seguimiento'),
+        company('nodata'),
+        company('prio'),
+        company('prec'),
+      ];
+
+      final sorted = sortCompanies(
+        companies,
+        CompanySortMode.recomendacion,
+        insightFor: (nombre) => insights[nombre],
+      );
+
+      expect(
+        sorted.map((c) => c.nombre).toList(),
+        ['prio', 'seguimiento', 'prec', 'baja', 'nodata'],
+      );
+    });
+
+    test('los empates van por nº de postulaciones y luego alfabético', () {
+      final insights = <String, CompanyInsight>{
+        'A': insight('A', CompanyRecommendation.priorizar),
+        'B': insight('B', CompanyRecommendation.priorizar),
+        'C': insight('C', CompanyRecommendation.priorizar),
+      };
+      final companies = [company('B'), company('A', total: 5), company('C')];
+
+      final sorted = sortCompanies(
+        companies,
+        CompanySortMode.recomendacion,
+        insightFor: (nombre) => insights[nombre],
+      );
+
+      expect(sorted.map((c) => c.nombre).toList(), ['A', 'B', 'C']);
+    });
+
+    test('sin resolver de insights, todos quedan al final por total', () {
+      final companies = [company('A'), company('B', total: 9)];
+      final sorted =
+          sortCompanies(companies, CompanySortMode.recomendacion);
+
+      expect(sorted.map((c) => c.nombre).toList(), ['B', 'A']);
     });
   });
 }

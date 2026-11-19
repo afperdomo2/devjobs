@@ -1,22 +1,28 @@
+import 'package:devjobs/models/company_insight.dart';
 import 'package:devjobs/models/job_application.dart';
 import 'package:devjobs/providers/app_state.dart';
 import 'package:devjobs/screens/empresas_screen.dart';
 import 'package:devjobs/services/sheets_api_service.dart';
 import 'package:devjobs/theme.dart';
 import 'package:devjobs/widgets/company_card.dart';
+import 'package:devjobs/widgets/filter_pill.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 class _FakeApi extends SheetsApiService {
   final List<JobApplication> data;
+  final List<CompanyInsight> insights;
   int updateCalls = 0;
   final List<Map<String, String>> updates = [];
 
-  _FakeApi(this.data) : super(baseUrl: 'http://test');
+  _FakeApi(this.data, {this.insights = const []}) : super(baseUrl: 'http://test');
 
   @override
   Future<List<JobApplication>> fetchAll() async => data;
+
+  @override
+  Future<List<CompanyInsight>> fetchCompanyInsights() async => insights;
 
   @override
   Future<void> updateRow(int rowIndex, Map<String, String> updates) async {
@@ -83,13 +89,16 @@ void main() {
       ),
   ];
 
-  Future<_FakeApi> pumpScreen(WidgetTester tester) async {
+  Future<_FakeApi> pumpScreen(
+    WidgetTester tester, {
+    List<CompanyInsight> insights = const [],
+  }) async {
     tester.view.physicalSize = const Size(600, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final api = _FakeApi(apps);
+    final api = _FakeApi(apps, insights: insights);
     final state = AppState(apiService: api);
     await state.fetchApplications(forceRefresh: true);
 
@@ -134,6 +143,79 @@ void main() {
     await tester.pump();
     expect(order(tester), equals(['Gamma', 'Beta', 'Acme']));
     expect(tester.takeException(), isNull);
+  });
+
+  group('filtro por comportamiento', () {
+    // Las etiquetas/recomendación también se pintan en las cards: los taps
+    // se acotan a los FilterPill de la barra de filtros.
+    Finder pill(String label) => find.ancestor(
+          of: find.text(label),
+          matching: find.byType(FilterPill),
+        );
+
+    final insights = [
+      const CompanyInsight(
+        empresa: 'Acme',
+        recomendacion: CompanyRecommendation.priorizar,
+        etiquetas: ['no-respuesta'],
+      ),
+      const CompanyInsight(
+        empresa: 'Beta',
+        recomendacion: CompanyRecommendation.seguimientoNormal,
+        etiquetas: ['con-feedback'],
+      ),
+    ];
+
+    testWidgets('Con análisis muestra solo las empresas con análisis',
+        (tester) async {
+      await pumpScreen(tester, insights: insights);
+
+      expect(order(tester), hasLength(3));
+
+      await tester.ensureVisible(pill('Con análisis'));
+      await tester.tap(pill('Con análisis'));
+      await tester.pump();
+
+      expect(order(tester), equals(['Acme', 'Beta']));
+      expect(find.text('2 de 3 empresas'), findsOneWidget);
+    });
+
+    testWidgets('filtra por recomendación y por etiqueta', (tester) async {
+      await pumpScreen(tester, insights: insights);
+
+      await tester.ensureVisible(pill('Priorizar'));
+      await tester.tap(pill('Priorizar'));
+      await tester.pump();
+      expect(order(tester), equals(['Acme']));
+      expect(find.text('1 de 3 empresas'), findsOneWidget);
+
+      await tester.ensureVisible(pill('No responde'));
+      await tester.tap(pill('No responde'));
+      await tester.pump();
+      expect(order(tester), equals(['Acme']));
+
+      await tester.ensureVisible(pill('Da feedback'));
+      await tester.tap(pill('Da feedback'));
+      await tester.pump();
+      expect(order(tester), equals(['Beta']));
+    });
+
+    testWidgets('sin resultados ofrece limpiar filtros', (tester) async {
+      await pumpScreen(tester, insights: insights);
+
+      await tester.ensureVisible(pill('Sin feedback'));
+      await tester.tap(pill('Sin feedback'));
+      await tester.pump();
+
+      expect(
+        find.text('Sin empresas con este comportamiento'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Limpiar filtros'));
+      await tester.pump();
+      expect(order(tester), hasLength(3));
+    });
   });
 
   group('Combinar empresas', () {

@@ -1,4 +1,5 @@
 import 'package:devjobs/helpers/company_stats.dart';
+import 'package:devjobs/models/company_insight.dart';
 import 'package:devjobs/widgets/company_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +25,7 @@ void main() {
     WidgetTester tester,
     CompanyStats stats, {
     VoidCallback? onTap,
+    CompanyInsight? insight,
   }) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
@@ -35,7 +37,11 @@ void main() {
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: CompanyCard(company: stats, onTap: onTap ?? () {}),
+            child: CompanyCard(
+              company: stats,
+              onTap: onTap ?? () {},
+              insight: insight,
+            ),
           ),
         ),
       ),
@@ -76,5 +82,48 @@ void main() {
     await tester.tap(find.byType(CompanyCard));
 
     expect(tapped, 1);
+  });
+
+  group('con análisis IA', () {
+    const insight = CompanyInsight(
+      empresa: 'Acme',
+      recomendacion: CompanyRecommendation.priorizar,
+      etiquetas: ['con-feedback', 'no-respuesta', 'proceso-agil'],
+    );
+
+    testWidgets('muestra la recomendación y hasta dos etiquetas', (
+      tester,
+    ) async {
+      await pumpCard(tester, company(), insight: insight);
+
+      expect(find.text('Priorizar'), findsOneWidget);
+      // Máx. 2 etiquetas, negativas primero.
+      expect(find.text('No responde'), findsOneWidget);
+      expect(find.text('Da feedback'), findsOneWidget);
+      expect(find.text('Proceso ágil'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('sin análisis no se muestra nada de IA', (tester) async {
+      await pumpCard(tester, company());
+
+      expect(find.text('Priorizar'), findsNothing);
+      expect(find.text('No responde'), findsNothing);
+    });
+
+    testWidgets('un análisis sin etiquetas muestra solo la recomendación', (
+      tester,
+    ) async {
+      await pumpCard(
+        tester,
+        company(),
+        insight: const CompanyInsight(
+          empresa: 'Acme',
+          recomendacion: CompanyRecommendation.bajaPrioridad,
+        ),
+      );
+
+      expect(find.text('Baja prioridad'), findsOneWidget);
+    });
   });
 }

@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../helpers/company_stats.dart';
 import '../helpers/network_error.dart';
+import '../models/company_insight.dart';
 import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/company_card.dart';
 import '../widgets/company_sort_bar.dart';
+import '../widgets/filter_pill.dart';
 import '../widgets/merge_companies_sheet.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/scroll_to_top_button.dart';
@@ -26,13 +28,35 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   String _query = '';
+  String _behavior = _behaviorAll;
   CompanySortMode _sortMode = CompanySortMode.total;
+
+  /// Filtro por defecto: sin restricción de comportamiento.
+  static const _behaviorAll = 'todas';
+
+  /// Filtros de comportamiento (selección única). Los ids que no son
+  /// especiales coinciden con los ids de etiquetas del análisis IA.
+  static const _behaviors = <(String, String, IconData)>[
+    (_behaviorAll, 'Todas', Icons.apps_outlined),
+    ('con-analisis', 'Con análisis', Icons.auto_awesome),
+    ('priorizar', 'Priorizar', Icons.star_outline),
+    ('no-respuesta', 'No responde', Icons.notifications_off_outlined),
+    ('con-feedback', 'Da feedback', Icons.forum_outlined),
+    ('sin-feedback', 'Sin feedback', Icons.sms_failed_outlined),
+    (
+      'vacantes-estancadas',
+      'Vacantes estancadas',
+      Icons.pause_circle_outline,
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppState>().fetchApplications();
+      final state = context.read<AppState>();
+      state.fetchApplications();
+      state.loadCompanyInsights();
     });
   }
 
@@ -52,6 +76,29 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
     setState(() => _query = '');
   }
 
+  void _clearFilters() {
+    _searchCtrl.clear();
+    setState(() {
+      _query = '';
+      _behavior = _behaviorAll;
+    });
+  }
+
+  bool get _hasFilters => _query.trim().isNotEmpty || _behavior != _behaviorAll;
+
+  bool _matchesBehavior(CompanyInsight? insight) {
+    switch (_behavior) {
+      case _behaviorAll:
+        return true;
+      case 'con-analisis':
+        return insight != null;
+      case 'priorizar':
+        return insight?.recomendacion == CompanyRecommendation.priorizar;
+      default:
+        return insight?.etiquetas.contains(_behavior) ?? false;
+    }
+  }
+
   /// Abre la hoja "Combinar empresas" y avisa al terminar.
   Future<void> _openMerge(List<CompanyStats> all) async {
     final finalName = await showMergeCompaniesSheet(
@@ -68,17 +115,23 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
     );
   }
 
-  List<CompanyStats> _filter(List<CompanyStats> all) {
+  List<CompanyStats> _filter(List<CompanyStats> all, AppState state) {
     final q = _query.trim().toLowerCase();
-    if (q.isEmpty) return all;
-    return all.where((c) => c.nombre.toLowerCase().contains(q)).toList();
+    return all.where((c) {
+      if (q.isNotEmpty && !c.nombre.toLowerCase().contains(q)) return false;
+      return _matchesBehavior(state.insightFor(c.nombre));
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final all = companiesStats(state.applications);
-    final companies = sortCompanies(_filter(all), _sortMode);
+    final companies = sortCompanies(
+      _filter(all, state),
+      _sortMode,
+      insightFor: state.insightFor,
+    );
 
     Widget content;
     if (state.loading && all.isEmpty) {
@@ -110,24 +163,24 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      _query.isEmpty
-                          ? Icons.business_outlined
-                          : Icons.search_off,
+                      _hasFilters ? Icons.search_off : Icons.business_outlined,
                       size: 40,
                       color: muted,
                     ),
                     const SizedBox(height: AppSpace.sm),
                     Text(
-                      _query.isEmpty
+                      !_hasFilters
                           ? 'Sin empresas para mostrar'
-                          : 'Sin resultados para "$_query"',
+                          : (_query.trim().isNotEmpty
+                              ? 'Sin resultados para "$_query"'
+                              : 'Sin empresas con este comportamiento'),
                       textAlign: TextAlign.center,
                     ),
-                    if (_query.isNotEmpty) ...[
+                    if (_hasFilters) ...[
                       const SizedBox(height: AppSpace.xs),
                       TextButton(
-                        onPressed: _clearQuery,
-                        child: const Text('Limpiar búsqueda'),
+                        onPressed: _clearFilters,
+                        child: const Text('Limpiar filtros'),
                       ),
                     ],
                   ],
@@ -139,6 +192,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
           final company = companies[index];
           return CompanyCard(
             company: company,
+            insight: state.insightFor(company.nombre),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -159,6 +213,33 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
           onClear: _clearQuery,
         ),
         if (all.isNotEmpty)
+          SizedBox(
+            height: 44,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpace.lg,
+                vertical: AppSpace.xs,
+              ),
+              child: Row(
+                children: [
+                  for (var i = 0; i < _behaviors.length; i++) ...[
+                    FilterPill(
+                      label: _behaviors[i].$2,
+                      icon: _behaviors[i].$3,
+                      selected: _behaviors[i].$1 == _behavior,
+                      onTap: () =>
+                          setState(() => _behavior = _behaviors[i].$1),
+                      semanticLabel: 'Filtrar por ${_behaviors[i].$2}',
+                    ),
+                    if (i < _behaviors.length - 1)
+                      const SizedBox(width: AppSpace.sm),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        if (all.isNotEmpty)
           CompanySortBar(
             selected: _sortMode,
             onSelected: (mode) => setState(() => _sortMode = mode),
@@ -175,7 +256,7 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    _query.isEmpty
+                    !_hasFilters
                         ? '${companies.length} '
                             '${companies.length == 1 ? 'empresa' : 'empresas'}'
                         : '${companies.length} de ${all.length} empresas',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../helpers/company_stats.dart';
 import '../theme.dart';
+import 'filter_pill.dart';
 
 /// Fila horizontal de criterios de orden para el listado de Empresas.
 class CompanySortBar extends StatelessWidget {
@@ -31,6 +32,7 @@ class CompanySortBar extends StatelessWidget {
       'Mejor respuesta',
       Icons.check_circle_outline,
     ),
+    (CompanySortMode.recomendacion, 'Recomendación', Icons.auto_awesome),
     (CompanySortMode.recent, 'Recientes', Icons.schedule),
   ];
 
@@ -47,76 +49,16 @@ class CompanySortBar extends StatelessWidget {
         child: Row(
           children: [
             for (var i = 0; i < _specs.length; i++) ...[
-              _SortPill(
+              FilterPill(
                 label: _specs[i].$2,
                 icon: _specs[i].$3,
                 selected: _specs[i].$1 == selected,
                 onTap: () => onSelected(_specs[i].$1),
+                semanticLabel: 'Ordenar por ${_specs[i].$2}',
               ),
               if (i < _specs.length - 1) const SizedBox(width: AppSpace.sm),
             ],
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SortPill extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _SortPill({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final scheme = Theme.of(context).colorScheme;
-    final color = selected ? scheme.primary : scheme.onSurfaceVariant;
-
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: 'Ordenar por $label',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.chip)),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpace.md,
-            vertical: AppSpace.sm - 2,
-          ),
-          decoration: BoxDecoration(
-            color: selected ? scheme.primary.withValues(alpha: 0.10) : null,
-            borderRadius: const BorderRadius.all(Radius.circular(AppRadius.chip)),
-            border: Border.all(
-              color: selected ? scheme.primary : chipBorderColor(brightness),
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: AppIconSize.chip, color: color),
-              const SizedBox(width: AppSpace.xs),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

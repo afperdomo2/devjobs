@@ -2,22 +2,34 @@ import 'package:flutter/material.dart';
 
 import '../helpers/company_stats.dart';
 import '../helpers/date_formatter.dart';
+import '../models/company_insight.dart';
 import '../theme.dart';
+import 'insight_tag_chip.dart';
 import 'meta_chip.dart';
 
 /// Card de una empresa en el listado: identidad, actividad reciente y chips
 /// con las señales que importan (pendientes, entrevistas, activas y respuestas).
+///
+/// Con [insight] muestra además la recomendación del análisis IA y hasta dos
+/// etiquetas de comportamiento; sin análisis, la card queda como siempre.
 class CompanyCard extends StatelessWidget {
   final CompanyStats company;
   final VoidCallback onTap;
+  final CompanyInsight? insight;
 
-  const CompanyCard({super.key, required this.company, required this.onTap});
+  const CompanyCard({
+    super.key,
+    required this.company,
+    required this.onTap,
+    this.insight,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final muted = scheme.onSurfaceVariant;
     final brightness = Theme.of(context).brightness;
+    final insightData = insight;
 
     final chips = <Widget>[
       if (company.porGestionar > 0)
@@ -102,10 +114,31 @@ class CompanyCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (insightData != null) ...[
+                      const SizedBox(width: AppSpace.sm),
+                      Flexible(
+                        child: InsightRecommendationChip(
+                          recomendacion: insightData.recomendacion,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpace.sm),
+                    ],
                     Icon(Icons.chevron_right, color: scheme.primary),
                   ],
                 ),
                 const SizedBox(height: AppSpace.md - 2),
+                if (insightData != null &&
+                    insightData.highlightEtiquetas().isNotEmpty) ...[
+                  Wrap(
+                    spacing: AppSpace.xs + 2,
+                    runSpacing: AppSpace.xs + 2,
+                    children: [
+                      for (final id in insightData.highlightEtiquetas())
+                        InsightTagChip(tagId: id),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpace.sm),
+                ],
                 Wrap(
                   spacing: AppSpace.xs + 2,
                   runSpacing: AppSpace.xs + 2,
