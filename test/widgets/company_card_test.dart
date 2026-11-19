@@ -58,8 +58,11 @@ void main() {
     );
 
     expect(find.text('Acme'), findsOneWidget);
-    expect(find.textContaining('8 postulaciones · hace'), findsOneWidget);
-    expect(find.text('3 activas'), findsOneWidget);
+    expect(
+      find.textContaining('8 postulaciones · 3 activas · hace'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('3 activas'), findsOneWidget);
     expect(find.text('2/8 respondieron'), findsOneWidget);
     expect(find.textContaining('entrevista'), findsNothing);
     expect(find.textContaining('por gestionar'), findsNothing);
@@ -72,6 +75,31 @@ void main() {
     expect(find.text('2 entrevistas'), findsOneWidget);
     expect(find.text('1 por gestionar'), findsOneWidget);
     expect(find.textContaining('8 postulaciones'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('el nombre no compite con la recomendación en la misma fila', (
+    tester,
+  ) async {
+    // La recomendación vive en su propia fila; el header solo lleva
+    // identidad, así que el nombre nunca se trunca por un chip.
+    await pumpCard(
+      tester,
+      company(),
+      insight: const CompanyInsight(
+        empresa: 'Acme',
+        recomendacion: CompanyRecommendation.seguimientoNormal,
+      ),
+    );
+
+    final name = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(CompanyCard),
+        matching: find.text('Acme'),
+      ),
+    );
+    expect(name.overflow, TextOverflow.ellipsis);
+    expect(find.text('Seguimiento normal'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

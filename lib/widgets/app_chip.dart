@@ -12,6 +12,10 @@ enum AppChipVariant {
 
   /// Tinte suave + borde sólido. Usado por GestionTag ("Por gestionar").
   flag,
+
+  /// Sin fondo ni borde: solo icono + texto. Métricas de contexto en cards,
+  /// para no competir visualmente con la identidad ni con los chips IA.
+  plain,
 }
 
 /// Cascarón único de los chips de la app: padding, radio, tamaño de icono y
@@ -53,6 +57,11 @@ class AppChip extends StatelessWidget {
           color,
           FontWeight.w600,
         ),
+      AppChipVariant.plain => (
+          Colors.transparent,
+          Colors.transparent,
+          FontWeight.w500,
+        ),
     };
 
     final content = Container(
@@ -63,7 +72,9 @@ class AppChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: const BorderRadius.all(Radius.circular(AppRadius.chip)),
-        border: Border.all(color: borderColor),
+        border: borderColor == Colors.transparent
+            ? null
+            : Border.all(color: borderColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

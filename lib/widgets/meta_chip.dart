@@ -14,12 +14,17 @@ class MetaChip extends StatelessWidget {
   /// Al presionar el chip (opcional). Si es null el chip es solo informativo.
   final VoidCallback? onTap;
 
+  /// Estilo plano (sin fondo ni borde): métricas de contexto que no deben
+  /// competir con la identidad de la card ni con los chips IA.
+  final bool plain;
+
   const MetaChip({
     super.key,
     required this.icon,
     required this.label,
     this.color,
     this.onTap,
+    this.plain = false,
   });
 
   @override
@@ -28,7 +33,7 @@ class MetaChip extends StatelessWidget {
     return AppChip(
       icon: icon,
       label: label,
-      variant: AppChipVariant.meta,
+      variant: plain ? AppChipVariant.plain : AppChipVariant.meta,
       color: tint,
       onTap: onTap,
     );

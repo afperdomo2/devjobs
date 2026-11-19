@@ -7,11 +7,17 @@ import '../theme.dart';
 import 'insight_tag_chip.dart';
 import 'meta_chip.dart';
 
-/// Card de una empresa en el listado: identidad, actividad reciente y chips
-/// con las señales que importan (pendientes, entrevistas, activas y respuestas).
+/// Card de una empresa en el listado.
 ///
-/// Con [insight] muestra además la recomendación del análisis IA y hasta dos
-/// etiquetas de comportamiento; sin análisis, la card queda como siempre.
+/// Jerarquía (de más a menos importante):
+/// 1. **Identidad**: avatar + nombre con todo el ancho disponible + chevron.
+///    Nada más compite en esa fila: el nombre nunca se trunca por un chip.
+/// 2. **Subtítulo**: total · activas · última actividad.
+/// 3. **Fila IA** (solo con [insight]): chip de recomendación + hasta 2
+///    etiquetas. Chips con fondo tintado = análisis IA.
+/// 4. **Métricas planas** (`MetaChip.plain`, sin fondo): por gestionar
+///    (accionable, fucsia), entrevistas y respondieron (contexto, gris).
+///    El color queda reservado a la IA y a lo accionable.
 class CompanyCard extends StatelessWidget {
   final CompanyStats company;
   final VoidCallback onTap;
@@ -31,42 +37,53 @@ class CompanyCard extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final insightData = insight;
 
-    final chips = <Widget>[
+    // Métricas planas de contexto; solo "por gestionar" lleva color.
+    final metrics = <Widget>[
       if (company.porGestionar > 0)
         MetaChip(
           icon: Icons.label_important,
           label: '${company.porGestionar} por gestionar',
           color: gestionColor(brightness),
+          plain: true,
         ),
       if (company.entrevistas > 0)
         MetaChip(
           icon: Icons.record_voice_over_outlined,
           label:
               '${company.entrevistas} ${company.entrevistas == 1 ? 'entrevista' : 'entrevistas'}',
-          color: statusColor('entrevista', brightness),
+          plain: true,
         ),
-      MetaChip(
-        icon: Icons.notifications_active_outlined,
-        label:
-            '${company.activas} ${company.activas == 1 ? 'activa' : 'activas'}',
-        color: tealColor(brightness),
-      ),
       MetaChip(
         icon: Icons.check_circle_outline,
         label: '${company.conNovedad}/${company.total} respondieron',
-        color: infoColor(brightness),
+        plain: true,
       ),
+    ];
+
+    // Fila IA: recomendación primero y luego las etiquetas destacadas.
+    final iaChips = <Widget>[
+      if (insightData != null) ...[
+        InsightRecommendationChip(
+          recomendacion: insightData.recomendacion,
+        ),
+        for (final id in insightData.highlightEtiquetas())
+          InsightTagChip(tagId: id),
+      ],
     ];
 
     final totalLabel =
         '${company.total} ${company.total == 1 ? 'postulación' : 'postulaciones'}';
+    final activasLabel =
+        '${company.activas} ${company.activas == 1 ? 'activa' : 'activas'}';
     final ultima = company.ultimaPostulacion;
     final dias = ultima == null
         ? null
         : DateTime.now().difference(ultima).inDays;
-    final subtitle = dias == null
-        ? totalLabel
-        : '$totalLabel · ${formatSinNovedad(dias < 0 ? 0 : dias)}';
+    final subtitle = [
+      totalLabel,
+      activasLabel,
+      if (dias != null) formatSinNovedad(dias < 0 ? 0 : dias),
+    ].join(' · ');
 
     final resumen = [
       totalLabel,
@@ -114,35 +131,22 @@ class CompanyCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (insightData != null) ...[
-                      const SizedBox(width: AppSpace.sm),
-                      Flexible(
-                        child: InsightRecommendationChip(
-                          recomendacion: insightData.recomendacion,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpace.sm),
-                    ],
                     Icon(Icons.chevron_right, color: scheme.primary),
                   ],
                 ),
                 const SizedBox(height: AppSpace.md - 2),
-                if (insightData != null &&
-                    insightData.highlightEtiquetas().isNotEmpty) ...[
+                if (iaChips.isNotEmpty) ...[
                   Wrap(
                     spacing: AppSpace.xs + 2,
                     runSpacing: AppSpace.xs + 2,
-                    children: [
-                      for (final id in insightData.highlightEtiquetas())
-                        InsightTagChip(tagId: id),
-                    ],
+                    children: iaChips,
                   ),
                   const SizedBox(height: AppSpace.sm),
                 ],
                 Wrap(
                   spacing: AppSpace.xs + 2,
                   runSpacing: AppSpace.xs + 2,
-                  children: chips,
+                  children: metrics,
                 ),
               ],
             ),
