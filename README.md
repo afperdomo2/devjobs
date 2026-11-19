@@ -268,9 +268,9 @@ La app se conecta a una **Google Sheet** como backend. No necesita servidor prop
 | **Dashboard** | Resumen con totales: postulaciones, activas, **con entrevista** y finalizadas. Cards clickeables (Activas → Postulaciones con filtro Activas, Finalizadas → Postulaciones con filtro Finalizadas) con indicador visual `›`. La **Tasa de conversión** muestra “Con respuesta” (por estado), “A entrevista” (switch N) y “Finalizadas”. **Actividad reciente** muestra los conteos de 7/30 días y los últimos 3 movimientos. En el **Pipeline**, cada etapa es tocable y abre sus postulaciones. **Ritmo mensual** muestra las postulaciones de los últimos 6 meses. **Salario ofrecido** muestra promedio y rango por moneda (COP/USD), con abreviaturas (`5,9M`, `100K`) e interpreta rangos y dólares |
 | **Postulaciones** | Listado con pills Todas/Activas/Enviadas/Finalizadas, búsqueda global con contador y acceso al detalle |
 | **Agenda** | Cuarto tab con badge. Secciones **Por gestionar**, **Entrevistas agendadas** y **Ofertas recibidas**; hasta 5 filas por sección y “Ver todas” al listado completo |
-| **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes. El detalle de cada empresa incluye métricas, distribución, el **Análisis IA** de su comportamiento y sus vacantes |
+| **Empresas** | Listado con buscador y barra de orden: Más postulaciones, Más activas, Más entrevistas, Mejor respuesta y Recientes. El detalle de cada empresa incluye métricas, distribución, el **Análisis IA** de su comportamiento y sus vacantes. Botón **Combinar** para unificar empresas duplicadas renombrando sus postulaciones |
 | **Detalle** | Estado, datos, tiempo del proceso, **enlace externo con Abrir/Copiar** (antes de comentarios y descripción; aviso si el enlace no es válido), comentarios, descripción, entrevista, botón **Agregar nota** con fecha y botón **Finalizar proceso** (estado final, fecha editable y nota opcional) |
-| **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, avisa si el link ya está registrado (al salir del campo y al guardar) y vuelve a la lista al guardar |
+| **Crear / editar** | Formulario único en tres secciones (Vacante / Proceso / Notas). El FAB **Nueva** de Postulaciones crea; el lápiz del detalle edita. Valida empresa, vacante y fecha, avisa si el link ya está registrado (al salir del campo y al guardar) y vuelve a la lista al guardar. Al escribir la **Empresa** sugiere empresas registradas parecidas (aviso con chips **"Usar …"**, nunca automático) y ofrece el enlace **¿Sin nombre? Usar "Empresa confidencial"** cuando el campo está vacío |
 | **Importar con IA** | Tarjeta **Autocompletar con IA** dentro de Nueva postulación (solo si hay proveedor y al menos un modelo configurados). Pega un link o la descripción y la IA prellena los campos; la descripción se guarda como resumen Markdown por secciones y se renderiza en el detalle |
 | **Ajustes** | Ícono de engranaje en el AppBar. Tema **Sistema**, **Claro** u **Oscuro** (se aplica al instante y se recuerda) y acceso a la configuración de la **importación con IA**: proveedor y lista de modelos con respaldo automático |
 
@@ -353,7 +353,19 @@ Desde el **detalle de una empresa** (tab Empresas) la app puede generar un anál
 2. Al terminar, el análisis se guarda en la pestaña `EmpresaAnalisis` de la Sheet y queda visible en la tarjeta **Análisis IA**.
 3. Si después hay postulaciones nuevas o novedades, la tarjeta avisa **"Datos desactualizados"** y ofrece **Reanalizar**. El disparador es manual: la app no gasta tokens sin que lo pidas.
 
-> 📄 La pestaña `EmpresaAnalisis` se crea sola en el primer guardado. Si el análisis no se puede guardar en la Sheet (p. ej. un problema transitorio), se conserva en el dispositivo y se reintenta al reanalizar.
+> 📄 La pestaña `EmpresaAnalisis` se crea sola en el primer guardado. Si el análisis no se puede guardar en la Sheet (p. ej. un problema transitorio), se conserva en el dispositivo y se reintenta al reanalizar. Para **"Empresa confidencial"** (vacantes sin empresa real) el botón no aparece: ese agrupado mezcla empresas distintas y el análisis no tendría sentido.
+
+### Combinar empresas (duplicados)
+
+Cuando la misma empresa aparece con nombres distintos (`xpertgroup` / `xpertgroup sas`), el tab **Empresas** las unifica:
+
+1. Toca **Combinar** (junto al contador de empresas).
+2. Marca las empresas que son la misma y elige el **nombre final**.
+3. Revisa la **vista previa** (qué filas se renombrarán) y confirma.
+
+Las postulaciones seleccionadas se renombran al nombre final en el Sheet (la pestaña `Postulaciones` queda con un solo nombre). Los análisis IA no se mezclan: el del nombre final se queda como está y se marca **"Datos desactualizados"** (con un clic en **Reanalizar** obtienes el de la empresa combinada); los análisis de los nombres absorbidos quedan huérfanos en `EmpresaAnalisis` y puedes borrarlos a mano desde la Sheet.
+
+**Avisos de posibles duplicados al crear/editar:** al escribir el nombre de la empresa, la app sugiere empresas registradas parecidas (sufijos, palabra raíz como `stefanini latam` ∼ `stefanini group`, errores de tipeo) con chips **"Usar …"** para adoptar el nombre existente. Es solo un aviso: nunca cambia lo que escribes, así que empresas parecidas pero distintas (p. ej. dos grupos de la misma organización) pueden convivir. Y si no sabes la empresa, el enlace **¿Sin nombre? Usar "Empresa confidencial"** (debajo del campo, solo con el campo vacío) rellena el nombre canónico para agrupar esos casos.
 
 ### Columnas de Postulaciones
 

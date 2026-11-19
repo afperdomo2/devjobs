@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../helpers/company_analysis.dart';
+import '../helpers/company_similarity.dart';
 import '../helpers/company_stats.dart';
 import '../helpers/date_formatter.dart';
 import '../providers/app_state.dart';
@@ -52,7 +53,10 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
     final ciudades = _unique(apps.map((a) => a.ciudad));
     final modalidades = _unique(apps.map((a) => a.modalidad));
     final plataformas = _unique(apps.map((a) => a.plataforma));
-    final insight = state.insightFor(stats.nombre);
+    // El bucket de vacantes sin empresa real mezcla compañías distintas:
+    // su análisis IA no tendría sentido y no se ofrece.
+    final isConfidencial = isConfidentialCompany(stats.nombre);
+    final insight = isConfidencial ? null : state.insightFor(stats.nombre);
 
     return Scaffold(
       appBar: AppBar(title: Text(stats.nombre)),
@@ -167,7 +171,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
               ),
             ),
           ],
-          if (insight != null || state.aiEnabled) ...[
+          if (!isConfidencial && (insight != null || state.aiEnabled)) ...[
             const SizedBox(height: 12),
             CompanyInsightCard(
               insight: insight,

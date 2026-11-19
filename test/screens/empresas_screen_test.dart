@@ -10,11 +10,19 @@ import 'package:provider/provider.dart';
 
 class _FakeApi extends SheetsApiService {
   final List<JobApplication> data;
+  int updateCalls = 0;
+  final List<Map<String, String>> updates = [];
 
   _FakeApi(this.data) : super(baseUrl: 'http://test');
 
   @override
   Future<List<JobApplication>> fetchAll() async => data;
+
+  @override
+  Future<void> updateRow(int rowIndex, Map<String, String> updates) async {
+    updateCalls++;
+    this.updates.add({'_row': '$rowIndex', ...updates});
+  }
 }
 
 void main() {
@@ -75,13 +83,14 @@ void main() {
       ),
   ];
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  Future<_FakeApi> pumpScreen(WidgetTester tester) async {
     tester.view.physicalSize = const Size(600, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final state = AppState(apiService: _FakeApi(apps));
+    final api = _FakeApi(apps);
+    final state = AppState(apiService: api);
     await state.fetchApplications(forceRefresh: true);
 
     await tester.pumpWidget(
@@ -94,6 +103,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    return api;
   }
 
   List<String> order(WidgetTester tester) {
@@ -124,5 +134,68 @@ void main() {
     await tester.pump();
     expect(order(tester), equals(['Gamma', 'Beta', 'Acme']));
     expect(tester.takeException(), isNull);
+  });
+
+  group('Combinar empresas', () {
+    Finder tile(String name) => find.descendant(
+          of: find.byType(CheckboxListTile),
+          matching: find.text(name),
+        );
+
+    testWidgets('el botón abre la hoja y el merge renombra las filas absorbidas',
+        (tester) async {
+      final api = await pumpScreen(tester);
+
+      await tester.tap(find.byKey(const Key('merge-companies')));
+      await tester.pumpAndSettle();
+      expect(find.text('Combinar empresas'), findsOneWidget);
+
+      await tester.tap(tile('Acme'));
+      await tester.pump();
+      await tester.tap(tile('Beta'));
+      await tester.pump();
+      // Vista previa: Beta (2 filas) pasa a llamarse Acme.
+      expect(find.text('· "Beta" (2 filas) → "Acme"'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('merge-confirm')));
+      await tester.pumpAndSettle();
+
+      // Solo se renombran las 2 filas de Beta.
+      expect(api.updateCalls, 2);
+      expect(
+        api.updates.map((u) => u['_row']).toSet(),
+        {'5', '6'},
+      );
+      expect(api.updates.every((u) => u['empresa'] == 'Acme'), isTrue);
+      expect(
+        find.text('Postulaciones combinadas en "Acme"'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('el botón no aparece con una sola empresa', (tester) async {
+      tester.view.physicalSize = const Size(600, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final state = AppState(
+        apiService: _FakeApi([apps.first]),
+      );
+      await state.fetchApplications(forceRefresh: true);
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: state,
+          child: MaterialApp(
+            theme: AppTheme.light,
+            home: const Scaffold(body: EmpresasScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('merge-companies')), findsNothing);
+    });
   });
 }

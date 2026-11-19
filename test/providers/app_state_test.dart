@@ -516,4 +516,40 @@ void main() {
       expect(state.insightFor('A')?.resumen, 'Guardado.');
     });
   });
+
+  group('mergeCompanies', () {
+    test('renombra solo las filas absorbidas y refresca la lista', () async {
+      final api = _FakeInsightApi([
+        JobApplication(rowIndex: 1, empresa: 'xpertgroup', vacante: 'Dev'),
+        JobApplication(rowIndex: 2, empresa: 'xpertgroup sas', vacante: 'QA'),
+        JobApplication(rowIndex: 3, empresa: 'xpertgroup sas', vacante: 'UX'),
+        JobApplication(rowIndex: 4, empresa: 'Globex', vacante: 'PM'),
+      ]);
+      final state = AppState(apiService: api);
+      await state.fetchApplications(forceRefresh: true);
+
+      await state.mergeCompanies(
+        finalName: 'xpertgroup',
+        names: ['xpertgroup', 'xpertgroup sas'],
+      );
+
+      expect(api.updateCalls, 2);
+      expect(api.lastUpdatedRow, 3);
+      expect(api.lastUpdates, {'empresa': 'xpertgroup'});
+    });
+
+    test('sin conexión lanza y no renombra nada', () async {
+      final state = AppState(apiService: _OfflineApi());
+      await state.fetchApplications(forceRefresh: true);
+      expect(state.offline, isTrue);
+
+      await expectLater(
+        state.mergeCompanies(
+          finalName: 'xpertgroup',
+          names: ['xpertgroup', 'xpertgroup sas'],
+        ),
+        throwsA(isA<Exception>()),
+      );
+    });
+  });
 }

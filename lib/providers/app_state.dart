@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config.dart';
 import '../helpers/application_sort.dart';
+import '../helpers/company_merge.dart';
 import '../helpers/network_error.dart';
 import '../helpers/status.dart';
 import '../helpers/text_normalizer.dart';
@@ -491,5 +492,41 @@ class AppState extends ChangeNotifier {
       _analyzingInsight = false;
       notifyListeners();
     }
+  }
+
+  /// Combina empresas: renombra la columna Empresa de las postulaciones
+  /// seleccionadas a [finalName] y refresca la lista.
+  ///
+  /// Solo renombra filas cuyo nombre no sea exactamente [finalName]
+  /// ([mergeRenameTargets]). Los análisis IA no se tocan: el del nombre
+  /// final queda como está (y se marca desactualizado al cambiar los
+  /// conteos) y los de los nombres absorbidos quedan huérfanos en la hoja.
+  Future<void> mergeCompanies({
+    required String finalName,
+    required List<String> names,
+  }) async {
+    if (_offline) {
+      throw Exception(
+        'Sin conexión a internet. No se puede combinar en modo solo lectura.',
+      );
+    }
+
+    final targets = mergeRenameTargets(_cached ?? [], names, finalName);
+    if (targets.isEmpty) return;
+
+    try {
+      for (final row in targets) {
+        await apiService.updateRow(row.rowIndex, {'empresa': finalName});
+      }
+    } catch (e) {
+      if (isNetworkError(e)) {
+        _offline = true;
+        notifyListeners();
+      }
+      throw Exception(friendlyErrorMessage(e));
+    }
+
+    _lastFetched = null;
+    await fetchApplications(forceRefresh: true);
   }
 }

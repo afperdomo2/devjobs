@@ -7,6 +7,7 @@ import '../providers/app_state.dart';
 import '../theme.dart';
 import '../widgets/company_card.dart';
 import '../widgets/company_sort_bar.dart';
+import '../widgets/merge_companies_sheet.dart';
 import '../widgets/offline_banner.dart';
 import '../widgets/scroll_to_top_button.dart';
 import '../widgets/wheel_refresh.dart';
@@ -49,6 +50,22 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
   void _clearQuery() {
     _searchCtrl.clear();
     setState(() => _query = '');
+  }
+
+  /// Abre la hoja "Combinar empresas" y avisa al terminar.
+  Future<void> _openMerge(List<CompanyStats> all) async {
+    final finalName = await showMergeCompaniesSheet(
+      context,
+      companies: all,
+      onMerge: (finalName, names) => context.read<AppState>().mergeCompanies(
+        finalName: finalName,
+        names: names,
+      ),
+    );
+    if (finalName == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Postulaciones combinadas en "$finalName"')),
+    );
   }
 
   List<CompanyStats> _filter(List<CompanyStats> all) {
@@ -154,17 +171,27 @@ class _EmpresasScreenState extends State<EmpresasScreen> {
               AppSpace.lg,
               AppSpace.xs,
             ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                _query.isEmpty
-                    ? '${companies.length} '
-                        '${companies.length == 1 ? 'empresa' : 'empresas'}'
-                    : '${companies.length} de ${all.length} empresas',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _query.isEmpty
+                        ? '${companies.length} '
+                            '${companies.length == 1 ? 'empresa' : 'empresas'}'
+                        : '${companies.length} de ${all.length} empresas',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
+                if (all.length >= 2 && !state.offline)
+                  TextButton.icon(
+                    key: const Key('merge-companies'),
+                    onPressed: () => _openMerge(all),
+                    icon: const Icon(Icons.merge_type, size: AppIconSize.row),
+                    label: const Text('Combinar'),
+                  ),
+              ],
             ),
           ),
         Expanded(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../helpers/company_similarity.dart';
+import '../helpers/company_stats.dart';
 import '../helpers/date_formatter.dart';
 import '../helpers/job_duplicate.dart';
 import '../helpers/network_error.dart';
@@ -226,6 +228,29 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
   void _markUserEdited(String key) {
     if (!_importedFields.contains(key)) return;
     setState(() => _importedFields.remove(key));
+  }
+
+  /// Empresas registradas parecidas a lo escrito en el campo Empresa:
+  /// avisos de posibles duplicados (nunca automáticos).
+  List<CompanyStats> _companySuggestions(AppState state) {
+    final value = _empresaCtrl.text.trim();
+    if (value.isEmpty) return const [];
+
+    final selfName = widget.initial?.empresa;
+    final selfKey = selfName == null ? null : companyMatchKey(selfName);
+    final candidates = companiesStats(state.applications)
+        .where((c) => companyMatchKey(c.nombre) != selfKey)
+        .toList();
+
+    final names = similarCompanyNames(
+      value,
+      candidates.map((c) => c.nombre),
+    );
+    final byName = {for (final c in candidates) c.nombre: c};
+    return [
+      for (final name in names)
+        if (byName[name] != null) byName[name]!,
+    ];
   }
 
   /// Al salir del campo Link se comprueba si el enlace ya está registrado.
@@ -555,8 +580,11 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isOffline = context.watch<AppState>().offline;
+    final state = context.watch<AppState>();
+    final isOffline = state.offline;
     final linkDuplicate = _linkDuplicate;
+    final showConfidencial = _empresaCtrl.text.trim().isEmpty;
+    final companySuggestions = _companySuggestions(state);
     final scheme = Theme.of(context).colorScheme;
     final showImportEntry =
         _aiAvailable && (_importedFields.isEmpty || _bannerDismissed);
@@ -635,7 +663,10 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                           TextFormField(
                             key: const Key('form-empresa'),
                             controller: _empresaCtrl,
-                            onChanged: (_) => _markUserEdited('empresa'),
+                            onChanged: (_) {
+                              _markUserEdited('empresa');
+                              setState(() {});
+                            },
                             textInputAction: TextInputAction.next,
                             textCapitalization: TextCapitalization.words,
                             decoration: const InputDecoration(
@@ -645,6 +676,102 @@ class _ApplicationFormScreenState extends State<ApplicationFormScreen> {
                             validator: (v) =>
                                 _validateRequired(v, 'Ingresa la empresa'),
                           ),
+                          if (showConfidencial) ...[
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                key: const Key('form-empresa-confidencial'),
+                                onPressed: () {
+                                  _markUserEdited('empresa');
+                                  setState(
+                                    () => _empresaCtrl.text = kConfidencialCompany,
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.visibility_off_outlined,
+                                  size: AppIconSize.row,
+                                ),
+                                label: Text(
+                                  '¿Sin nombre? Usar "$kConfidencialCompany"',
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (companySuggestions.isNotEmpty) ...[
+                            const SizedBox(height: AppSpace.xs),
+                            Container(
+                              key: const Key('form-empresa-suggestions'),
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpace.md,
+                                vertical: AppSpace.sm,
+                              ),
+                              decoration: BoxDecoration(
+                                color: warningContainer(
+                                  Theme.of(context).brightness,
+                                ),
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(AppRadius.chip),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.warning_amber_outlined,
+                                        size: AppIconSize.row,
+                                        color: warningTextColor(
+                                          Theme.of(context).brightness,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Se parece a una empresa ya '
+                                          'registrada. ¿Es la misma?',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: warningTextColor(
+                                                  Theme.of(context).brightness,
+                                                ),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: AppSpace.xs),
+                                  Wrap(
+                                    spacing: AppSpace.xs + 2,
+                                    runSpacing: AppSpace.xs + 2,
+                                    children: [
+                                      for (final suggestion
+                                          in companySuggestions)
+                                        ActionChip(
+                                          label: Text(
+                                            'Usar "${suggestion.nombre}" '
+                                            '(${suggestion.total})',
+                                          ),
+                                          onPressed: () {
+                                            _markUserEdited('empresa');
+                                            setState(
+                                              () => _empresaCtrl.text =
+                                                  suggestion.nombre,
+                                            );
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: AppSpace.md),
                           TextFormField(
                             key: const Key('form-vacante'),

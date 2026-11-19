@@ -174,4 +174,44 @@ void main() {
 
     expect(find.text('Análisis IA'), findsNothing);
   });
+
+  testWidgets('la empresa confidencial no ofrece el análisis IA',
+      (tester) async {
+    final confidencial = [
+      JobApplication(
+        rowIndex: 1,
+        empresa: 'Empresa confidencial',
+        estado: 'Enviada',
+        fechaPostulacion: '01/01/2026',
+      ),
+    ];
+    final state = AppState(apiService: _FakeApi(confidencial));
+    await state.fetchApplications(forceRefresh: true);
+    await state.updateAiConfig(const AiConfig(
+      baseUrl: 'https://ejemplo.test/v1',
+      apiKey: 'key',
+      models: ['m1'],
+    ));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: state,
+        child: const MaterialApp(
+          home: CompanyDetailScreen(nombre: 'Empresa confidencial'),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Aunque la IA esté configurada, la tarjeta no se ofrece.
+    await tester.scrollUntilVisible(
+      find.textContaining('Vacantes'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    expect(find.text('Análisis IA'), findsNothing);
+    expect(find.text('Analizar con IA'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
