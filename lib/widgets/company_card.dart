@@ -61,13 +61,15 @@ class CompanyCard extends StatelessWidget {
     ];
 
     // Fila IA: recomendación primero y luego las etiquetas destacadas.
+    // Labels cortos (compact) para que la fila quepa en una línea.
     final iaChips = <Widget>[
       if (insightData != null) ...[
         InsightRecommendationChip(
           recomendacion: insightData.recomendacion,
+          compact: true,
         ),
         for (final id in insightData.highlightEtiquetas())
-          InsightTagChip(tagId: id),
+          InsightTagChip(tagId: id, compact: true),
       ],
     ];
 

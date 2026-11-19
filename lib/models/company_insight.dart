@@ -4,14 +4,18 @@ import '../helpers/text_normalizer.dart';
 
 /// Recomendación sobre qué tan conveniente es seguir postulando a la empresa.
 enum CompanyRecommendation {
-  priorizar('Priorizar'),
-  seguimientoNormal('Seguimiento normal'),
-  bajaPrioridad('Baja prioridad'),
-  precaucion('Precaución');
+  priorizar('Priorizar', 'Priorizar'),
+  seguimientoNormal('Seguimiento normal', 'Seguimiento'),
+  bajaPrioridad('Baja prioridad', 'Baja'),
+  precaucion('Precaución', 'Precaución');
 
+  /// Texto completo (detalle de la empresa).
   final String label;
 
-  const CompanyRecommendation(this.label);
+  /// Texto corto para listas compactas (cards del tab Empresas).
+  final String shortLabel;
+
+  const CompanyRecommendation(this.label, this.shortLabel);
 
   /// Acepta la etiqueta ("Precaución") o el id (`precaucion`), sin depender
   /// de mayúsculas ni tildes. Cualquier valor desconocido cae en
@@ -36,13 +40,20 @@ enum CompanyInsightTone { positive, negative, neutral }
 class CompanyInsightTag {
   final String id;
   final String label;
+
+  /// Texto corto para listas compactas; vacío usa [label].
+  final String shortLabel;
   final CompanyInsightTone tone;
 
   const CompanyInsightTag({
     required this.id,
     required this.label,
+    this.shortLabel = '',
     required this.tone,
   });
+
+  /// Etiqueta a mostrar en listas compactas.
+  String get compactLabel => shortLabel.isEmpty ? label : shortLabel;
 }
 
 /// Vocabulario cerrado de etiquetas. La IA solo puede elegir de aquí; las
@@ -51,61 +62,73 @@ const kCompanyInsightTags = <CompanyInsightTag>[
   CompanyInsightTag(
     id: 'no-respuesta',
     label: 'No responde',
+    shortLabel: 'No responde',
     tone: CompanyInsightTone.negative,
   ),
   CompanyInsightTag(
     id: 'respuesta-lenta',
     label: 'Respuesta lenta',
+    shortLabel: 'Lenta',
     tone: CompanyInsightTone.negative,
   ),
   CompanyInsightTag(
     id: 'respuesta-rapida',
     label: 'Respuesta rápida',
+    shortLabel: 'Rápida',
     tone: CompanyInsightTone.positive,
   ),
   CompanyInsightTag(
     id: 'con-feedback',
     label: 'Da feedback',
+    shortLabel: 'Feedback',
     tone: CompanyInsightTone.positive,
   ),
   CompanyInsightTag(
     id: 'sin-feedback',
     label: 'Sin feedback',
+    shortLabel: 'Sin fb.',
     tone: CompanyInsightTone.negative,
   ),
   CompanyInsightTag(
     id: 'proceso-agil',
     label: 'Proceso ágil',
+    shortLabel: 'Ágil',
     tone: CompanyInsightTone.positive,
   ),
   CompanyInsightTag(
     id: 'proceso-largo',
     label: 'Proceso largo',
+    shortLabel: 'Largo',
     tone: CompanyInsightTone.negative,
   ),
   CompanyInsightTag(
     id: 'vacantes-estancadas',
     label: 'Vacantes estancadas',
+    shortLabel: 'Estancadas',
     tone: CompanyInsightTone.negative,
   ),
   CompanyInsightTag(
     id: 'reclutamiento-serio',
     label: 'Reclutamiento serio',
+    shortLabel: 'Serio',
     tone: CompanyInsightTone.positive,
   ),
   CompanyInsightTag(
     id: 'salario-transparente',
     label: 'Salario transparente',
+    shortLabel: 'Salario',
     tone: CompanyInsightTone.positive,
   ),
   CompanyInsightTag(
     id: 'pide-prueba',
     label: 'Pide pruebas',
+    shortLabel: 'Prueba',
     tone: CompanyInsightTone.neutral,
   ),
   CompanyInsightTag(
     id: 'publica-frecuente',
     label: 'Publica seguido',
+    shortLabel: 'Seguido',
     tone: CompanyInsightTone.neutral,
   ),
 ];

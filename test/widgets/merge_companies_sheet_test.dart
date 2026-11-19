@@ -173,4 +173,52 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('la lista está en orden alfabético', (tester) async {
+    await pumpSheet(tester);
+
+    final titles = tester
+        .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
+        .map((t) => (t.title as Text).data)
+        .toList();
+    expect(titles, ['Globex', 'xpertgroup', 'xpertgroup sas']);
+  });
+
+  testWidgets('el buscador filtra sin perder la selección', (tester) async {
+    await pumpSheet(tester);
+
+    await tester.enterText(find.byKey(const Key('merge-search')), 'xpert');
+    await tester.pump();
+    expect(tile('Globex'), findsNothing);
+    expect(tile('xpertgroup'), findsOneWidget);
+
+    await tester.tap(tile('xpertgroup'));
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key('merge-search')), 'sas');
+    await tester.pump();
+    await tester.tap(tile('xpertgroup sas'));
+    await tester.pump();
+
+    // Al limpiar la búsqueda, ambas siguen seleccionadas y la vista previa
+    // muestra la absorbida.
+    await tester.enterText(find.byKey(const Key('merge-search')), '');
+    await tester.pump();
+    expect(find.byType(CheckboxListTile), findsNWidgets(3));
+    expect(
+      find.text('· "xpertgroup sas" (2 filas) → "xpertgroup"'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('sin resultados ofrece limpiar búsqueda', (tester) async {
+    await pumpSheet(tester);
+
+    await tester.enterText(find.byKey(const Key('merge-search')), 'zzz');
+    await tester.pump();
+
+    expect(find.text('Sin resultados para "zzz"'), findsOneWidget);
+    await tester.tap(find.text('Limpiar búsqueda'));
+    await tester.pump();
+    expect(find.byType(CheckboxListTile), findsNWidgets(3));
+  });
 }

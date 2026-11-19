@@ -79,11 +79,13 @@ Color insightRecommendationColor(
 /// Chip de una etiqueta de comportamiento del análisis IA.
 ///
 /// Resuelve el vocabulario cerrado por id ("no-respuesta" o su etiqueta
-/// visible); los ids desconocidos caen en un chip neutro.
+/// visible); los ids desconocidos caen en un chip neutro. Con [compact]
+/// muestra el label corto (para listas); el detalle usa el label completo.
 class InsightTagChip extends StatelessWidget {
   final String tagId;
+  final bool compact;
 
-  const InsightTagChip({super.key, required this.tagId});
+  const InsightTagChip({super.key, required this.tagId, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +112,7 @@ class InsightTagChip extends StatelessWidget {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              tag.label,
+              compact ? tag.compactLabel : tag.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -128,10 +130,17 @@ class InsightTagChip extends StatelessWidget {
 
 /// Chip compacto con la recomendación del análisis IA
 /// (Priorizar / Seguimiento normal / Precaución / Baja prioridad).
+///
+/// Con [compact] muestra el label corto ("Seguimiento", "Baja"…).
 class InsightRecommendationChip extends StatelessWidget {
   final CompanyRecommendation recomendacion;
+  final bool compact;
 
-  const InsightRecommendationChip({super.key, required this.recomendacion});
+  const InsightRecommendationChip({
+    super.key,
+    required this.recomendacion,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +165,7 @@ class InsightRecommendationChip extends StatelessWidget {
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              recomendacion.label,
+              compact ? recomendacion.shortLabel : recomendacion.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

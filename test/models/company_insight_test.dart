@@ -46,6 +46,38 @@ void main() {
     });
   });
 
+  group('labels cortos', () {
+    test('las etiquetas tienen label corto único para listas', () {
+      final shorts = <String>{};
+      for (final tag in kCompanyInsightTags) {
+        expect(tag.compactLabel, isNotEmpty);
+        shorts.add(tag.compactLabel);
+      }
+      expect(shorts.length, kCompanyInsightTags.length);
+    });
+
+    test('compactLabel cae al label completo si no hay corto', () {
+      const tag = CompanyInsightTag(
+        id: 'x',
+        label: 'Etiqueta completa',
+        tone: CompanyInsightTone.neutral,
+      );
+      expect(tag.compactLabel, 'Etiqueta completa');
+    });
+
+    test('las recomendaciones tienen label corto único', () {
+      final shorts = CompanyRecommendation.values
+          .map((r) => r.shortLabel)
+          .toSet();
+      expect(shorts.length, CompanyRecommendation.values.length);
+      expect(
+        CompanyRecommendation.seguimientoNormal.shortLabel,
+        'Seguimiento',
+      );
+      expect(CompanyRecommendation.bajaPrioridad.shortLabel, 'Baja');
+    });
+  });
+
   group('CompanyInsight.fromJson', () {
     test('parsea fechas d/M/yyyy, listas y etiquetas', () {
       final insight = CompanyInsight.fromJson(<String, dynamic>{

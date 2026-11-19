@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../helpers/company_stats.dart';
+import '../helpers/text_normalizer.dart';
 import '../theme.dart';
 
 /// Abre la hoja "Combinar empresas".
@@ -21,6 +22,9 @@ Future<String?> showMergeCompaniesSheet(
 
 /// Selección múltiple de empresas + nombre final + vista previa de las filas
 /// que se renombrarán en el Sheet.
+///
+/// La lista va en orden alfabético (las nombres similares quedan juntas) y
+/// tiene buscador; la selección se conserva mientras se filtra.
 class MergeCompaniesSheet extends StatefulWidget {
   final List<CompanyStats> companies;
   final Future<void> Function(String finalName, List<String> names) onMerge;
@@ -37,9 +41,36 @@ class MergeCompaniesSheet extends StatefulWidget {
 
 class _MergeCompaniesSheetState extends State<MergeCompaniesSheet> {
   final Set<String> _selected = {};
+  final _searchCtrl = TextEditingController();
+  String _query = '';
   String? _finalName;
   bool _saving = false;
   String? _error;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Empresas en orden alfabético (sin distinguir mayúsculas ni tildes).
+  List<CompanyStats> get _sorted {
+    final sorted = List<CompanyStats>.of(widget.companies);
+    sorted.sort(
+      (a, b) => normalizeText(a.nombre).compareTo(normalizeText(b.nombre)),
+    );
+    return sorted;
+  }
+
+  /// Lista visible: [ _sorted ] filtrada por el buscador.
+  List<CompanyStats> get _visible {
+    final query = normalizeText(_query);
+    if (query.isEmpty) return _sorted;
+    return [
+      for (final company in _sorted)
+        if (normalizeText(company.nombre).contains(query)) company,
+    ];
+  }
 
   CompanyStats? _statsOf(String name) {
     for (final company in widget.companies) {
@@ -61,6 +92,11 @@ class _MergeCompaniesSheetState extends State<MergeCompaniesSheet> {
       }
       _error = null;
     });
+  }
+
+  void _clearQuery() {
+    _searchCtrl.clear();
+    setState(() => _query = '');
   }
 
   /// Filas que cambiarían: las de las empresas seleccionadas cuyo nombre no
@@ -97,6 +133,7 @@ class _MergeCompaniesSheetState extends State<MergeCompaniesSheet> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final canMerge = _selected.length >= 2 && _finalName != null && !_saving;
+    final visible = _visible;
 
     return SafeArea(
       child: Padding(
@@ -121,28 +158,66 @@ class _MergeCompaniesSheetState extends State<MergeCompaniesSheet> {
                   ?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: AppSpace.md),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final company in widget.companies)
-                    CheckboxListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      value: _selected.contains(company.nombre),
-                      onChanged: _saving
-                          ? null
-                          : (checked) =>
-                              _toggle(company.nombre, checked ?? false),
-                      title: Text(company.nombre),
-                      subtitle: Text(
-                        '${company.total} '
-                        '${company.total == 1 ? 'postulación' : 'postulaciones'}',
-                      ),
-                    ),
-                ],
+            TextField(
+              key: const Key('merge-search'),
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _query = v),
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'Buscar empresa...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: _clearQuery,
+                      )
+                    : null,
               ),
+            ),
+            const SizedBox(height: AppSpace.sm),
+            Flexible(
+              child: visible.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpace.xl,
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.search_off, size: 32),
+                            const SizedBox(height: AppSpace.sm),
+                            Text('Sin resultados para "$_query"'),
+                            TextButton(
+                              onPressed: _clearQuery,
+                              child: const Text('Limpiar búsqueda'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final company in visible)
+                          CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            value: _selected.contains(company.nombre),
+                            onChanged: _saving
+                                ? null
+                                : (checked) =>
+                                    _toggle(company.nombre, checked ?? false),
+                            title: Text(company.nombre),
+                            subtitle: Text(
+                              '${company.total} '
+                              '${company.total == 1 ? 'postulación' : 'postulaciones'}',
+                            ),
+                          ),
+                      ],
+                    ),
             ),
             if (_selected.length >= 2) ...[
               const SizedBox(height: AppSpace.sm),

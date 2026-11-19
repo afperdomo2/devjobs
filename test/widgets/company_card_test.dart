@@ -99,7 +99,9 @@ void main() {
       ),
     );
     expect(name.overflow, TextOverflow.ellipsis);
-    expect(find.text('Seguimiento normal'), findsOneWidget);
+    // Label corto de la recomendación en lista.
+    expect(find.text('Seguimiento'), findsOneWidget);
+    expect(find.text('Seguimiento normal'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -125,9 +127,10 @@ void main() {
       await pumpCard(tester, company(), insight: insight);
 
       expect(find.text('Priorizar'), findsOneWidget);
-      // Máx. 2 etiquetas, negativas primero.
+      // Máx. 2 etiquetas, negativas primero y con label corto.
       expect(find.text('No responde'), findsOneWidget);
-      expect(find.text('Da feedback'), findsOneWidget);
+      expect(find.text('Feedback'), findsOneWidget);
+      expect(find.text('Ágil'), findsNothing);
       expect(find.text('Proceso ágil'), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -151,7 +154,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Baja prioridad'), findsOneWidget);
+      expect(find.text('Baja'), findsOneWidget);
+      expect(find.text('Baja prioridad'), findsNothing);
     });
   });
 }
