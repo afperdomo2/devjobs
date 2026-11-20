@@ -55,9 +55,9 @@ void main() {
           'requisitos': ['Experiencia: 3 años.'],
           'beneficios': ['Horario flexible.'],
           'observaciones': ['Viaje ocasional.'],
-          'datosClave': {
-            'ingles': 'B2',
-            'beneficios': ['Horario flexible'],
+          'avisos': {
+            'modalidad': 'Híbrido al inicio',
+            'condiciones': ['Horario de fines de semana'],
           },
         }),
       );
@@ -77,6 +77,8 @@ void main() {
     expect(body['reasoning_effort'], equals('none'));
     expect(body['response_format'], equals({'type': 'json_object'}));
     expect(body['messages'], isA<List>());
+    expect(body['messages'][0]['content'], contains('avisos'));
+    expect(body['messages'][0]['content'], isNot(contains('datosClave')));
 
     expect(data.empresa, equals('Acme'));
     expect(data.vacante, equals('Dev'));
@@ -85,7 +87,10 @@ void main() {
     expect(data.requisitos, equals(['Experiencia: 3 años.']));
     expect(data.beneficios, equals(['Horario flexible.']));
     expect(data.observaciones, equals(['Viaje ocasional.']));
-    expect(data.datosClave, containsAll(['B2', 'Horario flexible']));
+    expect(
+      data.avisos,
+      containsAll(['Híbrido al inicio', 'Horario de fines de semana']),
+    );
   });
 
   test('limpia vallas de markdown', () async {

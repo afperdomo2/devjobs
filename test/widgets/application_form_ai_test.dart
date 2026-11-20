@@ -97,7 +97,7 @@ void main() {
         'modalidad': 'Remoto',
         'descripcion':
             '## Resumen\n\nBuscamos un dev.\n\n## Requisitos\n\n- **Experiencia:** 3 años.',
-        'comentarios': '- 5/11/2026: Datos clave: Inglés B2',
+        'comentarios': '- 5/11/2026: Avisos: Híbrido los primeros meses, luego remoto',
         'link': 'https://acme.com/jobs/1',
       },
       importedFields: {

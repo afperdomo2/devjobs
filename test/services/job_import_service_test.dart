@@ -47,7 +47,7 @@ void main() {
         resumen: 'Resumen de la IA para Acme.',
         responsabilidades: ['Diseñar APIs REST.'],
         requisitos: ['Experiencia: 3 años.'],
-        datosClave: ['Inglés B2'],
+        avisos: ['Horario de fines de semana'],
       );
     final client = MockClient((request) async {
       expect(request.url.toString(), equals('https://acme.com/jobs/1'));
@@ -78,7 +78,7 @@ void main() {
       result.fields['descripcion'],
       contains('Resumen de la IA para Acme.'),
     );
-    expect(result.fields['comentarios'], contains('Inglés B2'));
+    expect(result.fields['comentarios'], contains('Horario de fines de semana'));
     expect(result.source, equals('JSON-LD + IA'));
     expect(extractor.calls, equals(1));
   });
@@ -142,7 +142,7 @@ void main() {
         vacante: 'Dev',
         resumen: 'Buscamos un desarrollador con experiencia.',
         responsabilidades: ['Construir APIs.'],
-        datosClave: ['Inglés B2'],
+        avisos: ['Horario de fines de semana'],
       );
 
     final result = await service(
@@ -154,7 +154,12 @@ void main() {
     expect(result.fields['vacante'], equals('Dev'));
     expect(result.fields['descripcion'], contains('## Resumen'));
     expect(result.fields['descripcion'], contains('Construir APIs.'));
-    expect(result.fields['comentarios'], contains('Inglés B2'));
+    expect(result.fields['comentarios'], contains('Horario de fines de semana'));
+    // Sin salario en la página ni en la IA: siempre queda la nota.
+    expect(
+      result.fields['comentarios'],
+      contains('Sin sueldo publicado en la vacante.'),
+    );
     expect(result.fields.containsKey('link'), isFalse);
     expect(extractor.calls, equals(1));
   });

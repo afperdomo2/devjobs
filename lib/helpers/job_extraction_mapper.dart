@@ -88,6 +88,10 @@ JobImportResult buildJobImportResult({
     company: company,
     title: title,
     salaryValue: salary.value,
+    contract: contract,
+    modality: modality,
+    city: city,
+    description: description,
     now: current,
   );
 
@@ -317,9 +321,12 @@ String? _cleanContact(String? raw, Set<String> warnings) {
   return truncate(text, 100);
 }
 
+/// Nota de Comentarios cuando la vacante no trae ningún sueldo publicado.
+const String kMissingSalaryNote = 'Sin sueldo publicado en la vacante.';
+
 SalaryMapping _mapSalary(String? raw, Set<String> warnings) {
   final text = raw?.trim() ?? '';
-  if (text.isEmpty) return const SalaryMapping();
+  if (text.isEmpty) return const SalaryMapping(note: kMissingSalaryNote);
 
   final normalized = normalizeText(text);
   const unsupported = [
@@ -378,10 +385,24 @@ String? _buildNotes({
   required String? company,
   required String? title,
   required String? salaryValue,
+  required String? contract,
+  required String? modality,
+  required String? city,
+  required String? description,
   required DateTime now,
 }) {
   final items = <String>[];
   final seen = <String>{};
+
+  final fieldValues = <String>[
+    ?company,
+    ?title,
+    ?salaryValue,
+    ?contract,
+    ?modality,
+    ?city,
+  ];
+  final foldedDescription = _foldForMatch(description ?? '');
 
   void add(String raw) {
     final text = raw.trim();
@@ -394,22 +415,27 @@ String? _buildNotes({
         normalized.contains('www.')) {
       return;
     }
-    if (normalized.startsWith('salario')) return;
-    if (company != null && normalizeText(company) == normalized) return;
-    if (title != null && normalizeText(title) == normalized) return;
-    if (salaryValue != null && normalizeText(salaryValue) == normalized) {
+    // El salario tiene campo propio o su nota dedicada: nunca va en avisos.
+    if (normalized.contains('salario') ||
+        normalized.contains('sueldo') ||
+        normalized.contains('remuneracion')) {
       return;
     }
+    // Un aviso no debe repetir el valor de un campo del formulario…
+    if (_repeatsFieldValue(text, fieldValues)) return;
+    // …ni datos que ya quedaron en la descripción.
+    final folded = _foldForMatch(text);
+    if (folded.isNotEmpty && foldedDescription.contains(folded)) return;
     if (!seen.add(normalized)) return;
     items.add(text);
   }
 
-  for (final item in ai?.datosClave ?? const <String>[]) {
+  for (final item in ai?.avisos ?? const <String>[]) {
     add(item);
   }
 
   // La nota de salario se agrega aparte: el filtro de arriba descarta
-  // cualquier dato que empiece por "salario" porque ya tiene su campo.
+  // cualquier dato de salario porque ya tiene su campo o su nota dedicada.
   if (salaryNote != null) {
     final text = salaryNote.trim();
     if (text.isNotEmpty && seen.add(normalizeText(text))) {
@@ -420,5 +446,32 @@ String? _buildNotes({
   if (items.isEmpty) return null;
 
   final joined = items.take(5).join(' · ');
-  return appendComment('', 'Datos clave: $joined', date: now);
+  return appendComment('', 'Avisos: $joined', date: now);
+}
+
+/// True si [text] solo repite el valor de un campo del formulario
+/// (igualdad exacta del texto completo o de la parte tras "Etiqueta: ").
+bool _repeatsFieldValue(String text, List<String> fieldValues) {
+  if (fieldValues.isEmpty) return false;
+
+  final normalized = normalizeText(text);
+  String? valuePart;
+  final separator = text.indexOf(': ');
+  if (separator > 0 && separator <= 40) {
+    valuePart = normalizeText(text.substring(separator + 2));
+  }
+
+  for (final value in fieldValues) {
+    final target = normalizeText(value);
+    if (target.isEmpty) continue;
+    if (normalized == target) return true;
+    if (valuePart != null && valuePart == target) return true;
+  }
+  return false;
+}
+
+/// Reduce un texto a solo [a-z0-9] para comparar coincidencias de contenido
+/// ignorando mayúsculas, tildes, puntuación y formato Markdown.
+String _foldForMatch(String text) {
+  return normalizeText(text).replaceAll(RegExp(r'[^a-z0-9]+'), '');
 }

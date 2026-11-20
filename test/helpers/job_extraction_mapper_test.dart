@@ -42,9 +42,10 @@ void main() {
           requisitos: ['Experiencia: 3 años.'],
           beneficios: ['Horario flexible.'],
           observaciones: ['Viaje ocasional.'],
-          datosClave: [
-            'Inglés B2',
-            'Horario flexible',
+          avisos: [
+            'Híbrido los primeros 3 meses, luego remoto',
+            'Horario de fines de semana',
+            'Modalidad: Remoto',
             'Job ID: 123',
             'Salario de 6M',
           ],
@@ -74,10 +75,14 @@ void main() {
       expect(result.fields['link'], equals('https://linkedin.com/jobs/view/1'));
       expect(
         result.fields['comentarios'],
-        equals('- 5/11/2026: Datos clave: Inglés B2 · Horario flexible'),
+        equals(
+          '- 5/11/2026: Avisos: Híbrido los primeros 3 meses, luego remoto · '
+          'Horario de fines de semana',
+        ),
       );
       expect(result.fields['comentarios'], isNot(contains('Job ID')));
       expect(result.fields['comentarios'], isNot(contains('Salario de 6M')));
+      expect(result.fields['comentarios'], isNot(contains('Modalidad')));
       expect(result.source, equals('JSON-LD + IA'));
       expect(result.status, JobImportStatus.success);
       expect(result.warnings.join(' '), contains('contacto'));
@@ -90,7 +95,7 @@ void main() {
           description: null,
           hasJobPosting: false,
         ),
-        ai: const AiJobData(datosClave: ['Inglés B2']),
+        ai: const AiJobData(avisos: ['Horario de fines de semana']),
         link: '',
         existing: const [],
         now: now,
@@ -113,6 +118,65 @@ void main() {
       expect(result.fields.containsKey('salarioOfrecido'), isFalse);
       expect(result.fields['comentarios'], contains('EUR 3.000'));
       expect(result.warnings.join(' '), contains('moneda distinta'));
+    });
+
+    test('vacante sin sueldo genera nota en comentarios', () {
+      final result = buildJobImportResult(
+        page: page(salaryText: null),
+        ai: const AiJobData(avisos: ['Horario de fines de semana']),
+        link: '',
+        existing: const [],
+        now: now,
+      );
+
+      expect(result.fields.containsKey('salarioOfrecido'), isFalse);
+      expect(
+        result.fields['comentarios'],
+        contains('Sin sueldo publicado en la vacante.'),
+      );
+      expect(result.fields['comentarios'], contains('Horario de fines de semana'));
+    });
+
+    test('la nota de sin sueldo se genera incluso sin IA', () {
+      final result = buildJobImportResult(
+        page: page(salaryText: null, hasJobPosting: false),
+        ai: null,
+        link: '',
+        existing: const [],
+        now: now,
+      );
+
+      expect(
+        result.fields['comentarios'],
+        equals('- 5/11/2026: Avisos: Sin sueldo publicado en la vacante.'),
+      );
+    });
+
+    test('descarta avisos que repiten campos del formulario o la descripción', () {
+      final result = buildJobImportResult(
+        page: page(),
+        ai: const AiJobData(
+          modalidad: 'Remoto',
+          requisitos: ['Experiencia: 3 años.'],
+          avisos: [
+            'Modalidad: Remoto',
+            'Ciudad: Bogotá',
+            'Tipo de contrato: Tiempo completo',
+            'Experiencia: 3 años.',
+            'Se requiere viajar a la sede una vez al mes.',
+          ],
+        ),
+        link: '',
+        existing: const [],
+        now: now,
+      );
+
+      expect(
+        result.fields['comentarios'],
+        equals(
+          '- 5/11/2026: Avisos: Se requiere viajar a la sede una vez al mes.',
+        ),
+      );
     });
 
     test('empresa confidencial queda vacía y avisa', () {
@@ -230,24 +294,34 @@ void main() {
   });
 
   group('AiJobData.fromJson', () {
-    test('acepta datosClave como objeto o como array', () {
+    test('acepta avisos como objeto o como array', () {
       final fromObject = AiJobData.fromJson({
         'empresa': 'Acme',
-        'datosClave': {
-          'experiencia': '3 anos',
-          'beneficios': ['Horario flexible'],
+        'avisos': {
+          'modalidad': 'Híbrido al inicio, remoto después',
+          'condiciones': ['Horario de fines de semana'],
         },
       });
       expect(fromObject.empresa, equals('Acme'));
       expect(
-        fromObject.datosClave,
-        containsAll(['3 anos', 'Horario flexible']),
+        fromObject.avisos,
+        containsAll([
+          'Híbrido al inicio, remoto después',
+          'Horario de fines de semana',
+        ]),
       );
 
       final fromList = AiJobData.fromJson({
-        'datosClave': ['Inglés B2', 'Inglés B2', ''],
+        'avisos': ['Horario de fines de semana', 'Horario de fines de semana', ''],
       });
-      expect(fromList.datosClave, equals(['Inglés B2']));
+      expect(fromList.avisos, equals(['Horario de fines de semana']));
+    });
+
+    test('acepta la clave antigua datosClave', () {
+      final data = AiJobData.fromJson({
+        'datosClave': ['Inglés B2'],
+      });
+      expect(data.avisos, equals(['Inglés B2']));
     });
   });
 

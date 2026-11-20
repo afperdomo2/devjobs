@@ -33,7 +33,12 @@ class AiJobData {
   final List<String> beneficios;
   final List<String> observaciones;
   final String? contacto;
-  final List<String> datosClave;
+
+  /// Puntos ambiguos, contradictorios o inusuales que requieren atención
+  /// especial. Es lo único que va a Comentarios (junto con las notas de
+  /// salario); los datos con campo propio o que pertenecen a la descripción
+  /// no se guardan aquí.
+  final List<String> avisos;
 
   const AiJobData({
     this.empresa,
@@ -48,7 +53,7 @@ class AiJobData {
     this.beneficios = const [],
     this.observaciones = const [],
     this.contacto,
-    this.datosClave = const [],
+    this.avisos = const [],
   });
 
   factory AiJobData.fromJson(Map<String, dynamic> json) {
@@ -80,7 +85,8 @@ class AiJobData {
       beneficios: _readStringList(json['beneficios']),
       observaciones: _readStringList(json['observaciones']),
       contacto: readString('contacto'),
-      datosClave: _readStringList(json['datosClave']),
+      // Tolerancia a modelos que aún devuelven la clave antigua `datosClave`.
+      avisos: _readStringList(json['avisos'] ?? json['datosClave']),
     );
   }
 
